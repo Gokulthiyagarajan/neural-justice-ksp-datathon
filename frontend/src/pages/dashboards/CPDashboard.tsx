@@ -387,7 +387,7 @@ export function CPDashboard() {
         <button
           type="button"
           onClick={load}
-          className="text-[10px] font-mono text-text-tertiary hover:text-text-secondary transition-colors flex items-center gap-1"
+          className="text-xs font-mono text-text-tertiary hover:text-text-secondary transition-colors flex items-center gap-1 min-h-12 min-w-12 focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:outline-none rounded-md"
         >
           <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
           Refresh
@@ -411,7 +411,7 @@ export function CPDashboard() {
                 >
                   <Icon size={14} style={{ color: kpi.color }} />
                 </div>
-                <span className="text-[10px] font-medium text-text-tertiary uppercase tracking-wider leading-tight">
+                <span              className="text-xs font-medium text-text-tertiary uppercase tracking-wider leading-tight">
                   {kpi.label}
                 </span>
               </div>
@@ -434,10 +434,10 @@ export function CPDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Map */}
         <SectionCard title="Karnataka District Map" icon={MapPin} className="lg:col-span-2">
-          <div className="relative rounded-lg overflow-hidden" style={{ background: 'var(--bg-tertiary)', height: 340 }}>
+          <div className="relative rounded-lg overflow-hidden h-60 sm:h-80" style={{ background: 'var(--bg-tertiary)' }}>
             {/* Simple grid-based district visualization (no Leaflet dependency) */}
             <div className="absolute inset-0 p-3 overflow-auto">
-              <div className="grid grid-cols-6 gap-1.5 h-full">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1.5 h-full">
                 {districtMapData.map((d) => {
                   const maxFirs = Math.max(...districtMapData.map((x) => x.firCount), 1)
                   const intensity = d.firCount / maxFirs
@@ -445,7 +445,7 @@ export function CPDashboard() {
                     <button
                       key={d.name}
                       type="button"
-                      className="rounded-md flex flex-col items-center justify-center text-center p-1 transition-all hover:scale-105 cursor-pointer border min-h-[2.5rem] min-w-[2.5rem]"
+                      className="rounded-md flex flex-col items-center justify-center text-center p-1 transition-all hover:scale-105 cursor-pointer border min-h-[2.5rem] min-w-[2.5rem] focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-1 focus-visible:outline-none"
                       style={{
                         background: intensity > 0.5
                           ? `rgba(248, 113, 113, ${0.15 + intensity * 0.35})`
@@ -481,9 +481,7 @@ export function CPDashboard() {
                     >
                       <span className="text-[10px] font-medium text-text-secondary leading-tight truncate w-full">
                         {d.name.length > 12 ? d.name.slice(0, 10) + '…' : d.name}
-                      </span>
-                      <span
-                        className="text-xs font-mono font-bold mt-0.5"
+                      </span>      <span className="text-xs sm:text-sm font-mono font-bold mt-0.5"
                         style={{ color: intensity > 0.5 ? RED : BLUE }}
                       >
                         {d.firCount}

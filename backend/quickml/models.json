@@ -1,0 +1,12 @@
+{
+  "models": [
+    {
+      "id": "crm-di-glm47b_30b_it",
+      "name": "GLM 47B Instruction Tuned",
+      "provider": "Zoho Catalyst / QuickML",
+      "capabilities": ["chat", "instruction-following"],
+      "max_tokens": 4096,
+      "endpoint_type": "glm/chat"
+    }
+  ]
+}
