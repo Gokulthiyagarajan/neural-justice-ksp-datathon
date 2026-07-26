@@ -383,7 +383,15 @@ def _call_quickml_rest(messages: list, max_tokens: int = 2048, temperature: floa
 
 
 def _call_quickml(messages: list, max_tokens: int = 2048, temperature: float = 0.1) -> Optional[str]:
-    """Call QuickML — tries SDK first, falls back to REST API."""
+    """Call QuickML — returns mock response if MOCK_AI=true, otherwise tries SDK then REST."""
+    # Check MOCK_AI first
+    if os.environ.get("MOCK_AI", "false").lower() in ("1", "true", "yes"):
+        # Return mock response based on last user message
+        user_msg = messages[-1]["content"] if messages else ""
+        return (
+            f"[MOCK AI] Based on KSP database context, regarding: \"{user_msg[:80]}{'...' if len(user_msg) > 80 else ''}\"\n\n"
+            "This is a simulated response. Set MOCK_AI=false and configure QuickML credentials for real AI responses."
+        )
     # Try SDK first (preferred in Catalyst runtime)
     result = _call_quickml_sdk(messages)
     if result is not None:
