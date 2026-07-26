@@ -1141,6 +1141,59 @@ def handler(request=None, response=None):
                 "trend_12m": [{"date": f"{months[(now.month + i - 12) % 12]} {now.year}", "count": 900 + random.randint(0, 300) + i * 50} for i in range(12)],
             })
 
+        # ── FIR Operations (used by SPCases, FIRDetailPage, etc.) ────────────────────
+        if path == "/api/fir-ops" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            dc = _get_query_param(request, "district_id", "BENGALURU_URBAN")
+            limit = int(_get_query_param(request, "limit", "200"))
+            conn = get_db()
+            try:
+                rows = conn.execute(
+                    "SELECT id as case_master_id, crime_no, crime_type as crime_head_name, status as case_status_name, station, district, occurrence_date, filing_date, brief_facts, latitude as lat, longitude as lng FROM cases WHERE district=? ORDER BY created_at DESC LIMIT ?",
+                    (dc, limit)
+                ).fetchall()
+                return _json_response({"firs": [dict(r) for r in rows]})
+            finally: conn.close()
+
+        if path.startswith("/api/firs/") and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            # /api/firs/{crime_no} or /api/firs/{crime_no}/timeline etc.
+            parts = path.split("/")
+            if len(parts) >= 4:
+                crime_no = parts[3]
+                conn = get_db()
+                try:
+                    if len(parts) == 4:  # /api/firs/{crime_no}
+                        row = conn.execute("SELECT * FROM cases WHERE crime_no=?", (crime_no,)).fetchone()
+                        return _json_response(dict(row) if row else {})
+                    elif len(parts) == 5 and parts[4] == "timeline":  # /api/firs/{crime_no}/timeline
+                        row = conn.execute("SELECT crime_no, status, occurrence_date, filing_date, station FROM cases WHERE crime_no=?", (crime_no,)).fetchone()
+                        if row:
+                            return _json_response({"crime_no": crime_no, "events": [
+                                {"date": row["occurrence_date"] or "", "event": "FIR Registered", "station": row["station"], "crime_no": crime_no},
+                                {"date": row["filing_date"] or "", "event": "Case Filed", "station": row["station"], "crime_no": crime_no},
+                            ]})
+                        return _json_response({"crime_no": crime_no, "events": []})
+                    elif len(parts) == 5 and parts[4] == "accused":
+                        return _json_response([])
+                    elif len(parts) == 5 and parts[4] == "victims":
+                        return _json_response([])
+                    elif len(parts) == 5 and parts[4] == "case-dates":
+                        return _json_response({"crime_no": crime_no, "dates": []})
+                return _error_response("Not Found", 404)
+            finally: conn.close()
+
+        if path == "/api/firs/assigned" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            conn = get_db()
+            try:
+                rows = conn.execute("SELECT * FROM cases ORDER BY created_at DESC LIMIT 50").fetchall()
+                return _json_response({"firs": [dict(r) for r in rows], "total": len(rows)})
+            finally: conn.close()
+
         # Fallback — return 404
         return _error_response(f"Not Found: {method} {path}", 404)
     
