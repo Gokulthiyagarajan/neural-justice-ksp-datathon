@@ -13,7 +13,7 @@
       "ENVIRONMENT": "production",
       "DATABASE_URL": "sqlite:///neural_justice.db",
       "CORS_ORIGINS": "*",
-      "MOCK_AI": "false",
+      "MOCK_AI": "true",
       "QUICKML_AUTH_MODE": "bearer",
       "QUICKML_ENDPOINT": "https://api.catalyst.zoho.in/quickml/v1/project/52367000000021001/glm/chat",
       "QUICKML_MODEL": "qwen-2.5-14b-instruct",
