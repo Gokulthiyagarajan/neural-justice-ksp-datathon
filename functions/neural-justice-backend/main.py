@@ -785,6 +785,139 @@ def handler(request=None, response=None):
         if path == "/api/ai/sessions" and method == "GET":
             return _handle_ai_sessions(body, request)
         
+        # ── Stations ──────────────────────────────────────────────
+        if path == "/api/stations" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            conn = get_db()
+            try:
+                rows = conn.execute("SELECT * FROM stations WHERE status='active'").fetchall()
+                return _json_response([dict(r) for r in rows])
+            finally: conn.close()
+        
+        if path.startswith("/api/stations/") and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            station_id = path.split("/")[-1]
+            conn = get_db()
+            try:
+                row = conn.execute("SELECT * FROM stations WHERE id=?", (station_id,)).fetchone()
+                return _json_response(dict(row) if row else {})
+            finally: conn.close()
+
+        # ── Criminal Profiles ─────────────────────────────────────
+        if path == "/api/criminal-profiles" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            conn = get_db()
+            try:
+                rows = conn.execute("SELECT * FROM criminal_profiles WHERE status='active'").fetchall()
+                return _json_response([dict(r) for r in rows])
+            finally: conn.close()
+        
+        if path.startswith("/api/criminal-profiles/") and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            pid = path.split("/")[-1]
+            conn = get_db()
+            try:
+                row = conn.execute("SELECT * FROM criminal_profiles WHERE id=?", (pid,)).fetchone()
+                return _json_response(dict(row) if row else {})
+            finally: conn.close()
+
+        # ── Cases ─────────────────────────────────────────────────
+        if path == "/api/cases" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            conn = get_db()
+            try:
+                rows = conn.execute("SELECT * FROM cases ORDER BY created_at DESC").fetchall()
+                return _json_response([dict(r) for r in rows])
+            finally: conn.close()
+        
+        if path.startswith("/api/cases/") and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            cid = path.split("/")[-1]
+            conn = get_db()
+            try:
+                row = conn.execute("SELECT * FROM cases WHERE case_number=?", (cid,)).fetchone()
+                return _json_response(dict(row) if row else {})
+            finally: conn.close()
+
+        # ── Orders ────────────────────────────────────────────────
+        if path == "/api/orders" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            conn = get_db()
+            try:
+                rows = conn.execute("SELECT * FROM orders ORDER BY created_at DESC").fetchall()
+                return _json_response([dict(r) for r in rows])
+            finally: conn.close()
+
+        # ── Activity ──────────────────────────────────────────────
+        if path == "/api/activity" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            conn = get_db()
+            try:
+                rows = conn.execute("SELECT * FROM activity ORDER BY timestamp DESC LIMIT 100").fetchall()
+                return _json_response([dict(r) for r in rows])
+            finally: conn.close()
+
+        # ── Notifications ─────────────────────────────────────────
+        if path == "/api/notifications" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            conn = get_db()
+            try:
+                rows = conn.execute("SELECT * FROM notifications WHERE read_status='unread' ORDER BY created_at DESC LIMIT 50").fetchall()
+                return _json_response([dict(r) for r in rows])
+            finally: conn.close()
+
+        # ── Patrol Units ──────────────────────────────────────────
+        if path == "/api/patrol" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            conn = get_db()
+            try:
+                rows = conn.execute("SELECT * FROM patrol_units WHERE status='active'").fetchall()
+                return _json_response([dict(r) for r in rows])
+            finally: conn.close()
+
+        # ── AI Situation Room ─────────────────────────────────────
+        if path == "/api/ai-situation-room" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            conn = get_db()
+            try:
+                rows = conn.execute("SELECT * FROM ai_situation_room WHERE status='active' ORDER BY last_updated DESC").fetchall()
+                return _json_response([dict(r) for r in rows])
+            finally: conn.close()
+
+        # ── Crime Patterns ────────────────────────────────────────
+        if path == "/api/crime-patterns" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            conn = get_db()
+            try:
+                rows = conn.execute("SELECT * FROM crime_patterns ORDER BY analysis_date DESC").fetchall()
+                return _json_response([dict(r) for r in rows])
+            finally: conn.close()
+
+        # ── AI / QuickML routes ────────────────────────────────────
+        if path == "/api/ai/copilot" and method == "POST":
+            return _handle_ai_copilot(body, request)
+        
+        if path == "/api/ai/copilot/chat" and method == "POST":
+            return _handle_ai_copilot_chat(body, request)
+        
+        if path == "/api/ai/query" and method == "POST":
+            return _handle_ai_query(body, request)
+        
+        if path == "/api/ai/sessions" and method == "GET":
+            return _handle_ai_sessions(body, request)
+        
         # /api/ai/sessions/{id}/messages
         import re
         m = re.match(r"^/api/ai/sessions/([^/]+)/messages$", path)

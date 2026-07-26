@@ -19,6 +19,16 @@ from fastapi.middleware.cors import CORSMiddleware
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 
 from backend.api.routes.copilot import router as copilot_router
+from backend.api.routes.reports import router as reports_router
+from backend.api.routes.stations import router as stations_router
+from backend.api.routes.profiles import router as profiles_router
+from backend.api.routes.cases import router as cases_router
+from backend.api.routes.orders import router as orders_router
+from backend.api.routes.activity import router as activity_router
+from backend.api.routes.notifications import router as notifications_router
+from backend.api.routes.situation_room import router as situation_room_router
+from backend.api.routes.patrol import router as patrol_router
+from backend.api.routes.crime_patterns import router as crime_patterns_router
 
 logger = logging.getLogger("nj.api.main")
 
@@ -58,6 +68,16 @@ app.add_middleware(
 # ── Routers ───────────────────────────────────────────────────────────────────
 
 app.include_router(copilot_router)
+app.include_router(reports_router)
+app.include_router(stations_router)
+app.include_router(profiles_router)
+app.include_router(cases_router)
+app.include_router(orders_router)
+app.include_router(activity_router)
+app.include_router(notifications_router)
+app.include_router(situation_room_router)
+app.include_router(patrol_router)
+app.include_router(crime_patterns_router)
 
 
 # ── Health ────────────────────────────────────────────────────────────────────
