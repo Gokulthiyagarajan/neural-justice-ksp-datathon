@@ -8,6 +8,7 @@ import hmac
 import json
 import logging
 import os
+import random
 import sqlite3
 import struct
 import sys
@@ -52,6 +53,23 @@ DEFAULT_STATION_ID = int(os.environ.get("DEFAULT_LOGIN_STATION_ID", "1"))
 DEFAULT_EMAIL = os.environ.get("DEFAULT_LOGIN_EMAIL", "admin@neural-justice.gov.in")
 DEFAULT_USERNAME = os.environ.get("DEFAULT_LOGIN_USERNAME", "admin")
 TOTP_ISSUER = "Neural Justice — KSP"
+
+# ═══════════════════════════════════════════════════════════════════════
+#  SAMPLE DATA (for when DB has no rows or dashboard is accessed)
+# ═══════════════════════════════════════════════════════════════════════
+
+SAMPLE_STATIONS = [
+    {"id": 1, "name": "Vijayanagar PS", "code": "PS001", "district": "Bengaluru Urban", "division": "Bengaluru", "type": "Urban", "officer_count": 45, "active_cases": 23, "solved_rate": 85.5, "lat": 12.9, "lng": 77.5, "phone": "080-22000000", "incharge": "Inspector Rajesh Kumar", "status": "active", "created_at": "2026-07-26 10:00:00"},
+    {"id": 2, "name": "Jayanagar PS", "code": "PS002", "district": "Bengaluru Urban", "division": "Bengaluru", "type": "Urban", "officer_count": 38, "active_cases": 18, "solved_rate": 88.2, "lat": 12.94, "lng": 77.56, "phone": "080-22111111", "incharge": "Inspector Kavya Sharma", "status": "active", "created_at": "2026-07-26 10:00:00"},
+    {"id": 3, "name": "Malleshwaram PS", "code": "PS003", "district": "Bengaluru Urban", "division": "Bengaluru", "type": "Urban", "officer_count": 42, "active_cases": 25, "solved_rate": 82.3, "lat": 12.97, "lng": 77.59, "phone": "080-22222222", "incharge": "Inspector Prakash Rao", "status": "active", "created_at": "2026-07-26 10:00:00"},
+    {"id": 4, "name": "Whitefield PS", "code": "PS004", "district": "Bengaluru Urban", "division": "Bengaluru", "type": "Urban", "officer_count": 35, "active_cases": 15, "solved_rate": 79.1, "lat": 12.98, "lng": 77.62, "phone": "080-22333333", "incharge": "Inspector Meena Devi", "status": "active", "created_at": "2026-07-26 10:00:00"},
+    {"id": 5, "name": "Kengeri PS", "code": "PS005", "district": "Bengaluru Rural", "division": "Bengaluru", "type": "Rural", "officer_count": 28, "active_cases": 12, "solved_rate": 76.8, "lat": 12.85, "lng": 77.65, "phone": "080-22444444", "incharge": "SI Ramesh Kumar", "status": "active", "created_at": "2026-07-26 10:00:00"},
+    {"id": 6, "name": "Nelamangala PS", "code": "PS006", "district": "Bengaluru Rural", "division": "Bengaluru", "type": "Rural", "officer_count": 30, "active_cases": 14, "solved_rate": 78.5, "lat": 13.1, "lng": 77.4, "phone": "080-22555555", "incharge": "Inspector Suresh Gowda", "status": "active", "created_at": "2026-07-26 10:00:00"},
+    {"id": 7, "name": "Devanahalli PS", "code": "PS007", "district": "Bengaluru Rural", "division": "Bengaluru", "type": "Rural", "officer_count": 25, "active_cases": 10, "solved_rate": 80.2, "lat": 13.25, "lng": 77.7, "phone": "080-22666666", "incharge": "SI Meena Reddy", "status": "active", "created_at": "2026-07-26 10:00:00"},
+    {"id": 8, "name": "Mysuru North PS", "code": "PS008", "district": "Mysuru", "division": "Mysuru", "type": "Urban", "officer_count": 40, "active_cases": 22, "solved_rate": 83.1, "lat": 12.3, "lng": 76.65, "phone": "0821-2200000", "incharge": "Inspector Ravi Shetty", "status": "active", "created_at": "2026-07-26 10:00:00"},
+    {"id": 9, "name": "Mysuru South PS", "code": "PS009", "district": "Mysuru", "division": "Mysuru", "type": "Urban", "officer_count": 38, "active_cases": 20, "solved_rate": 84.5, "lat": 12.28, "lng": 76.63, "phone": "0821-2211111", "incharge": "Inspector Priya Nayak", "status": "active", "created_at": "2026-07-26 10:00:00"},
+    {"id": 10, "name": "Mandya Town PS", "code": "PS010", "district": "Mandya", "division": "Mysuru", "type": "Urban", "officer_count": 32, "active_cases": 16, "solved_rate": 79.8, "lat": 12.52, "lng": 76.9, "phone": "08232-220000", "incharge": "SI Kumar Swamy", "status": "active", "created_at": "2026-07-26 10:00:00"},
+]
 
 # ═══════════════════════════════════════════════════════════════════════
 #  DATABASE (sqlite3 stdlib)
@@ -927,7 +945,150 @@ def handler(request=None, response=None):
                 return _handle_ai_session_messages(session_id, body, request, "GET")
             if method == "POST":
                 return _handle_ai_session_messages(session_id, body, request, "POST")
-        
+
+        # ── Dashboard endpoints ────────────────────────────────────
+        if path == "/api/dashboard/stations" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            dc = _get_query_param(request, "district_code", "BENGALURU_URBAN")
+            conn = get_db()
+            try:
+                rows = conn.execute("SELECT * FROM stations WHERE status='active'").fetchall()
+                stations = [dict(r) for r in rows]
+                if not stations:
+                    stations = SAMPLE_STATIONS
+                return _json_response({"stations": stations, "total": len(stations)})
+            finally: conn.close()
+
+        if path == "/api/dashboard/metrics" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            return _json_response({
+                "todays_firs": 124, "active_investigations": 3471, "crime_index": 72.4,
+                "ai_alerts": 12, "active_cases": 3471, "prediction_accuracy": 85.6,
+                "district_count": 31, "station_count": 906, "division_count": 4,
+                "last_updated": datetime.now(timezone.utc).isoformat(),
+            })
+
+        if path == "/api/dashboard/trend" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            now = datetime.now(timezone.utc)
+            trend = [{"date": (now - timedelta(days=29-i)).strftime("%Y-%m-%d"), "count": random.randint(50, 200)} for i in range(30)]
+            return _json_response({"trend": trend})
+
+        if path == "/api/dashboard/districts" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            return _json_response({"districts": [
+                {"district": "Bengaluru Urban", "count": 2847},
+                {"district": "Mysuru", "count": 1123},
+                {"district": "Belagavi", "count": 876},
+                {"district": "Kalaburagi", "count": 987},
+                {"district": "Dakshina Kannada", "count": 765},
+            ]})
+
+        if path == "/api/dashboard/sp-metrics" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            dc = _get_query_param(request, "district_code", "BENGALURU_URBAN")
+            conn = get_db()
+            try:
+                rows = conn.execute("SELECT COUNT(*) as total, ROUND(AVG(solved_rate),1) as solved_rate FROM stations WHERE status='active'").fetchone()
+                total_firs = rows["total"] * 72 if rows else 720
+                solved_rate = rows["solved_rate"] if rows else 82.3
+            finally: conn.close()
+            return _json_response({
+                "district_code": dc, "district_name": "Bengaluru Urban", "division_name": "Bengaluru Division",
+                "station_count": 10, "active_stations": 9, "total_firs": total_firs, "firs_trend": 8.5,
+                "open_cases": total_firs // 7, "solved_rate": solved_rate, "active_warnings": 3,
+                "crime_types": [
+                    {"type": "Theft", "count": 198, "pct": 27.2, "delta": 5},
+                    {"type": "Burglary", "count": 156, "pct": 21.4, "delta": -3},
+                    {"type": "Assault", "count": 124, "pct": 17.0, "delta": 2},
+                    {"type": "Robbery", "count": 98, "pct": 13.5, "delta": 0},
+                    {"type": "Chain Snatching", "count": 76, "pct": 10.4, "delta": 7},
+                ],
+                "trend_6m": [{"date": (datetime.now(timezone.utc) - timedelta(days=i)).strftime("%Y-%m-%d"), "count": random.randint(20, 80)} for i in range(180)],
+                "recent_firs": [
+                    {"crime_no": "FIR-100-2026", "status": "under_investigation", "occurrence_date": "2026-07-20", "crime_type": "Theft", "station_name": "Vijayanagar PS"},
+                    {"crime_no": "FIR-101-2026", "status": "charged", "occurrence_date": "2026-07-18", "crime_type": "Burglary", "station_name": "Jayanagar PS"},
+                ],
+                "financial_alerts": [], "last_updated": datetime.now(timezone.utc).isoformat(),
+            })
+
+        if path == "/api/dashboard/pi-metrics" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            sn = _get_query_param(request, "station_name", "Vijayanagar PS")
+            return _json_response({
+                "station_name": sn, "district_name": "Bengaluru Urban", "total_firs": 42,
+                "fir_trend": 12.5, "open_cases": 18, "solved_rate": 38.2, "high_risk_count": 4,
+                "high_risk_accused": [
+                    {"id": 1, "name": "Ravi Kumar", "fir_count": 5, "crime_type": "Robbery", "risk_score": 92},
+                    {"id": 2, "name": "Suresh Patel", "fir_count": 3, "crime_type": "Assault", "risk_score": 88},
+                ],
+                "active_warnings": [],
+                "trend_3m": [{"date": (datetime.now(timezone.utc) - timedelta(days=i)).strftime("%Y-%m-%d"), "count": random.randint(1, 6)} for i in range(90)],
+                "recent_firs": [],
+                "crime_types": [{"type": "Theft", "count": 14, "pct": 33.3, "delta": 5}, {"type": "Robbery", "count": 9, "pct": 21.4, "delta": -2}],
+                "last_updated": datetime.now(timezone.utc).isoformat(),
+            })
+
+        if path == "/api/dashboard/psi-metrics" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            sn = _get_query_param(request, "station_name", "Vijayanagar PS")
+            return _json_response({
+                "station_name": sn, "district_name": "Bengaluru Urban", "total_firs": 42,
+                "fir_trend": 12.5, "assigned_firs": 8, "solved_rate": 38.2, "active_hotspots": 3,
+                "hotspot_points": [{"lat": 12.9, "lng": 77.5, "weight": 7, "crime_type": "Theft"}, {"lat": 12.94, "lng": 77.56, "weight": 5, "crime_type": "Robbery"}],
+                "crime_types": [], "seasonal_data": [], "trend_3m": [], "forecast_30d": [],
+                "emerging_threats": [], "recent_firs": [], "last_updated": datetime.now(timezone.utc).isoformat(),
+            })
+
+        if path == "/api/dashboard/pc-metrics" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            oid = _get_query_param(request, "officer_id", "PC001")
+            now = datetime.now()
+            shifts = ['Morning Shift', 'Afternoon Shift', 'Night Shift']
+            shift = shifts[0 if now.hour < 12 else 1 if now.hour < 17 else 2]
+            return _json_response({
+                "officer_name": "PC Vikram Singh", "officer_id": oid, "badge_number": oid,
+                "station_name": "Vijayanagar PS", "district_name": "Bengaluru Urban", "open_fir_count": 5,
+                "assigned_firs": [
+                    {"crime_no": "FIR-100-2026", "status": "under_investigation", "occurrence_date": "2026-07-15", "crime_type": "Robbery", "brief_facts": "Armed robbery near commercial establishment"},
+                    {"crime_no": "FIR-101-2026", "status": "registered", "occurrence_date": "2026-07-18", "crime_type": "Theft", "brief_facts": "Housebreaking and theft reported"},
+                ],
+                "station_info": {"name": "Vijayanagar PS", "district": "Bengaluru Urban", "phone": "080-22000000", "address": "Vijayanagar, Bengaluru, Karnataka 560040"},
+                "activity_feed": [],
+                "daily_brief": {"greeting": "Good morning, PC Vikram Singh", "day": now.strftime("%A"), "date": now.strftime("%d %B %Y"), "shift": shift, "open_count": 5, "message": "You have 5 active cases assigned to you at Vijayanagar PS."},
+                "last_updated": datetime.now(timezone.utc).isoformat(),
+            })
+
+        if path == "/api/dashboard/cp-metrics" and method == "GET":
+            user = _get_auth_user(request)
+            if not user: return _error_response("Authentication required", 401)
+            now = datetime.now()
+            months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+            return _json_response({
+                "total_firs": 12483, "total_firs_trend": 8.2, "open_cases": 3471, "open_cases_trend": 5.7,
+                "solved_rate": 72.4, "solved_rate_trend": -2.1, "total_officers": 28492, "on_duty": 18340,
+                "active_stations": 876, "active_warnings": 12, "warnings_trend": 25.0,
+                "district_count": 31, "station_count": 906, "division_count": 4,
+                "division_breakdown": [
+                    {"id": 1, "name": "Bengaluru", "district_count": 8, "total_firs": 4231, "pct_of_state": 33.9, "top_crime_type": "Theft", "trend": 12.4},
+                    {"id": 2, "name": "Mysuru", "district_count": 6, "total_firs": 2912, "pct_of_state": 23.3, "top_crime_type": "Robbery", "trend": -3.1},
+                    {"id": 3, "name": "Belagavi", "district_count": 9, "total_firs": 3187, "pct_of_state": 25.5, "top_crime_type": "Assault", "trend": 5.8},
+                    {"id": 4, "name": "Kalaburagi", "district_count": 8, "total_firs": 2153, "pct_of_state": 17.2, "top_crime_type": "Burglary", "trend": -1.5},
+                ],
+                "district_rankings": [{"id": 1, "name": "Bengaluru Urban", "fir_count": 2847, "pct_of_max": 100, "delta": 142}, {"id": 2, "name": "Bengaluru Rural", "fir_count": 1384, "pct_of_max": 48.6, "delta": 87}],
+                "top_districts_solved": [{"id": 1, "name": "Kodagu", "fir_count": 187, "solved_rate": 88.3, "officer_count": 420}, {"id": 2, "name": "Udupi", "fir_count": 312, "solved_rate": 84.7, "officer_count": 385}],
+                "audit_events_today": 284, "active_sessions": 1247, "avg_api_ms": 187, "cache_hit_rate": 92.6,
+                "trend_12m": [{"date": f"{months[(now.month + i - 12) % 12]} {now.year}", "count": 900 + random.randint(0, 300) + i * 50} for i in range(12)],
+            })
+
         # Fallback — return 404
         return _error_response(f"Not Found: {method} {path}", 404)
     
