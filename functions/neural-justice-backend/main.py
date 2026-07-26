@@ -614,12 +614,30 @@ def _handle_verify_mfa(body: dict):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-#  AI / QuickML HANDLERS
+#  AI / QuickML HANDLERS (with real data queries)
 # ═══════════════════════════════════════════════════════════════════════
 
+def _get_data_context():
+    """Get real data from database for AI context."""
+    conn = get_db()
+    try:
+        # Get recent cases
+        cases = conn.execute("SELECT crime_no, crime_type, status, station, district, occurrence_date, brief_facts FROM cases ORDER BY created_at DESC LIMIT 10").fetchall()
+        # Get station stats
+        stations = conn.execute("SELECT name, code, district, active_cases, solved_rate, officer_count FROM stations WHERE status='active' ORDER BY active_cases DESC LIMIT 10").fetchall()
+        # Get crime type distribution
+        crime_types = conn.execute("SELECT crime_type, COUNT(*) as count FROM cases GROUP BY crime_type ORDER BY count DESC").fetchall()
+        return {
+            "recent_cases": [dict(c) for c in cases],
+            "top_stations": [dict(s) for s in stations],
+            "crime_distribution": [dict(c) for c in crime_types],
+        }
+    finally:
+        conn.close()
+
+
 def _handle_ai_copilot(body: dict, request=None):
-    """POST /api/ai/copilot — single-turn copilot query."""
-    # Verify JWT
+    """POST /api/ai/copilot — single-turn copilot query with real data."""
     user = _get_auth_user(request)
     if not user:
         return _error_response("Authentication required", 401)
@@ -630,18 +648,36 @@ def _handle_ai_copilot(body: dict, request=None):
     if not message:
         return _error_response("message is required", 400)
 
+    # Get real data context
+    data = _get_data_context()
+    data_summary = f"""
+Recent Cases (top 10): {len(data['recent_cases'])} cases
+Top Stations by Active Cases: {len(data['top_stations'])} stations
+Crime Type Distribution: {len(data['crime_distribution'])} crime types
+
+Sample Cases:
+{chr(10).join([f"- {c['crime_no']}: {c['crime_type']} at {c['station']} ({c['status']})" for c in data['recent_cases'][:5]])}
+
+Top Stations:
+{chr(10).join([f"- {s['name']} ({s['code']}): {s['active_cases']} active, {s['solved_rate']}% solved" for s in data['top_stations'][:5]])}
+
+Crime Distribution:
+{chr(10).join([f"- {c['crime_type']}: {c['count']} cases" for c in data['crime_distribution'][:5]])}
+"""
+
     messages = [
-        {"role": "system", "content": f"You are Neural Justice AI, a police intelligence copilot for Karnataka State Police. Mode: {mode}. Provide concise, actionable insights."},
+        {"role": "system", "content": f"You are Neural Justice AI, a police intelligence copilot for Karnataka State Police. Mode: {mode}. Use the provided real KSP data to give concise, actionable insights. Data context:\n{data_summary}"},
         {"role": "user", "content": message},
     ]
 
     response_text = _call_quickml(messages)
     if response_text is None:
         return _json_response({
-            "response": "AI service is currently unavailable. Please try again later.",
+            "response": f"Based on KSP data: {data_summary[:500]}... (AI service unavailable, showing data summary)",
             "mode": mode,
-            "confidence": 0.0,
+            "confidence": 0.7,
             "requires_review": True,
+            "sources": ["ksp_database"],
         }, 503)
 
     return _json_response({
@@ -649,12 +685,12 @@ def _handle_ai_copilot(body: dict, request=None):
         "mode": mode,
         "confidence": 0.85,
         "requires_review": False,
-        "sources": [],
+        "sources": ["ksp_database", "quickml"],
     })
 
 
 def _handle_ai_copilot_chat(body: dict, request=None):
-    """POST /api/ai/copilot/chat — multi-turn chat (used by CopilotPanel)."""
+    """POST /api/ai/copilot/chat — multi-turn chat with real data context."""
     user = _get_auth_user(request)
     if not user:
         return _error_response("Authentication required", 401)
@@ -665,14 +701,22 @@ def _handle_ai_copilot_chat(body: dict, request=None):
     if not messages:
         return _error_response("messages are required", 400)
 
-    # Prepend system message
-    system_msg = {"role": "system", "content": f"You are Neural Justice AI, a police intelligence copilot for Karnataka State Police. Respond in {'Kannada (ಕನ್ನಡ)' if lang == 'kn' else 'English'}. Provide concise, actionable insights."}
+    # Get real data context
+    data = _get_data_context()
+    data_summary = f"""
+KSP Database Context:
+- {len(data['recent_cases'])} recent cases
+- {len(data['top_stations'])} active stations
+- Crime types: {', '.join([c['crime_type'] for c in data['crime_distribution'][:5]])}
+"""
+
+    system_msg = {"role": "system", "content": f"You are Neural Justice AI, a police intelligence copilot for Karnataka State Police. Respond in {'Kannada (ಕನ್ನಡ)' if lang == 'kn' else 'English'}. Use real data:\n{data_summary}"}
     full_messages = [system_msg] + messages
 
     response_text = _call_quickml(full_messages)
     if response_text is None:
         return _json_response({
-            "response": "AI service is currently unavailable. Please try again later.",
+            "response": f"Data summary: {data_summary} (AI unavailable)",
         }, 503)
 
     return _json_response({
