@@ -1,0 +1,30 @@
+{
+  "defaults": {
+    "project": 1,
+    "env": 1
+  },
+  "actives": {
+    "project": 1,
+    "env": 1
+  },
+  "projects": [
+    {
+      "idx": 1,
+      "id": "52367000000021001",
+      "name": "Neural-justice",
+      "domain": {
+        "id": "50044079875",
+        "name": "neural-justice-60077006311.development"
+      },
+      "timezone": "Asia/Kolkata",
+      "env": [
+        {
+          "idx": 1,
+          "id": "60077006311",
+          "name": "Development",
+          "type": 3
+        }
+      ]
+    }
+  ]
+}

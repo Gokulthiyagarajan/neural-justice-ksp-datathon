@@ -1,0 +1,25 @@
+{
+  "project_id": "52367000000021001",
+  "project_name": "Neural-justice",
+  "client": {
+    "path": ".",
+    "stack": "reactjs",
+    "code": ".",
+    "config": "{\"spa\":{\"enabled\":true}}"
+  },
+  "functions": {
+    "targets": [
+      "neural-justice-backend"
+    ],
+    "source": "functions",
+    "ignore": [
+      "__pycache__",
+      "*.pyc",
+      ".env",
+      ".env.*"
+    ]
+  },
+  "apig": {
+    "enabled": false
+  }
+}

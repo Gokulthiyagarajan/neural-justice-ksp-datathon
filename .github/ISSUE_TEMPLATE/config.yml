@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: KSP Datathon Support
+    url: https://ksp-neuraljustice.org/support
+    about: Reach out to the team for general questions or support.
+  - name: Security Policy
+    url: https://github.com/ksp/neural-justice/security/policy
+    about: Report security vulnerabilities here.

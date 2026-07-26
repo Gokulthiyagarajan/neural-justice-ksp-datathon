@@ -1,0 +1,35 @@
+{
+  "deployment": {
+    "name": "neural-justice-backend",
+    "stack": "python_3_11",
+    "type": "advancedio",
+    "memory": 2048,
+    "env_variables": {
+      "PYTHONUNBUFFERED": "1",
+      "JWT_SECRET_KEY": "2779c6dc8e32e843e6f04560e4bcf04b1f6abdda2c678b13bc7e2de921ba3228",
+      "JWT_SECRET": "2779c6dc8e32e843e6f04560e4bcf04b1f6abdda2c678b13bc7e2de921ba3228",
+      "JWT_ALGORITHM": "HS256",
+      "ENCRYPTION_KEY": "1CMq90IbaYTxmmgqreUKG4p-cri29xqErfpZDYWIXlQ=",
+      "ENVIRONMENT": "production",
+      "DATABASE_URL": "sqlite:///neural_justice.db",
+      "CORS_ORIGINS": "*",
+      "MOCK_AI": "false",
+      "QUICKML_AUTH_MODE": "bearer",
+      "QUICKML_ENDPOINT": "https://api.catalyst.zoho.in/quickml/v1/project/52367000000021001/glm/chat",
+      "QUICKML_MODEL": "qwen-2.5-14b-instruct",
+      "QUICKML_ENDPOINT_KEY": "",
+      "QUICKML_ORG_ID": "",
+      "ZOHO_CLIENT_ID": "1000.4A57WEDENTUGCL7N3X7BX186BLTAKM",
+      "ZOHO_CLIENT_SECRET": "2047fe8b7f380d9ad66418055cc767745d727657bf",
+      "DEFAULT_LOGIN_EMAIL": "admin@neural-justice.gov.in",
+      "DEFAULT_LOGIN_PASSWORD": "test123",
+      "DEFAULT_LOGIN_ROLES": "[\"SUPER_ADMIN\"]",
+      "DEFAULT_LOGIN_DISTRICT_ID": "1",
+      "DEFAULT_LOGIN_STATION_ID": "1"
+    }
+  },
+  "execution": {
+    "main": "main.py",
+    "test_inputs": {}
+  }
+}

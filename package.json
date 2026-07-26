@@ -1,0 +1,33 @@
+{
+  "name": "neural-justice",
+  "version": "1.0.0",
+  "description": "Neural Justice — AI-assisted case-management and analytics platform for Karnataka State Police, built on Zoho Catalyst",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint \"shared/**/*.ts\" \"backend/**/*.ts\"",
+    "lint:fix": "eslint \"shared/**/*.ts\" \"backend/**/*.ts\" --fix",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"shared/**/*.ts\" \"backend/**/*.ts\"",
+    "format:check": "prettier --check \"shared/**/*.ts\" \"backend/**/*.ts\"",
+    "catalyst:deploy:dev": "catalyst deploy --environment dev",
+    "catalyst:deploy:staging": "catalyst deploy --environment staging",
+    "catalyst:deploy:prod": "catalyst deploy --environment prod"
+  },
+  "dependencies": {
+    "@react-pdf/renderer": "^4.5.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.0",
+    "zcatalyst-sdk-node": "^2.x"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.0",
+    "@types/jsonwebtoken": "^9.0.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.3.0"
+  }
+}

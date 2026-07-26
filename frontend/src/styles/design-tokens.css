@@ -1,0 +1,41 @@
+/* ═══════════════════════════════════════════════
+   NEURAL JUSTICE — Government Design System
+   Design Tokens Reference
+   ═══════════════════════════════════════════════ */
+
+/* ── COLORS ──────────────────────────────────── */
+/* Primary:    #0B1F3A (Deep Navy)               */
+/* Secondary:  #1F4E8C (Royal Blue)              */
+/* Accent:     #C9A227 (Government Gold)         */
+/* Success:    #16A34A                            */
+/* Warning:    #F59E0B                            */
+/* Critical:   #DC2626                            */
+/* Info:       #2563EB                            */
+
+/* ── TYPOGRAPHY ──────────────────────────────── */
+/* English:    Inter, system-ui, sans-serif       */
+/* Kannada:    Noto Sans Kannada, serif           */
+/* Scale:      display(2rem) → micro(0.625rem)   */
+
+/* ── SPACING ─────────────────────────────────── */
+/* 4, 8, 12, 16, 20, 24, 32, 40, 48, 56, 64px   */
+
+/* ── BORDER RADIUS ───────────────────────────── */
+/* Cards:      16px                               */
+/* Buttons:    12px                               */
+/* Inputs:     12px                               */
+/* Badges:     9999px                             */
+/* Dialogs:    20px                               */
+
+/* ── SHADOWS ─────────────────────────────────── */
+/* sm:   0 1px 2px rgba(11,31,58,0.04)           */
+/* md:   0 2px 8px rgba(11,31,58,0.06)           */
+/* lg:   0 4px 16px rgba(11,31,58,0.08)          */
+/* xl:   0 8px 32px rgba(11,31,58,0.10)          */
+
+/* ── COMPONENT USAGE ─────────────────────────── */
+/* Cards:      card / card-hover-effect           */
+/* Buttons:    btn-primary / btn-secondary / btn-outline / btn-ghost */
+/* Badges:     badge-live / badge-active / badge-critical / badge-warning */
+/* Inputs:     input / input-error / input-search */
+/* Status:     status-dot-active / status-dot-warning / status-dot-critical */
