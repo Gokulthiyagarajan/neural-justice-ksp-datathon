@@ -1059,28 +1059,6 @@ def handler(request=None, response=None):
                 return _json_response({"unread_count": row["count"] if row else 0})
             finally: conn.close()
 
-        # ── CP Warnings ──────────────────────────────────────────
-        if path == "/api/cp/warnings" and method == "GET":
-            user = _get_auth_user(request)
-            if not user: return _error_response("Authentication required", 401)
-            conn = get_db()
-            try:
-                rows = conn.execute(
-                    "SELECT * FROM warnings WHERE severity IN ('critical','high') ORDER BY created_at DESC LIMIT 20"
-                ).fetchall()
-                warnings = [dict(r) for r in rows]
-                if not warnings:
-                    warnings = [
-                        {"id": 1, "type": "Crime Spike", "severity": "critical", "district": "Bengaluru Urban",
-                         "description": "Unusual spike in theft reports in Bengaluru Urban district this week",
-                         "created_at": "2026-07-26 10:00:00", "status": "active"},
-                        {"id": 2, "type": "Repeat Offender", "severity": "high", "district": "Kalaburagi",
-                         "description": "Pattern detected: 3 related robbery incidents in Kalaburagi this month",
-                         "created_at": "2026-07-25 14:30:00", "status": "active"},
-                    ]
-                return _json_response({"warnings": warnings, "total": len(warnings)})
-            finally: conn.close()
-
         # ── Patrol Units ──────────────────────────────────────────
         if path == "/api/patrol" and method == "GET":
             user = _get_auth_user(request)
