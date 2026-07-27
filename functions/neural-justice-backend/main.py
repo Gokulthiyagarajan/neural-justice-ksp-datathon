@@ -934,34 +934,6 @@ def handler(request=None, response=None):
         if path == "/api/health" and method == "GET":
             return _handle_health()
         
-        if path == "/api/debug-headers" and method == "GET":
-            info = {"path": path, "method": method}
-            if request is not None:
-                info["has_headers"] = hasattr(request, 'headers')
-                info["has_get_header"] = hasattr(request, 'get_header')
-                info["has_args"] = hasattr(request, 'args')
-                info["type"] = type(request).__name__
-                if hasattr(request, 'headers'):
-                    hdrs = request.headers
-                    info["headers_type"] = type(hdrs).__name__
-                    info["headers_callable"] = callable(hdrs)
-                    if callable(hdrs):
-                        try:
-                            hdrs = hdrs()
-                            info["headers_after_call_type"] = type(hdrs).__name__
-                        except Exception as e:
-                            info["headers_call_error"] = str(e)
-                    if isinstance(hdrs, dict):
-                        info["authorization"] = hdrs.get("Authorization", "MISSING")
-                    else:
-                        info["headers_not_dict"] = str(hdrs)[:500]
-                if hasattr(request, 'get_header'):
-                    try:
-                        info["get_header_auth"] = request.get_header("Authorization", "MISSING")
-                    except Exception as e:
-                        info["get_header_error"] = str(e)
-            return _json_response(info)
-        
         if path == "/" and method == "GET":
             return _handle_root()
         
