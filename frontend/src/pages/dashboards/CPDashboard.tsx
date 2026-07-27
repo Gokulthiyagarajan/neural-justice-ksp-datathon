@@ -17,7 +17,6 @@ import {
   Shield, Users, AlertTriangle, BarChart3, MapPin,
   Activity, Server, Database, Clock, Eye, TrendingUp,
   ChevronRight, Building2, Scale, RefreshCw,
-  Mail,
 } from 'lucide-react';
 import AnimatedCounter from '@/components/Dashboard/AnimatedCounter';
 import { UnifiedTrendChart } from '@/components/Common/UnifiedTrendChart';

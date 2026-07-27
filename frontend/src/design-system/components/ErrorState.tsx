@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Mail } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { cn } from '@/design-system/utils/cn';
 
 const SUPPORT_EMAIL = 'neuraljustice@neuraljustice.jo3.org';
@@ -44,6 +44,7 @@ export function ErrorState({
   className,
   children,
 }: ErrorStateProps) {
+  const v = VARIANT_STYLES[variant];
   const fullDescription = `${description} For assistance, contact ${SUPPORT_EMAIL}`;
   
   return (

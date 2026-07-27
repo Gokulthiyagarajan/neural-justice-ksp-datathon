@@ -19,7 +19,6 @@ import {
   TrendingUp, Building2, Scale,
   RefreshCw, CheckCircle2, Map, IndianRupee,
   FileText, Navigation, Users, FolderOpen,
-  Mail,
 } from 'lucide-react';
 import AnimatedCounter from '@/components/Dashboard/AnimatedCounter';
 import { UnifiedTrendChart } from '@/components/Common/UnifiedTrendChart';
@@ -29,6 +28,7 @@ import { useJurisdiction } from '@/hooks/useJurisdiction';
 import { JurisdictionBanner } from '@/components/Common/JurisdictionBanner';
 import { LeafletMapView } from '@/components/geo/LeafletMapView';
 import { COPY } from '@/auth/constants/copy';
+import {
   fetchSPMetrics,
   fetchStationPerformance,
   type SPMetrics,
