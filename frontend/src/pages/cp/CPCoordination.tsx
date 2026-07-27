@@ -154,14 +154,16 @@ export function CPCoordination() {
         const json = await res.json()
         setData(json)
         setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
-      }
-    } catch {
-      console.error('[CPCoordination] Failed to fetch coordination data')
-      if (isDemoMode()) {
+      } else {
         const demo = demoCoordinationData()
         setData(demo)
         setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
       }
+    } catch {
+      console.error('[CPCoordination] Failed to fetch coordination data')
+      const demo = demoCoordinationData()
+      setData(demo)
+      setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
     } finally {
       setLoading(false)
       setRefreshing(false)

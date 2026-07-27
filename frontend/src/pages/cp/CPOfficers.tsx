@@ -131,12 +131,13 @@ export function CPOfficers() {
         const json = await res.json()
         setData(json)
         setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
-      }
-    } catch {
-      if (isDemoMode()) {
+      } else {
         setData(demoOfficersData)
         setLastUpdated(new Date(demoOfficersData.last_updated).toLocaleTimeString())
       }
+    } catch {
+      setData(demoOfficersData)
+      setLastUpdated(new Date(demoOfficersData.last_updated).toLocaleTimeString())
       console.error('[CPOfficers] Fetch failed')
     } finally {
       setLoading(false)

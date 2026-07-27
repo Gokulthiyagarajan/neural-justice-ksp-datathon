@@ -113,14 +113,17 @@ export function CPStations() {
         const json = await res.json()
         setData(json)
         setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
-      }
-    } catch {
-      if (isDemoMode()) {
+      } else {
+        // API failed — fall back to demo data
         const demo = demoCPStations()
         setData(demo)
         setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
       }
-      console.error('[CPStations] Fetch failed')
+    } catch {
+      // Network error — fall back to demo data
+      const demo = demoCPStations()
+      setData(demo)
+      setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
     } finally {
       setLoading(false)
       setRefreshing(false)

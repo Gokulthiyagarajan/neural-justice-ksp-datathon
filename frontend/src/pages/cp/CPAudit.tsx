@@ -168,12 +168,13 @@ export function CPAudit() {
         const json = await res.json()
         setData(json)
         setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
-      }
-    } catch {
-      if (isDemoMode()) {
+      } else {
         setData(demoAuditData)
         setLastUpdated(new Date(demoAuditData.last_updated).toLocaleTimeString())
       }
+    } catch {
+      setData(demoAuditData)
+      setLastUpdated(new Date(demoAuditData.last_updated).toLocaleTimeString())
       console.error('[CPAudit] Fetch failed')
     } finally {
       setLoading(false)

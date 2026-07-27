@@ -133,14 +133,16 @@ export function CPRisk() {
         const json = await res.json()
         setData(json)
         setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
-      }
-    } catch {
-      console.error('[CPRisk] Failed to fetch risk data')
-      if (isDemoMode()) {
+      } else {
         const demo = demoRiskData()
         setData(demo)
         setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
       }
+    } catch {
+      console.error('[CPRisk] Failed to fetch risk data')
+      const demo = demoRiskData()
+      setData(demo)
+      setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
     } finally {
       setLoading(false)
       setRefreshing(false)

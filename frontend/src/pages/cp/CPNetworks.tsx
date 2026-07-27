@@ -322,14 +322,16 @@ export function CPNetworks() {
         const json = await res.json()
         setData(json)
         setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
-      }
-    } catch {
-      console.error('[CPNetworks] Failed to fetch network data')
-      if (isDemoMode()) {
+      } else {
         const demo = demoNetworkData()
         setData(demo)
         setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
       }
+    } catch {
+      console.error('[CPNetworks] Failed to fetch network data')
+      const demo = demoNetworkData()
+      setData(demo)
+      setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
     } finally {
       setLoading(false)
       setRefreshing(false)

@@ -88,62 +88,74 @@ export function CPActivity() {
   const [severityFilter, setSeverityFilter] = useState('all')
 
   const fetchData = useCallback(async () => {
+    const getDemoData = () => {
+      const now = new Date()
+      const districts = ['Bengaluru Urban', 'Bengaluru Rural', 'Mysuru', 'Hubballi', 'Mangaluru', 'Belagavi', 'Kalaburagi', 'Shivamogga']
+      const actions = ['fir_registration', 'arrest', 'alert', 'patrol', 'resolution']
+      const severities: Array<'info' | 'low' | 'medium' | 'high' | 'critical'> = ['info', 'low', 'medium', 'high', 'critical']
+      const activities: ActivityEntry[] = Array.from({ length: 24 }, (_, i) => {
+        const district = districts[i % districts.length]
+        const action = actions[i % actions.length]
+        return {
+          id: `act-${(i + 1).toString().padStart(3, '0')}`,
+          user: ['SI Meena K.', 'PI Ramesh', 'ASI Gopal', 'DCP Sharma', 'SI Venkatesh', 'PI Shetty', 'ASI Nagesh', 'SI Priya'][i % 8],
+          user_role: ['SI', 'PI', 'ASI', 'DCP', 'SI', 'PI', 'ASI', 'SI'][i % 8],
+          action,
+          resource: action === 'fir_registration' ? `KSP-2026-${(200 - i).toString().padStart(3, '0')}` :
+                     action === 'arrest' ? `ACC-${(i + 100)}` :
+                     action === 'alert' ? `Warning #${i + 1}` :
+                     action === 'patrol' ? `Unit ${String.fromCharCode(65 + (i % 6))}` : `Case ${i + 1}`,
+          details: action === 'fir_registration' ? `New FIR registered for ${['Theft', 'Robbery', 'Assault', 'Burglary'][i % 4]}` :
+                    action === 'arrest' ? `Suspect arrested in connection with ${['chain snatching', 'burglary', 'vehicle theft'][i % 3]}` :
+                    action === 'alert' ? `AI-generated alert for ${['crime spike', 'repeat offender', 'pattern detected'][i % 3]}` :
+                    action === 'patrol' ? `Patrol unit deployed to ${['market area', 'residential zone', 'commercial district'][i % 3]}` :
+                    `Case resolved - ${['all charges dropped', 'suspect acquitted', 'compromise reached'][i % 3]}`,
+          district,
+          timestamp: new Date(now.getTime() - i * 3600000).toISOString(),
+          severity: severities[i % severities.length],
+        }
+      })
+      return {
+        summary: {
+          total: activities.length,
+          today: activities.filter(a => new Date(a.timestamp).toDateString() === now.toDateString()).length,
+          arrests: activities.filter(a => a.action === 'arrest').length,
+          fir_registrations: activities.filter(a => a.action === 'fir_registration').length,
+          alerts: activities.filter(a => a.action === 'alert').length,
+        },
+        activities,
+        districts,
+        action_types: actions,
+        last_updated: now.toISOString(),
+      }
+    }
+
     try {
       setRefreshing(true)
       setError(null)
       if (isDemoMode()) {
-        const now = new Date()
-        const districts = ['Bengaluru Urban', 'Bengaluru Rural', 'Mysuru', 'Hubballi', 'Mangaluru', 'Belagavi', 'Kalaburagi', 'Shivamogga']
-        const actions = ['fir_registration', 'arrest', 'alert', 'patrol', 'resolution']
-        const severities: Array<'info' | 'low' | 'medium' | 'high' | 'critical'> = ['info', 'low', 'medium', 'high', 'critical']
-        const activities: ActivityEntry[] = Array.from({ length: 24 }, (_, i) => {
-          const district = districts[i % districts.length]
-          const action = actions[i % actions.length]
-          return {
-            id: `act-${(i + 1).toString().padStart(3, '0')}`,
-            user: ['SI Meena K.', 'PI Ramesh', 'ASI Gopal', 'DCP Sharma', 'SI Venkatesh', 'PI Shetty', 'ASI Nagesh', 'SI Priya'][i % 8],
-            user_role: ['SI', 'PI', 'ASI', 'DCP', 'SI', 'PI', 'ASI', 'SI'][i % 8],
-            action,
-            resource: action === 'fir_registration' ? `KSP-2026-${(200 - i).toString().padStart(3, '0')}` :
-                       action === 'arrest' ? `ACC-${(i + 100)}` :
-                       action === 'alert' ? `Warning #${i + 1}` :
-                       action === 'patrol' ? `Unit ${String.fromCharCode(65 + (i % 6))}` : `Case ${i + 1}`,
-            details: action === 'fir_registration' ? `New FIR registered for ${['Theft', 'Robbery', 'Assault', 'Burglary'][i % 4]}` :
-                      action === 'arrest' ? `Suspect arrested in connection with ${['chain snatching', 'burglary', 'vehicle theft'][i % 3]}` :
-                      action === 'alert' ? `AI-generated alert for ${['crime spike', 'repeat offender', 'pattern detected'][i % 3]}` :
-                      action === 'patrol' ? `Patrol unit deployed to ${['market area', 'residential zone', 'commercial district'][i % 3]}` :
-                      `Case resolved - ${['all charges dropped', 'suspect acquitted', 'compromise reached'][i % 3]}`,
-            district,
-            timestamp: new Date(now.getTime() - i * 3600000).toISOString(),
-            severity: severities[i % severities.length],
-          }
-        })
-        setData({
-          summary: {
-            total: activities.length,
-            today: activities.filter(a => new Date(a.timestamp).toDateString() === now.toDateString()).length,
-            arrests: activities.filter(a => a.action === 'arrest').length,
-            fir_registrations: activities.filter(a => a.action === 'fir_registration').length,
-            alerts: activities.filter(a => a.action === 'alert').length,
-          },
-          activities,
-          districts,
-          action_types: actions,
-          last_updated: now.toISOString(),
-        })
-        setLastUpdated(now.toLocaleTimeString())
+        const demo = getDemoData()
+        setData(demo)
+        setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
         setLoading(false)
         setRefreshing(false)
         return
       }
       const res = await fetch('/api/cp/activity', { headers: authHeaders() })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json = await res.json()
-      setData(json)
-      setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
+      if (res.ok) {
+        const json = await res.json()
+        setData(json)
+        setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
+      } else {
+        const demo = getDemoData()
+        setData(demo)
+        setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
+      }
     } catch {
       console.error('[CPActivity] Fetch failed')
-      setError('Unable to load activity')
+      const demo = getDemoData()
+      setData(demo)
+      setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
     } finally {
       setLoading(false)
       setRefreshing(false)

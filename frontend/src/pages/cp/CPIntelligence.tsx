@@ -190,14 +190,16 @@ export function CPIntelligence() {
         const json = await res.json()
         setData(json)
         setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
-      }
-    } catch {
-      console.error('[CPIntelligence] Failed to fetch intelligence data')
-      if (isDemoMode()) {
+      } else {
         const demo = demoIntelligenceData()
         setData(demo)
         setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
       }
+    } catch {
+      console.error('[CPIntelligence] Failed to fetch intelligence data')
+      const demo = demoIntelligenceData()
+      setData(demo)
+      setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
     } finally {
       setLoading(false)
       setRefreshing(false)

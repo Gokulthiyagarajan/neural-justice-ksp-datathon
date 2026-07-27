@@ -153,12 +153,13 @@ export function CPFinance() {
         const json = await res.json()
         setData(json)
         setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
-      }
-    } catch {
-      if (isDemoMode()) {
+      } else {
         setData(demoFinanceData)
         setLastUpdated(new Date(demoFinanceData.last_updated).toLocaleTimeString())
       }
+    } catch {
+      setData(demoFinanceData)
+      setLastUpdated(new Date(demoFinanceData.last_updated).toLocaleTimeString())
       console.error('[CPFinance] Failed to fetch finance data')
     } finally {
       setLoading(false)

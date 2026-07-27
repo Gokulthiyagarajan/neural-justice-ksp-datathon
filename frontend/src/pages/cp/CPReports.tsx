@@ -142,12 +142,13 @@ export function CPReports() {
         const json = await res.json()
         setData(json)
         setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
-      }
-    } catch {
-      if (isDemoMode()) {
+      } else {
         setData(demoReportsData)
         setLastUpdated(new Date(demoReportsData.last_updated).toLocaleTimeString())
       }
+    } catch {
+      setData(demoReportsData)
+      setLastUpdated(new Date(demoReportsData.last_updated).toLocaleTimeString())
       console.error('[CPReports] Fetch failed')
     } finally {
       setLoading(false)

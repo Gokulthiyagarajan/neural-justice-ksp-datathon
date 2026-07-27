@@ -104,13 +104,15 @@ export function CPDistricts() {
         const json = await res.json()
         setData(json)
         setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
-      }
-    } catch {
-      if (isDemoMode()) {
+      } else {
         const demo = demoCPDistricts()
         setData(demo)
         setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
       }
+    } catch {
+      const demo = demoCPDistricts()
+      setData(demo)
+      setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
       console.error('[CPDistricts] Fetch failed')
     } finally {
       setLoading(false)

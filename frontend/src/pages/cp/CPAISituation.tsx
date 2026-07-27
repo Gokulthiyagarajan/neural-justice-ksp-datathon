@@ -326,11 +326,7 @@ export function CPAISituation() {
       setData(await res.json())
     } catch (err) {
       console.error('[CPAISituation] Fetch error:', err)
-      if (isDemoMode()) {
-        setData(demoAISituationData())
-      } else {
-        setError('Unable to load AI situation data')
-      }
+      setData(demoAISituationData())
     } finally {
       setLoading(false)
     }

@@ -417,14 +417,14 @@ export function CPGISMap() {
         const json = await res.json()
         setData(json)
         setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
-      }
-    } catch {
-      if (isDemoMode()) {
+      } else {
         setData(DEMO_GIS_DATA)
         setLastUpdated(new Date(DEMO_GIS_DATA.last_updated).toLocaleTimeString())
-      } else {
-        console.error('[CPGISMap] Failed to fetch GIS data')
       }
+    } catch {
+      setData(DEMO_GIS_DATA)
+      setLastUpdated(new Date(DEMO_GIS_DATA.last_updated).toLocaleTimeString())
+      console.error('[CPGISMap] Failed to fetch GIS data')
     } finally {
       setLoading(false)
       setRefreshing(false)

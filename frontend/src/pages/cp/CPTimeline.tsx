@@ -161,10 +161,7 @@ export function CPTimeline() {
         const json = await res.json()
         setData(json)
         setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
-      }
-    } catch {
-      console.error('[CPTimeline] Failed to fetch timeline data')
-      if (isDemoMode()) {
+      } else {
         const now = new Date()
         setData({
           total_events: 0,
@@ -176,6 +173,18 @@ export function CPTimeline() {
         })
         setLastUpdated(now.toLocaleTimeString())
       }
+    } catch {
+      console.error('[CPTimeline] Failed to fetch timeline data')
+      const now = new Date()
+      setData({
+        total_events: 0,
+        summary: { fir_registrations: 0, emergency_responses: 0, patrol_deployments: 0, ai_alerts: 0, warning_escalations: 0, resource_movements: 0, inter_agency: 0, arrests: 0 },
+        events: [],
+        timeline_markers: [],
+        period_hours: timeRange,
+        last_updated: now.toISOString(),
+      })
+      setLastUpdated(now.toLocaleTimeString())
     } finally {
       setLoading(false)
       setRefreshing(false)

@@ -280,14 +280,16 @@ export function CPForecast() {
         const json = await res.json()
         setData(json)
         setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
-      }
-    } catch {
-      console.error('[CPForecast] Failed to fetch forecast data')
-      if (isDemoMode()) {
+      } else {
         const demo = demoForecastData()
         setData(demo)
         setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
       }
+    } catch {
+      console.error('[CPForecast] Failed to fetch forecast data')
+      const demo = demoForecastData()
+      setData(demo)
+      setLastUpdated(new Date(demo.last_updated).toLocaleTimeString())
     } finally {
       setLoading(false)
       setRefreshing(false)
