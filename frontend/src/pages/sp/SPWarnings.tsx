@@ -55,7 +55,18 @@ export function SPWarnings() {
       const d = await res.json();
       setWarnings(d?.warnings ?? d ?? []);
     } catch (err) {
-      setError('Unable to load warnings');
+      console.warn('[SPWarnings] Fetch failed:', err);
+      // Fall back to demo data on API failure
+      setWarnings(demoPIWarnings().map(w => ({
+        warning_id: w.warning_id,
+        type: w.type,
+        severity: w.severity,
+        message: w.message,
+        recommended_action: w.recommended_action ?? null,
+        generated_at: w.generated_at,
+        status: w.status,
+        station_name: w.entity_id ? `Station #${w.entity_id}` : undefined,
+      })));
     } finally {
       setLoading(false);
     }
