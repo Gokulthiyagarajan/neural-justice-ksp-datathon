@@ -1,0 +1,42 @@
+ActCode,SectionCode,SectionDescription,Active
+BNS,103,Murder,1
+BNS,109,Attempt to Murder,1
+BNS,115,Voluntarily Causing Hurt,1
+BNS,117,Voluntarily Causing Grievous Hurt,1
+BNS,303,Theft,1
+BNS,305,Theft in Dwelling House,1
+BNS,309,Robbery,1
+BNS,310,Dacoity,1
+BNS,316,Criminal Breach of Trust,1
+BNS,318,Cheating,1
+BNS,63,Rape,1
+BNS,74,Assault or Criminal Force to Woman with Intent to Outrage Modesty,1
+BNS,85,Cruelty by Husband or Relatives,1
+BNS,80,Dowry Death,1
+BNS,126,Wrongful Restraint,1
+BNS,351,Criminal Intimidation,1
+IPC,302,Murder,0
+IPC,307,Attempt to Murder,0
+IPC,376,Rape,0
+IPC,354,Assault on Woman with Intent to Outrage Modesty,0
+IPC,420,Cheating and Dishonestly Inducing Delivery of Property,0
+IPC,379,Theft,0
+IPC,392,Robbery,0
+IPC,498A,Cruelty by Husband or Relatives,0
+IPC,304B,Dowry Death,0
+NDPS,20,Punishment for Contravention Involving Cannabis,1
+NDPS,21,Punishment for Contravention Involving Manufactured Drugs,1
+NDPS,22,Punishment for Contravention Involving Psychotropic Substances,1
+POCSO,4,Punishment for Penetrative Sexual Assault,1
+POCSO,8,Punishment for Sexual Assault,1
+POCSO,12,Punishment for Sexual Harassment,1
+MVACT,279,Rash Driving,1
+MVACT,184,Driving Dangerously,1
+ARMS,25,Punishment for Possessing Arms Without License,1
+ARMS,27,Punishment for Using Arms in Contravention,1
+ITACT,66,Computer Related Offences,1
+ITACT,66C,Identity Theft,1
+ITACT,66D,Cheating by Personation Using Computer,1
+DPACT,3,Penalty for Giving or Taking Dowry,1
+DPACT,4,Penalty for Demanding Dowry,1
+BNSS,194,Police to Enquire and Report on Suicide/Unnatural Death (Inquest),1

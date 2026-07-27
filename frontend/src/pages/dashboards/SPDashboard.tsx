@@ -19,6 +19,7 @@ import {
   TrendingUp, Building2, Scale,
   RefreshCw, CheckCircle2, Map, IndianRupee,
   FileText, Navigation, Users, FolderOpen,
+  Mail,
 } from 'lucide-react';
 import AnimatedCounter from '@/components/Dashboard/AnimatedCounter';
 import { UnifiedTrendChart } from '@/components/Common/UnifiedTrendChart';
@@ -27,7 +28,7 @@ import { useRightDrawer } from '@/store/rightDrawerStore';
 import { useJurisdiction } from '@/hooks/useJurisdiction';
 import { JurisdictionBanner } from '@/components/Common/JurisdictionBanner';
 import { LeafletMapView } from '@/components/geo/LeafletMapView';
-import {
+import { COPY } from '@/auth/constants/copy';
   fetchSPMetrics,
   fetchStationPerformance,
   type SPMetrics,
@@ -303,7 +304,7 @@ export function SPDashboard() {
         <div className="rounded-xl border border-border-primary p-8 text-center" style={{ background: 'var(--bg-card)' }}>
           <AlertTriangle size={32} className="mx-auto mb-3" style={{ color: RED }} />
           <p className="text-sm text-text-primary font-medium mb-1">Unable to load dashboard data</p>
-          <p className="text-xs text-text-tertiary mb-4">Please try again. If the issue persists, contact support.</p>
+          <p className="text-xs text-text-tertiary mb-4">Please try again. If the issue persists, contact <a href={`mailto:${COPY.supportEmail}`} className="underline hover:text-blue-400">{COPY.supportEmail}</a>.</p>
           <button
             type="button"
             onClick={load}

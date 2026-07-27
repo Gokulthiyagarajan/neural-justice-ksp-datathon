@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Mail } from 'lucide-react';
 import { cn } from '@/design-system/utils/cn';
+
+const SUPPORT_EMAIL = 'neuraljustice@neuraljustice.jo3.org';
 
 export interface ErrorStateProps {
   title: string;
@@ -42,15 +44,15 @@ export function ErrorState({
   className,
   children,
 }: ErrorStateProps) {
-  const v = VARIANT_STYLES[variant];
-
+  const fullDescription = `${description} For assistance, contact ${SUPPORT_EMAIL}`;
+  
   return (
     <div className={cn('panel-card border p-5', v.border, v.bg, className)} role="alert">
       <div className="flex items-start gap-3">
         <AlertTriangle className={cn('w-5 h-5 shrink-0 mt-0.5', v.icon)} aria-hidden />
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-semibold text-text-primary">{title}</h4>
-          <p className="text-caption text-text-secondary mt-1">{description}</p>
+          <p className="text-caption text-text-secondary mt-1">{fullDescription}</p>
           {children}
           {onRetry && (
             <button type="button" onClick={onRetry} className={cn('mt-3 inline-flex items-center gap-1.5', v.button)}>

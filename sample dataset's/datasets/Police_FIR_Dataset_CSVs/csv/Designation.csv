@@ -1,0 +1,11 @@
+DesignationID,DesignationName,Active,SortOrder
+1,Investigating Officer,1,1
+2,Station House Officer (SHO),2,1
+3,Circle Inspector,3,1
+4,Deputy Commissioner of Police,4,1
+5,Additional SHO,5,1
+6,Case Diary Writer,6,1
+7,Beat Constable,7,1
+8,Cyber Crime Investigator,8,1
+9,Traffic Inspector,9,1
+10,Reader to SP,10,1

@@ -1,0 +1,21 @@
+CourtID,CourtName,DistrictID,StateID,Active
+1,"City Civil & Sessions Court, Bengaluru",1,1,1
+2,"III Additional Chief Metropolitan Magistrate Court, Bengaluru",1,1,1
+3,"Fast Track Court for Women & Children, Bengaluru",1,1,1
+4,"Principal District & Sessions Court, Mysuru",10,1,1
+5,"District & Sessions Court, Mangaluru",15,1,1
+6,"Special Court for NDPS Cases, Bengaluru",1,1,1
+7,"Special Court for POCSO Cases, Bengaluru",1,1,1
+8,"JMFC Court, Nelamangala",2,1,1
+9,"District & Sessions Court, Belagavi",18,1,1
+10,"District & Sessions Court, Kalaburagi",25,1,1
+11,"District & Sessions Court, Ramanagara",3,1,1
+12,"District & Sessions Court, Tumakuru",6,1,1
+13,"District & Sessions Court, Mandya",11,1,1
+14,"District & Sessions Court, Hassan",12,1,1
+15,"District & Sessions Court, Udupi",16,1,1
+16,"District & Sessions Court, Vijayapura",19,1,1
+17,"District & Sessions Court, Dharwad",21,1,1
+18,"District & Sessions Court, Bidar",26,1,1
+19,"District & Sessions Court, Ballari",30,1,1
+20,"District & Sessions Court, Vijayanagara",31,1,1

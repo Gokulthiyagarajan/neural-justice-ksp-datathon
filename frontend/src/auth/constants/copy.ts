@@ -5,6 +5,8 @@ export const COPY = {
   taglineKn: 'ಸುರಕ್ಷಿತ. ಬುದ್ಧಿವಂತ. ಜವಾಬ್ದಾರಿ.',
   footer: 'Authorised Personnel Only  ·  Karnataka State Police',
 
+  supportEmail: 'neuraljustice@neuraljustice.jo3.org',
+
   landing: {
     cta: 'Access System →',
   },
@@ -22,7 +24,7 @@ export const COPY = {
     passwordLabel: 'Password',
     passwordPlaceholder: 'Enter your password',
     forgotCredentials: 'Forgot credentials? Contact your District IT Supervisor',
-    helpdeskText: 'Call KSP IT Helpdesk: 080-2294-3000 · Available 24/7',
+    helpdeskText: 'Contact Support: neuraljustice@neuraljustice.jo3.org · Available 24/7',
     submitBtn: 'Verify Identity →',
     changeRole: 'Change role',
     invalidCredentials: 'Invalid credentials.',
@@ -38,7 +40,7 @@ export const COPY = {
     codeExpired: 'Code expired. Enter the new code from your app.',
     incorrectCode: 'Incorrect code.',
     cantAccess: "Can't access your authenticator app?",
-    escalationText: 'Raise an unlock request with your supervisor or call KSP IT Helpdesk: 080-2294-3000',
+    escalationText: "Can't access your authenticator app? Contact support at neuraljustice@neuraljustice.jo3.org or call KSP IT Helpdesk: 080-2294-3000",
   },
 
   auditGate: {
@@ -123,7 +125,7 @@ Official Email: {{email}}`,
   // district the officer types, so Gmail opens with To: already filled.
   // Unknown districts fall back to the central IT-support inbox.
   districtRecipients: {
-    fallback: 'it@neuraljustice.in',
+    fallback: 'neuraljustice@gmail.com',
     map: {
       'bagalkot': 'it@neuraljustice.in',
       'ballari': 'it@neuraljustice.in',

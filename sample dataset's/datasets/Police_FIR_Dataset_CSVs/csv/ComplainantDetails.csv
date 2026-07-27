@@ -1,0 +1,495 @@
+ComplainantID,CaseMasterID,ComplainantName,AgeYear,OccupationID,ReligionID,CasteID,GenderID
+1,1,Puttamma Nayak,77,8,5,4,F
+2,2,Mahesh Shetty,58,8,3,3,M
+3,3,Shailaja Reddy,62,10,4,8,F
+4,4,Roopa Gowda,28,9,1,1,F
+5,5,Lakshmi Nayak,56,6,4,4,F
+6,6,Lakshmi Naidu,49,8,6,5,F
+7,7,Basamma Naidu,77,12,3,6,F
+8,8,Srinivas Shetty,19,7,1,5,M
+9,9,Yamuna Gowda,72,4,2,1,F
+10,10,Muniraju Naidu,43,10,6,4,T
+11,11,Puneeth Iyengar,23,1,4,2,M
+12,12,Sunitha Nayak,18,8,2,9,F
+13,13,Shivakumar Kamath,64,11,4,2,M
+14,14,Girish Bhat,18,1,2,3,T
+15,15,Deepa Shetty,59,1,2,4,F
+16,16,Yogesh Bhat,57,7,1,2,M
+17,17,Lakshmi Setty,33,6,5,8,F
+18,18,Deepa Rao,71,7,2,3,F
+19,19,Vijay Naik,57,3,6,9,M
+20,20,Pushpa Naidu,74,7,1,2,F
+21,21,Vijay Poojary,34,5,4,8,M
+22,22,Srinivas Rao,64,4,4,9,M
+23,23,Vani Naik,22,4,6,1,F
+24,24,Prakash Reddy,33,3,3,6,M
+25,25,Savitha Rao,23,8,3,9,F
+26,26,Suresh,20,6,6,5,M
+27,27,Srinivas,58,2,6,5,M
+28,27,Srinivas Nayak,22,9,3,1,M
+29,28,Geetha Iyengar,63,6,1,8,F
+30,29,Cheluvamma Gowda,44,8,5,1,F
+31,30,Manjunath Naidu,55,2,1,2,M
+32,31,Anitha Poojary,64,12,6,8,F
+33,31,Ganesh,71,9,1,5,M
+34,32,Vinod,32,10,6,8,M
+35,33,Basavaraj Naik,37,9,2,6,M
+36,34,Vijay Iyengar,75,7,6,5,M
+37,35,Anand Naik,69,7,2,6,M
+38,36,Ravindra Naidu,40,5,7,3,M
+39,37,Rajesh Kamath,77,7,6,9,M
+40,38,Siddappa Iyengar,71,2,7,1,M
+41,39,Gowramma Achar,61,10,3,5,F
+42,40,Geetha Poojary,59,8,2,1,F
+43,41,Basavaraj Reddy,67,11,1,8,M
+44,42,Cheluvamma Setty,58,2,6,4,F
+45,43,Manjunath,29,9,6,1,M
+46,44,Puttaswamy,40,10,7,3,M
+47,45,Radha Naidu,75,7,6,7,F
+48,46,Manjunath Poojary,58,9,5,9,M
+49,47,Anitha Naik,47,2,6,2,F
+50,48,Rekha,23,6,3,1,F
+51,49,Yogesh,46,7,7,5,M
+52,50,Srinivas Kamath,69,1,2,9,M
+53,51,Pushpa Rao,26,9,6,9,F
+54,52,Pushpa Naidu,78,4,4,9,F
+55,53,Shailaja Kumar,53,9,5,9,F
+56,54,Devamma Naik,72,5,7,3,F
+57,55,Pushpa Naik,54,7,5,2,F
+58,55,Mohan Gowda,56,9,1,9,M
+59,56,Kavitha,54,2,6,3,F
+60,57,Cheluvamma Poojary,44,5,2,8,F
+61,58,Chandrappa,75,6,1,4,M
+62,59,Shivakumar Gowda,34,1,2,3,M
+63,60,Nagamma Setty,38,4,5,8,F
+64,61,Devamma,25,10,3,4,F
+65,62,Usha Kamath,19,9,5,3,F
+66,63,Shailaja Naik,52,9,2,9,F
+67,64,Nagamma Setty,32,3,3,6,F
+68,65,Anand Shetty,67,3,2,3,M
+69,66,Byrappa Kamath,24,9,7,3,M
+70,67,Lakshmi Shetty,69,4,5,6,F
+71,68,Gowramma,25,11,7,6,F
+72,69,Cheluvamma Naidu,30,8,1,1,F
+73,70,Deepa,50,3,2,3,F
+74,71,Chandru Shetty,28,10,1,3,M
+75,72,Naveen Iyengar,66,7,4,7,M
+76,72,Rajesh Setty,45,1,6,1,M
+77,73,Lokesh Setty,47,7,2,3,M
+78,74,Padma Poojary,38,10,5,4,F
+79,75,Nandini Achar,69,5,1,3,T
+80,76,Yogesh,75,12,3,7,M
+81,77,Mahesh Naidu,64,6,3,8,M
+82,78,Roopa Reddy,58,4,3,5,F
+83,79,Manjula,54,2,4,9,F
+84,80,Kavitha Poojary,62,10,1,2,F
+85,80,Radha Achar,65,8,4,9,F
+86,81,Manjunath Shetty,42,5,3,5,M
+87,82,Jayanthi,50,10,7,2,F
+88,83,Bhagya Reddy,22,7,2,7,F
+89,84,Prakash Kamath,49,8,4,5,M
+90,85,Malathi Bhat,41,8,6,5,F
+91,86,Chandru Gowda,63,1,7,4,M
+92,87,Puttamma Poojary,44,1,3,7,F
+93,88,Sharath Naidu,78,4,4,8,T
+94,89,Malathi Shetty,20,12,4,3,F
+95,90,Gowramma Shetty,56,1,5,7,F
+96,90,Prakash Setty,31,9,2,2,M
+97,91,Halappa Achar,44,11,5,7,M
+98,92,Geetha Bhat,70,12,2,4,F
+99,93,Boregowda Setty,37,5,3,4,M
+100,94,Radha,30,11,2,1,F
+101,95,Byrappa Gowda,34,10,1,2,M
+102,96,Ganesh Kumar,66,9,2,6,M
+103,97,Yogesh,39,12,2,2,M
+104,98,Rajesh Nayak,70,7,6,5,M
+105,99,Sharath Bhat,27,9,7,3,M
+106,100,Halappa Iyengar,24,2,5,2,M
+107,101,Yamuna Nayak,70,5,7,1,F
+108,102,Ganesh Bhat,60,8,6,6,M
+109,103,Sharath Setty,40,2,3,8,M
+110,104,Yamuna Achar,78,8,5,5,F
+111,105,Puttaswamy Hegde,77,2,3,6,M
+112,106,Usha Naik,55,12,5,6,F
+113,107,Deepa Kumar,71,3,1,8,F
+114,108,Sanjay,19,1,5,3,M
+115,109,Basamma Kamath,59,2,5,9,F
+116,110,Padma Achar,39,12,1,6,F
+117,111,Kavitha Kamath,27,4,6,4,F
+118,112,Puttamma Nayak,39,7,3,6,F
+119,113,Krishnappa,26,9,7,2,M
+120,114,Puttamma Setty,44,1,7,7,F
+121,115,Shailaja Gowda,52,9,3,1,F
+122,116,Basavaraj Hegde,44,12,2,7,M
+123,117,Byrappa,42,5,3,1,M
+124,118,Shailaja Rao,37,3,1,8,F
+125,119,Ravindra Iyengar,69,2,2,3,M
+126,120,Gowramma,56,10,5,4,F
+127,121,Manjula Bhat,43,11,5,9,F
+128,122,Prasad Iyengar,74,11,5,2,M
+129,123,Rajesh Rao,21,7,5,9,M
+130,124,Yamuna Hegde,21,1,7,8,F
+131,125,Muniraju Kumar,33,7,2,6,M
+132,126,Malathi Rao,69,11,6,5,F
+133,127,Mahesh Gowda,54,4,7,3,M
+134,128,Puttaswamy Shetty,35,8,6,8,M
+135,129,Devamma,52,5,1,4,F
+136,130,Cheluvamma Nayak,23,4,1,9,F
+137,131,Puneeth Iyengar,78,5,4,2,M
+138,132,Savitha Naidu,60,6,1,3,T
+139,133,Vinod Nayak,47,1,7,7,M
+140,134,Vinod Nayak,36,1,7,4,M
+141,135,Mohan,58,12,3,6,M
+142,136,Vani Naik,23,4,4,2,F
+143,137,Pushpa Iyengar,54,8,7,7,F
+144,138,Shivakumar Kumar,24,3,2,7,M
+145,139,Ganesh Shetty,63,4,1,3,M
+146,140,Srinivas Iyengar,67,7,5,3,M
+147,140,Geetha Poojary,67,8,3,7,F
+148,141,Gowramma Iyengar,57,4,6,9,F
+149,142,Puneeth Nayak,39,2,5,7,M
+150,143,Naveen Kumar,36,5,7,9,M
+151,144,Roopa,40,9,2,4,F
+152,145,Anand Gowda,63,11,6,4,M
+153,145,Radha,26,10,4,6,F
+154,146,Vani Nayak,41,2,4,3,F
+155,147,Bhagya Naidu,52,9,3,3,F
+156,148,Yogesh Rao,70,2,7,1,T
+157,149,Puttamma Setty,33,3,2,9,F
+158,150,Mahesh Rao,43,5,7,7,M
+159,151,Lakshmi Kumar,66,4,4,8,F
+160,152,Deepa Poojary,25,3,3,9,F
+161,153,Yogesh Reddy,77,11,7,1,M
+162,154,Pushpa Shetty,43,8,3,7,F
+163,155,Puttamma Kamath,54,5,4,8,F
+164,156,Basamma Kamath,44,2,5,2,F
+165,157,Malathi Kamath,51,7,1,6,F
+166,158,Byrappa Poojary,57,10,3,5,M
+167,159,Kavitha Nayak,33,4,5,7,F
+168,160,Puttaswamy Hegde,24,9,3,7,M
+169,160,Padma Setty,74,9,4,3,F
+170,161,Kavitha Naidu,54,2,5,3,F
+171,162,Nandini Gowda,78,5,2,5,F
+172,163,Siddappa,46,7,2,6,M
+173,164,Suresh Nayak,37,6,3,6,M
+174,165,Pushpa Naik,67,4,3,1,F
+175,166,Pushpa Gowda,40,3,6,9,F
+176,167,Sunitha Shetty,30,5,6,6,F
+177,168,Shivakumar Iyengar,44,12,7,8,M
+178,168,Sanjay Bhat,28,2,6,4,M
+179,169,Yamuna Bhat,50,5,3,9,F
+180,170,Rekha Kumar,32,11,2,5,F
+181,171,Padma Nayak,47,9,1,9,F
+182,172,Chandru,55,5,4,2,M
+183,173,Vijay Kumar,30,5,6,9,T
+184,174,Sunitha Nayak,27,10,4,1,F
+185,175,Srinivas,29,11,3,6,M
+186,175,Sunitha,68,5,5,9,F
+187,176,Puttamma Kumar,56,2,5,7,F
+188,177,Ramesh Hegde,67,5,4,9,M
+189,178,Vani Reddy,49,4,5,1,F
+190,179,Anitha Rao,29,10,1,8,F
+191,180,Ramesh Gowda,64,2,1,3,M
+192,181,Nagamma Hegde,68,10,2,1,F
+193,182,Puttaswamy Achar,38,10,4,2,M
+194,183,Ramesh Hegde,42,3,4,8,M
+195,184,Rajesh Reddy,41,3,4,3,M
+196,185,Ravindra Gowda,65,4,4,9,M
+197,186,Chandrappa Kamath,37,2,1,4,M
+198,187,Vijay Kamath,72,8,1,4,M
+199,188,Rajesh Reddy,77,3,4,1,M
+200,189,Devamma Kumar,76,8,7,7,F
+201,190,Prakash Naik,42,7,3,4,M
+202,190,Nagaraj,53,4,4,4,M
+203,191,Nandini,48,11,6,3,F
+204,192,Muniraju Naidu,42,1,6,5,M
+205,193,Puttaswamy Kumar,19,12,3,9,M
+206,194,Shobha Achar,63,2,3,1,F
+207,195,Geetha Hegde,41,12,7,2,F
+208,196,Siddappa Naidu,42,7,3,5,M
+209,197,Puneeth Poojary,21,10,2,8,M
+210,198,Shivakumar Reddy,56,4,3,7,M
+211,199,Malathi,26,5,3,8,F
+212,200,Girish,31,12,4,7,M
+213,201,Sanjay Shetty,40,5,3,6,M
+214,202,Suresh,72,10,1,5,M
+215,203,Rajesh,72,12,3,2,M
+216,204,Cheluvamma Achar,33,2,7,7,F
+217,204,Prakash,49,7,3,5,M
+218,205,Prasad Naik,28,8,7,3,M
+219,206,Padma Iyengar,51,7,7,3,F
+220,207,Puneeth Gowda,72,7,1,6,M
+221,208,Sunitha Poojary,35,8,7,5,F
+222,209,Srinivas Gowda,34,1,3,6,M
+223,210,Basamma Kumar,34,11,4,7,F
+224,211,Lakshmi Naik,41,2,6,1,F
+225,212,Srinivas Achar,44,2,7,8,M
+226,213,Mohan Reddy,76,3,6,9,M
+227,214,Suresh Rao,48,10,2,5,M
+228,215,Malathi Gowda,33,9,4,1,F
+229,216,Ganesh,59,12,7,6,M
+230,217,Sharath Naik,19,12,4,3,M
+231,218,Anitha,28,10,3,6,F
+232,218,Krishnappa Hegde,41,11,2,6,M
+233,219,Shivakumar Naidu,50,2,7,2,M
+234,220,Siddappa,72,11,4,1,M
+235,221,Pushpa Reddy,73,6,3,7,F
+236,222,Vani Achar,43,6,6,6,F
+237,223,Basamma Rao,31,10,4,3,F
+238,224,Manjula Rao,69,4,4,5,F
+239,225,Chandrappa Rao,18,5,6,5,M
+240,226,Usha Rao,43,1,2,2,F
+241,227,Vinod Poojary,40,6,1,9,M
+242,228,Puneeth Nayak,22,11,3,4,M
+243,229,Geetha Poojary,66,11,6,4,F
+244,230,Nandini Kumar,27,2,5,5,F
+245,231,Sharath Gowda,27,5,5,3,M
+246,232,Sanjay Naidu,38,8,2,6,M
+247,233,Padma Gowda,27,5,6,2,F
+248,234,Anand Kamath,26,8,1,7,M
+249,235,Sunitha Naik,53,9,5,5,F
+250,236,Radha Nayak,73,10,7,1,F
+251,237,Vinod Naidu,28,5,3,1,M
+252,238,Halappa Gowda,50,4,1,6,M
+253,239,Radha,69,7,3,9,F
+254,240,Kavitha,67,7,7,7,F
+255,241,Lakshmi Rao,19,4,3,7,F
+256,242,Lokesh Nayak,35,6,3,5,M
+257,243,Kavitha Achar,56,6,2,3,F
+258,244,Rekha Naik,52,3,3,2,F
+259,245,Byrappa Gowda,29,1,4,9,M
+260,246,Rajesh Gowda,78,3,3,2,M
+261,247,Byrappa,38,4,4,7,M
+262,248,Vani Naidu,70,11,4,6,F
+263,249,Lakshmi Rao,51,12,6,7,F
+264,250,Harish Nayak,57,12,6,7,M
+265,251,Kavitha Nayak,25,7,6,8,F
+266,252,Mohan,32,10,1,9,M
+267,253,Nandini Bhat,46,10,1,1,F
+268,254,Yogesh Achar,47,12,5,6,M
+269,254,Prasad Reddy,48,3,7,8,M
+270,255,Basavaraj Shetty,77,2,5,5,M
+271,256,Ravindra Iyengar,73,5,5,6,M
+272,256,Manjunath Kamath,52,4,4,5,M
+273,257,Siddappa,24,4,1,8,M
+274,257,Devamma,67,2,7,3,F
+275,258,Ravindra Setty,39,4,7,5,M
+276,259,Suresh Nayak,42,8,1,2,M
+277,260,Sharath Naik,58,9,6,7,M
+278,260,Yogesh Iyengar,70,11,3,4,M
+279,261,Nagaraj Nayak,26,1,2,5,M
+280,262,Roopa Setty,57,5,2,1,F
+281,263,Gowramma Setty,65,5,7,7,F
+282,263,Girish Kamath,22,6,7,7,M
+283,264,Naveen Setty,25,9,6,7,M
+284,265,Kavitha Bhat,36,2,6,8,F
+285,266,Muniraju Hegde,30,8,6,2,M
+286,267,Siddappa Achar,55,5,6,1,M
+287,268,Lokesh Rao,44,10,7,5,M
+288,269,Naveen,24,11,1,8,M
+289,270,Suresh Setty,41,1,6,6,M
+290,271,Lakshmi Rao,73,8,1,6,F
+291,271,Sharath,50,11,6,1,M
+292,272,Usha Kamath,68,4,6,9,F
+293,272,Padma Nayak,21,11,4,4,F
+294,273,Savitha Rao,49,9,4,2,F
+295,274,Ramesh,28,2,4,8,M
+296,275,Suresh Shetty,41,6,4,9,M
+297,276,Cheluvamma Shetty,67,5,5,2,F
+298,277,Ganesh,60,9,3,5,M
+299,278,Muniraju Nayak,55,1,2,8,M
+300,279,Naveen,26,3,2,9,M
+301,280,Gowramma Shetty,73,7,7,1,F
+302,281,Nagamma Poojary,25,3,3,9,F
+303,282,Puneeth,49,11,7,1,M
+304,283,Ramesh,31,2,6,7,M
+305,284,Shivakumar,59,2,4,5,M
+306,285,Savitha Naidu,32,7,7,8,F
+307,286,Nandini Shetty,39,1,3,9,F
+308,287,Anitha Poojary,53,4,6,2,F
+309,288,Chandrappa Hegde,41,9,6,9,M
+310,289,Naveen Gowda,44,12,5,6,M
+311,290,Lokesh Bhat,56,4,5,1,M
+312,290,Vinod,49,6,1,2,M
+313,291,Cheluvamma Kamath,69,11,7,6,F
+314,292,Naveen Naidu,61,7,2,5,M
+315,293,Basavaraj Bhat,70,11,3,1,M
+316,294,Ganesh,43,3,3,1,M
+317,294,Puttamma Naik,61,10,5,1,F
+318,295,Srinivas Kumar,39,2,4,3,M
+319,296,Vinod Nayak,45,6,6,2,M
+320,297,Yamuna,40,12,1,2,F
+321,298,Bhagya Shetty,59,4,1,7,F
+322,299,Vinod Rao,78,5,4,7,M
+323,300,Anand,42,8,4,7,M
+324,301,Nagaraj Iyengar,53,4,1,6,M
+325,302,Deepa,42,11,4,8,F
+326,303,Puttamma Rao,40,8,6,7,F
+327,304,Shailaja Achar,32,6,6,7,F
+328,305,Ramesh Poojary,22,4,6,4,M
+329,306,Manjula Kamath,53,9,4,7,F
+330,307,Naveen Bhat,66,9,7,3,M
+331,308,Manjula,54,8,3,8,F
+332,309,Savitha Bhat,66,2,2,3,F
+333,310,Harish Shetty,52,3,7,4,M
+334,311,Savitha Iyengar,77,6,1,5,F
+335,312,Kavitha Hegde,34,6,1,3,F
+336,313,Chandru Achar,36,9,2,5,M
+337,314,Girish,36,3,7,7,M
+338,315,Geetha Naidu,72,9,7,3,F
+339,316,Deepa Achar,76,5,1,7,F
+340,317,Sanjay,68,8,6,6,M
+341,317,Boregowda Achar,31,10,6,6,M
+342,318,Vinod Naidu,53,5,1,2,M
+343,319,Savitha Bhat,30,6,7,3,F
+344,319,Srinivas Rao,60,1,4,3,M
+345,320,Cheluvamma,72,9,1,7,F
+346,320,Padma,29,12,3,8,F
+347,321,Jayanthi Rao,24,8,2,2,F
+348,321,Bhagya,19,2,2,5,F
+349,322,Basavaraj,35,3,7,7,M
+350,323,Sharath Kumar,49,2,7,9,M
+351,323,Ravindra Shetty,76,2,3,5,M
+352,324,Basavaraj Kumar,20,12,5,9,M
+353,324,Puttamma Naidu,67,1,3,2,F
+354,325,Sanjay Kamath,43,6,3,4,M
+355,325,Vijay Achar,18,1,5,6,M
+356,326,Harish Nayak,61,11,2,7,M
+357,327,Siddappa,34,4,7,6,M
+358,328,Vani,57,10,3,1,F
+359,329,Boregowda Iyengar,37,12,6,4,M
+360,330,Padma Naidu,52,11,7,9,F
+361,331,Shivakumar Setty,44,11,3,2,M
+362,332,Shivakumar Kamath,42,11,7,4,T
+363,333,Rekha,42,10,6,2,F
+364,334,Sunitha,18,1,4,2,F
+365,335,Rajesh Kumar,22,8,2,6,M
+366,336,Cheluvamma Iyengar,27,1,2,4,F
+367,337,Devamma Nayak,74,6,3,2,F
+368,338,Srinivas Kumar,73,12,3,1,M
+369,338,Mahesh Shetty,38,5,5,9,M
+370,339,Cheluvamma,66,5,1,2,F
+371,340,Puneeth,76,3,2,6,M
+372,341,Halappa Setty,48,10,7,8,M
+373,342,Chandrappa Gowda,78,8,7,7,M
+374,343,Mahesh Poojary,20,12,7,4,M
+375,344,Krishnappa Naidu,45,8,1,3,M
+376,344,Puneeth Reddy,28,6,3,9,M
+377,345,Sharath Kumar,57,6,2,7,M
+378,346,Anitha,34,4,6,3,F
+379,347,Rekha Kumar,76,12,3,4,F
+380,348,Yogesh Bhat,62,11,1,1,M
+381,349,Nagamma,49,11,4,1,F
+382,350,Halappa Reddy,49,2,3,8,M
+383,351,Suresh Achar,27,9,4,1,M
+384,352,Deepa Poojary,33,1,3,4,F
+385,353,Harish,45,1,1,8,M
+386,354,Boregowda,38,6,2,4,M
+387,355,Shivakumar Hegde,37,12,6,5,M
+388,356,Kavitha,29,5,6,4,F
+389,357,Yamuna Iyengar,50,8,7,7,F
+390,358,Yamuna Kumar,22,2,3,5,F
+391,358,Vani Kumar,37,10,6,5,F
+392,359,Nagamma Reddy,26,7,7,7,F
+393,359,Puttamma Gowda,68,10,3,8,F
+394,360,Harish Reddy,42,1,2,8,M
+395,361,Vinod Rao,59,9,4,6,M
+396,362,Shailaja Achar,19,11,7,2,F
+397,363,Lakshmi Bhat,76,9,5,5,F
+398,364,Kavitha Achar,39,4,5,8,F
+399,364,Prakash,24,12,5,4,M
+400,365,Radha Kamath,41,6,4,2,F
+401,366,Malathi,36,7,2,7,F
+402,367,Padma Shetty,76,7,4,8,F
+403,367,Shailaja,66,11,5,5,F
+404,368,Puttaswamy Naidu,18,4,2,1,M
+405,369,Sharath Achar,35,11,1,1,M
+406,370,Chandrappa Naik,24,5,1,9,M
+407,371,Siddappa Rao,62,7,4,4,M
+408,372,Devamma Kamath,61,1,1,3,F
+409,373,Lakshmi Poojary,43,2,6,7,F
+410,374,Radha,31,10,7,6,F
+411,375,Rekha Gowda,39,4,7,9,F
+412,375,Usha Naik,65,5,1,2,F
+413,376,Byrappa Naik,41,8,4,6,M
+414,377,Puneeth Naidu,73,8,6,8,M
+415,378,Usha,60,7,6,2,F
+416,379,Halappa Kamath,64,4,6,5,M
+417,380,Deepa Iyengar,52,10,6,7,F
+418,381,Byrappa Achar,67,2,5,7,M
+419,382,Byrappa Reddy,30,8,5,1,M
+420,383,Padma Iyengar,43,12,3,8,F
+421,384,Jayanthi,53,3,1,3,F
+422,385,Nagamma,69,1,3,6,F
+423,386,Krishnappa,28,5,7,7,M
+424,387,Halappa Nayak,21,9,5,8,M
+425,388,Jayanthi Reddy,40,2,1,5,F
+426,389,Rajesh Poojary,41,12,3,3,M
+427,390,Bhagya Setty,19,7,6,7,F
+428,391,Vijay Naik,73,3,1,2,M
+429,392,Nagamma Naik,19,5,1,8,F
+430,393,Basamma Bhat,60,6,2,6,F
+431,394,Rajesh,74,12,3,1,M
+432,395,Rekha,54,6,2,9,F
+433,396,Shailaja Iyengar,27,8,4,3,F
+434,397,Puttamma Kumar,61,8,3,6,F
+435,398,Devamma Hegde,73,8,3,1,F
+436,399,Devamma Naidu,21,11,5,1,F
+437,400,Krishnappa,40,7,1,2,M
+438,401,Manjula,57,5,1,3,F
+439,402,Chandru Hegde,47,9,1,6,M
+440,403,Chandru Bhat,77,5,1,1,M
+441,404,Girish Kumar,29,2,2,2,M
+442,405,Siddappa,37,4,4,7,M
+443,406,Puttaswamy,46,4,3,1,M
+444,407,Ravindra Nayak,59,5,5,4,M
+445,408,Yamuna Nayak,53,12,3,8,F
+446,409,Anand Naidu,32,2,2,9,M
+447,410,Bhagya Bhat,50,1,7,5,F
+448,410,Vinod Gowda,22,3,7,7,M
+449,411,Bhagya Kamath,46,10,7,9,F
+450,412,Padma Nayak,29,12,2,8,F
+451,413,Yogesh Gowda,52,1,2,4,M
+452,414,Yogesh Kumar,37,9,5,2,M
+453,415,Sanjay Kumar,30,1,3,1,M
+454,415,Geetha Naik,63,11,1,3,F
+455,416,Cheluvamma Achar,38,12,2,6,F
+456,417,Yamuna Reddy,77,10,3,7,F
+457,418,Gowramma Kumar,42,7,4,1,F
+458,419,Anand Naidu,76,2,3,3,M
+459,420,Vinod Poojary,77,12,3,8,M
+460,421,Mohan Shetty,55,9,3,1,M
+461,422,Lokesh,56,6,4,3,M
+462,423,Manjula Naik,56,9,1,8,F
+463,423,Deepa Hegde,59,8,2,8,F
+464,424,Ravindra Rao,73,4,4,8,M
+465,425,Nagaraj Setty,42,12,1,6,M
+466,426,Ravindra Gowda,28,4,6,7,M
+467,427,Devamma Iyengar,26,10,7,1,F
+468,428,Anand Nayak,29,2,4,4,M
+469,429,Manjula,22,7,4,3,F
+470,430,Usha Gowda,24,8,3,1,F
+471,431,Yogesh Gowda,69,7,7,7,M
+472,431,Shivakumar Kumar,36,7,7,6,M
+473,432,Ravindra Achar,59,5,3,5,M
+474,432,Naveen Kumar,68,11,4,6,M
+475,433,Muniraju Setty,25,10,5,5,M
+476,434,Vani Rao,59,5,4,8,F
+477,434,Puttamma Reddy,26,7,6,5,F
+478,435,Shobha Achar,42,8,6,1,F
+479,436,Anand,62,5,2,7,M
+480,437,Vinod Gowda,18,12,1,6,M
+481,438,Suresh Naidu,50,7,6,4,M
+482,439,Chandrappa Kamath,47,5,3,9,M
+483,440,Halappa,65,11,5,3,M
+484,441,Geetha Kumar,30,11,1,7,F
+485,442,Anand Setty,64,11,1,6,M
+486,443,Ramesh Achar,47,9,4,6,M
+487,444,Suresh,59,4,1,1,M
+488,444,Padma Kumar,72,9,3,3,F
+489,445,Savitha Shetty,73,6,6,6,F
+490,446,Radha Reddy,55,11,5,6,F
+491,447,Jayanthi Nayak,58,4,1,8,F
+492,448,Boregowda Kumar,56,9,3,1,M
+493,449,Naveen Bhat,41,2,4,9,M
+494,450,Chandrappa Poojary,76,11,4,6,M

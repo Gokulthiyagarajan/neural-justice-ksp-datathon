@@ -17,6 +17,7 @@ import {
   Shield, Users, AlertTriangle, BarChart3, MapPin,
   Activity, Server, Database, Clock, Eye, TrendingUp,
   ChevronRight, Building2, Scale, RefreshCw,
+  Mail,
 } from 'lucide-react';
 import AnimatedCounter from '@/components/Dashboard/AnimatedCounter';
 import { UnifiedTrendChart } from '@/components/Common/UnifiedTrendChart';
@@ -29,6 +30,7 @@ import {
   type DistrictRanking,
   type DistrictSolvedRate,
 } from '@/services/dashboardApi';
+import { COPY } from '@/auth/constants/copy';
 
 // ─── Live Warning Item type ──────────────────────────────────────────────────
 interface LiveWarning {
@@ -364,7 +366,7 @@ export function CPDashboard() {
         >
           <AlertTriangle size={32} className="mx-auto mb-3" style={{ color: RED }} />
           <p className="text-sm text-text-primary font-medium mb-1">Unable to load dashboard data</p>
-          <p className="text-xs text-text-tertiary mb-4">Please try again. If the issue persists, contact support.</p>
+          <p className="text-xs text-text-tertiary mb-4">Please try again. If the issue persists, contact <a href={`mailto:${COPY.supportEmail}`} className="underline hover:text-amber-400">{COPY.supportEmail}</a>.</p>
           <button
             type="button"
             onClick={load}

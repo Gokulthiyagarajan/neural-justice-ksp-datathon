@@ -1,0 +1,9 @@
+CaseStatusID,CaseStatusName
+1,Under Investigation
+2,Charge Sheeted
+3,Closed - False Case
+4,Closed - Undetected
+5,Pending Court Trial
+6,Convicted
+7,Acquitted
+8,Transferred to Other PS

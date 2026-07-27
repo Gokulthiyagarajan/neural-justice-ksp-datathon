@@ -30,6 +30,7 @@ from backend.api.routes.situation_room import router as situation_room_router
 from backend.api.routes.patrol import router as patrol_router
 from backend.api.routes.crime_patterns import router as crime_patterns_router
 from backend.api.routes.dashboard import router as dashboard_router
+from backend.api.routes.cp import router as cp_router
 
 logger = logging.getLogger("nj.api.main")
 
@@ -80,6 +81,7 @@ app.include_router(situation_room_router)
 app.include_router(patrol_router)
 app.include_router(crime_patterns_router)
 app.include_router(dashboard_router)
+app.include_router(cp_router)
 
 
 # ── Health ────────────────────────────────────────────────────────────────────

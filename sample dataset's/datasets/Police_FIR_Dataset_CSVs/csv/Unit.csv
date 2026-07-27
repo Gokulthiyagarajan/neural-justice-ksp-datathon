@@ -1,0 +1,49 @@
+UnitID,UnitName,TypeID,ParentUnit,NationalityID,StateID,DistrictID,Active
+1,Cubbon Park Police Station,1,,1,1,1,1
+2,Vidhana Soudha Police Station,1,,1,1,1,1
+3,Indiranagar Police Station,1,,1,1,1,1
+4,Koramangala Police Station,1,,1,1,1,1
+5,Whitefield Police Station,1,,1,1,1,1
+6,Jayanagar Police Station,1,,1,1,1,1
+7,Rajajinagar Police Station,1,,1,1,1,1
+8,Byatarayanapura Police Station,1,,1,1,1,1
+9,Electronic City Police Station,1,,1,1,1,1
+10,HSR Layout Police Station,1,,1,1,1,1
+11,Cubbon Park Circle Office,2,1,1,1,1,1
+12,Bengaluru City Cyber Crime PS,8,,1,1,1,1
+13,Basavanagudi Women Police Station,7,,1,1,1,1
+14,Bengaluru City Police Commissionerate,5,,1,1,1,1
+15,Devanahalli Police Station,1,,1,1,2,1
+16,Nelamangala Police Station,1,,1,1,2,1
+17,Ramanagara Town Police Station,1,,1,1,3,1
+18,Kolar Town Police Station,1,,1,1,4,1
+19,Chikkaballapura Police Station,1,,1,1,5,1
+20,Tumakuru Town Police Station,1,,1,1,6,1
+21,Chitradurga Police Station,1,,1,1,7,1
+22,Davanagere City Police Station,1,,1,1,8,1
+23,Shivamogga Town Police Station,1,,1,1,9,1
+24,Mysuru City Police Station,1,,1,1,10,1
+25,Nazarbad Police Station,1,,1,1,10,1
+26,Mandya City Police Station,1,,1,1,11,1
+27,Hassan Town Police Station,1,,1,1,12,1
+28,Chamarajanagara Police Station,1,,1,1,13,1
+29,Madikeri Police Station,1,,1,1,14,1
+30,Mangaluru North Police Station,1,,1,1,15,1
+31,Mangaluru South Police Station,1,,1,1,15,1
+32,Udupi Town Police Station,1,,1,1,16,1
+33,Chikkamagaluru Police Station,1,,1,1,17,1
+34,Belagavi Rural Police Station,1,,1,1,18,1
+35,Vijayapura City Police Station,1,,1,1,19,1
+36,Bagalkote Police Station,1,,1,1,20,1
+37,Hubballi Traffic Police Station,6,,1,1,21,1
+38,Dharwad Town Police Station,1,,1,1,21,1
+39,Gadag Police Station,1,,1,1,22,1
+40,Haveri Police Station,1,,1,1,23,1
+41,Karwar Police Station,1,,1,1,24,1
+42,Kalaburagi City Police Station,1,,1,1,25,1
+43,Bidar Police Station,1,,1,1,26,1
+44,Yadgir Town Police Station,1,,1,1,27,1
+45,Raichur Police Station,1,,1,1,28,1
+46,Koppal Police Station,1,,1,1,29,1
+47,Ballari Police Station,1,,1,1,30,1
+48,Hosapete Police Station,1,,1,1,31,1

@@ -267,15 +267,20 @@ DEFAULT_LOGIN_STATION_ID=1
 
 | Domain | Prefix | Key Endpoints |
 |--------|--------|---------------|
-| Auth | `/api/auth` | `POST /login`, `POST /verify-mfa`, `POST /refresh` |
+| Auth | `/api/auth` | `POST /login`, `POST /verify-mfa`, `POST /logout` |
 | FIRs | `/api/firs` | `GET /`, `GET /{crime_no}`, `GET /{crime_no}/timeline` |
+| FIR Operations | `/api/fir-ops` | `GET /` (district-filtered FIRs) |
 | Stations | `/api/stations` | `GET /`, `GET /{id}`, `GET /{id}/stats` |
-| Cases | `/api/cases` | `GET /`, `GET /{id}`, `GET /summary/stats` |
-| Profiles | `/api/criminal-profiles` | `GET /`, `GET /{id}`, `GET /{id}/timeline` |
-| Dashboard | `/api/dashboard` | `GET /metrics`, `/trend`, `/stations`, `/sp-metrics`, `/pi-metrics`, `/cp-metrics` |
-| AI Copilot | `/api/ai` | `POST /copilot`, `POST /copilot/chat`, `GET /sessions` |
-| Geo | `/geo` | Hotspots, heatmaps, patrol routes |
-| Notifications | `/api/notifications` | `GET /`, push alerts |
+| Cases | `/api/cases` | `GET /`, `GET /{id}` |
+| Orders | `/api/orders` | `GET /` |
+| Activity | `/api/activity` | `GET /` |
+| Notifications | `/api/notifications` | `GET /`, `GET /unread-count` |
+| Profiles | `/api/criminal-profiles` | `GET /`, `GET /{id}` |
+| Patrol | `/api/patrol` | `GET /` |
+| Crime Patterns | `/api/crime-patterns` | `GET /` |
+| Dashboard | `/api/dashboard` | `GET /metrics`, `/trend`, `/districts`, `/stations`, `/sp-metrics`, `/pi-metrics`, `/psi-metrics`, `/pc-metrics`, `/cp-metrics` |
+| AI Copilot | `/api/ai` | `POST /copilot`, `POST /copilot/chat`, `POST /query`, `GET /sessions` |
+| **CP (Commissioner)** | `/api/cp` | `GET /stations`, `/districts`, `/warnings`, `/cases`, `/audit`, `/ai-situation`, `/activity`, `/notifications`, `/networks`, `/timeline`, `/media`, `/intelligence`, `/risk`, `/gis-data`, `/reports`, `/forecast`, `/patterns`, `/finance`, `/patrol`, `/officers`, `/orders`, `/coordination`, `/settings` |
 
 ---
 
@@ -383,4 +388,4 @@ MIT License — Copyright (c) 2026 Karnataka State Police. See [LICENSE](LICENSE
 For demo access issues or technical questions:
 - **GitHub Issues**: <https://github.com/Gokulthiyagarajan/neural-justice-ksp-datathon/issues>
 - **KSP IT Helpdesk**: 080-2294-3000 (24/7)
-- **Email**: it-support@neural-justice.ksp.gov.in
+- **Email**: neuraljustice@neuraljustice.jo3.org

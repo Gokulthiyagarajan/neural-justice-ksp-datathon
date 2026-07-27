@@ -1,0 +1,33 @@
+DistrictID,DistrictName,StateID,DivisionID,Active
+1,Bengaluru Urban,1,1,1
+2,Bengaluru Rural,1,1,1
+3,Ramanagara,1,1,1
+4,Kolar,1,1,1
+5,Chikkaballapura,1,1,1
+6,Tumakuru,1,1,1
+7,Chitradurga,1,1,1
+8,Davanagere,1,1,1
+9,Shivamogga,1,1,1
+10,Mysuru,1,2,1
+11,Mandya,1,2,1
+12,Hassan,1,2,1
+13,Chamarajanagar,1,2,1
+14,Kodagu,1,2,1
+15,Dakshina Kannada,1,2,1
+16,Udupi,1,2,1
+17,Chikkamagaluru,1,2,1
+18,Belagavi,1,3,1
+19,Vijayapura,1,3,1
+20,Bagalkote,1,3,1
+21,Dharwad,1,3,1
+22,Gadag,1,3,1
+23,Haveri,1,3,1
+24,Uttara Kannada,1,3,1
+25,Kalaburagi,1,4,1
+26,Bidar,1,4,1
+27,Yadgir,1,4,1
+28,Raichur,1,4,1
+29,Koppal,1,4,1
+30,Ballari,1,4,1
+31,Vijayanagara,1,4,1
+
