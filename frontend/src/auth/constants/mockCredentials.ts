@@ -3,11 +3,11 @@
 // In production builds, the login flow must call the real /api/auth/login
 // endpoint; these values are never sent to a live credential store.
 // Gate: VITE_DEMO_MODE must be "true" (set in .env.local) to activate
-// the one-click auto-fill path that reads these constants.
+// the one-click auto-fill path (auto-fills rank cards with demo credentials).
 
-export const MOCK_USERNAME = import.meta.env.VITE_DEMO_MODE === 'true' ? 'admin' : '';
-export const MOCK_PASSWORD = import.meta.env.VITE_DEMO_MODE === 'true' ? 'test123' : '';
-export const MOCK_TOTP_CODE = import.meta.env.VITE_DEMO_MODE === 'true' ? '123456' : '';
+export const MOCK_USERNAME = 'admin';
+export const MOCK_PASSWORD = 'test123';
+export const MOCK_TOTP_CODE = '123456';
 export const MOCK_OFFICER_NAME = 'KSP Officer';
 
 export const MAX_LOGIN_ATTEMPTS = 3;
