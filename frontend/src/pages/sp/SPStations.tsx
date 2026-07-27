@@ -14,6 +14,7 @@ import { SPPageSkeleton } from '@/components/sp/SPPageSkeleton';
 import { ErrorState } from '@/design-system/components/ErrorState';
 import { EmptyState } from '@/design-system/components/EmptyState';
 import { isDemoMode } from '@/services/demoData';
+import { fetchStationPerformance } from '@/services/dashboardApi';
 import maplibregl from 'maplibre-gl';
 
 interface StationSummary {
@@ -61,26 +62,23 @@ export function SPStations() {
         setLoading(false);
         return;
       }
-      const res = await fetch(`/api/dashboard/stations?district_code=${user?.district_id ?? 'BENGALURU_URBAN'}`,
-        { headers: authHeaders() });
-      if (res.ok) {
-        const d = await res.json();
-        setStations(d?.stations ?? d ?? []);
-      } else {
-        // API failed — fall back to demo data
-        setStations([
-          { id: 1, name: 'Koramangala PS', code: 'KMG', fir_count: 124, open_cases: 14, solved_rate: 68, officer_count: 12, last_reported: new Date().toISOString(), status: 'active', lat: 12.935, lng: 77.624 },
-          { id: 2, name: 'Indiranagar PS', code: 'IND', fir_count: 98, open_cases: 9, solved_rate: 75, officer_count: 10, last_reported: new Date().toISOString(), status: 'active', lat: 12.978, lng: 77.640 },
-          { id: 3, name: 'MG Road PS', code: 'MGR', fir_count: 87, open_cases: 22, solved_rate: 52, officer_count: 8, last_reported: new Date().toISOString(), status: 'delayed', lat: 12.961, lng: 77.619 },
-        ]);
-      }
+      const result = await fetchStationPerformance(user?.district_id ?? 'BENGALURU_URBAN');
+      setStations(result.stations.map(s => ({
+        ...s,
+        lat: undefined as number | undefined,
+        lng: undefined as number | undefined,
+      })));
     } catch (err) {
       console.warn('[SPStations] Fetch failed:', err);
-      // Network error — fall back to demo data
+      // API error — fall back to demo data
       setStations([
         { id: 1, name: 'Koramangala PS', code: 'KMG', fir_count: 124, open_cases: 14, solved_rate: 68, officer_count: 12, last_reported: new Date().toISOString(), status: 'active', lat: 12.935, lng: 77.624 },
         { id: 2, name: 'Indiranagar PS', code: 'IND', fir_count: 98, open_cases: 9, solved_rate: 75, officer_count: 10, last_reported: new Date().toISOString(), status: 'active', lat: 12.978, lng: 77.640 },
         { id: 3, name: 'MG Road PS', code: 'MGR', fir_count: 87, open_cases: 22, solved_rate: 52, officer_count: 8, last_reported: new Date().toISOString(), status: 'delayed', lat: 12.961, lng: 77.619 },
+        { id: 4, name: 'Jayanagar PS', code: 'JYN', fir_count: 73, open_cases: 11, solved_rate: 71, officer_count: 9, last_reported: new Date().toISOString(), status: 'active', lat: 12.930, lng: 77.594 },
+        { id: 5, name: 'BTM Layout PS', code: 'BTM', fir_count: 65, open_cases: 8, solved_rate: 80, officer_count: 7, last_reported: new Date().toISOString(), status: 'active', lat: 12.916, lng: 77.611 },
+        { id: 6, name: 'HSR Layout PS', code: 'HSR', fir_count: 59, open_cases: 17, solved_rate: 58, officer_count: 6, last_reported: new Date().toISOString(), status: 'active', lat: 12.911, lng: 77.638 },
+        { id: 7, name: 'Whitefield PS', code: 'WFD', fir_count: 52, open_cases: 6, solved_rate: 82, officer_count: 8, last_reported: new Date().toISOString(), status: 'active', lat: 12.969, lng: 77.748 },
       ]);
     } finally {
       setLoading(false);
