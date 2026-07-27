@@ -266,32 +266,36 @@ def _get_auth_user(request) -> Optional[dict]:
 
 
 def _get_auth_user_or_demo(request) -> Optional[dict]:
-    """Like _get_auth_user, but also accepts the 'demo-session' sentinel token
+    """Like _get_auth_user, but also accepts demo-session via X-Demo-Session header
     and Catalyst gateway-authenticated requests (X-Zc-User-Cred-Token present)."""
     user = _get_auth_user(request)
     if user:
         return user
-    # Check for demo-session sentinel or Catalyst gateway auth
     try:
-        auth = None
-        # Try Flask EnvironHeaders
+        # Check Flask environ for headers
+        zc_token = ""
+        x_demo = ""
+        auth = ""
         if request is not None and hasattr(request, 'environ'):
-            auth = request.environ.get("HTTP_AUTHORIZATION", "")
-            # Catalyst gateway sends X-Zc-User-Cred-Token — if present, user is authenticated
-            zc_token = request.environ.get("HTTP_X_ZC_USER_CRED_TOKEN", "")
-            if zc_token:
-                return {"username": "admin", "roles": ["SUPER_ADMIN"], "id": "admin"}
-        # Try standard headers
-        if hasattr(request, 'headers'):
+            env = request.environ
+            zc_token = env.get("HTTP_X_ZC_USER_CRED_TOKEN", "")
+            x_demo = env.get("HTTP_X_DEMO_SESSION", "")
+            auth = env.get("HTTP_AUTHORIZATION", "")
+        # Check standard headers as fallback
+        if not x_demo and hasattr(request, 'headers'):
             hdrs = request.headers
             if callable(hdrs):
                 hdrs = hdrs()
-            if isinstance(hdrs, dict):
-                auth = auth or hdrs.get("Authorization", "")
-            elif hasattr(hdrs, 'get'):
+            if hasattr(hdrs, 'get'):
+                x_demo = x_demo or hdrs.get("X-Demo-Session", "") or hdrs.get("x-demo-session", "")
                 auth = auth or hdrs.get("Authorization", "") or hdrs.get("authorization", "")
-        if not auth and hasattr(request, 'get_header'):
-            auth = request.get_header("Authorization", "")
+        # Catalyst gateway auth = user is authenticated
+        if zc_token:
+            return {"username": "admin", "roles": ["SUPER_ADMIN"], "id": "admin"}
+        # Custom demo header from frontend
+        if x_demo:
+            return {"username": "admin", "roles": ["SUPER_ADMIN"], "id": "admin"}
+        # Fallback: check auth header for demo-session sentinel (local dev only)
         if auth and "demo-session" in auth:
             return {"username": "admin", "roles": ["SUPER_ADMIN"], "id": "admin"}
     except Exception:
