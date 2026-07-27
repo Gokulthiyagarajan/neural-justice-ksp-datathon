@@ -15,6 +15,7 @@ import { FIREmptyState } from './components/FIREmptyState';
 import { FIRBulkActionBar } from './components/FIRBulkActionBar';
 import { JurisdictionBanner } from '@/components/Common/JurisdictionBanner';
 import { useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function FIROperations() {
   const navigate = useNavigate();
@@ -30,6 +31,10 @@ export function FIROperations() {
     updateFilter,
     clearFilters,
     refetch,
+    page,
+    setPage,
+    hasMore,
+    totalPages,
   } = useFIRData();
 
   // Apply jurisdiction district filter on mount for non-state-wide roles
@@ -135,6 +140,72 @@ export function FIROperations() {
             onFlag={handleFlag}
             onAssign={handleAssign}
           />
+        )}
+
+        {/* Pagination */}
+        {!loading && firs.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: 12,
+              padding: '8px 16px',
+              background: C.navyMid,
+              border: `1px solid ${C.navyLight}`,
+              borderRadius: 8,
+            }}
+          >
+            <span style={{ fontSize: 13, color: C.muted }}>
+              Page {page} of {totalPages}
+            </span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                disabled={page <= 1 || loading}
+                onClick={() => setPage(page - 1)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '6px 14px',
+                  background: page > 1 ? C.amber : C.navyLight,
+                  color: page > 1 ? C.navy : C.muted,
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: page > 1 ? 'pointer' : 'not-allowed',
+                  opacity: page > 1 ? 1 : 0.5,
+                }}
+              >
+                <ChevronLeft size={16} />
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={!hasMore || loading}
+                onClick={() => setPage(page + 1)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '6px 14px',
+                  background: hasMore ? C.amber : C.navyLight,
+                  color: hasMore ? C.navy : C.muted,
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: hasMore ? 'pointer' : 'not-allowed',
+                  opacity: hasMore ? 1 : 0.5,
+                }}
+              >
+                Next
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Bulk action bar */}

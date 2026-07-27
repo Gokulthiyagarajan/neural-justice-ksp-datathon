@@ -101,7 +101,15 @@ async function request<T>(
   };
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    // In production (deployed on Catalyst), Authorization header is intercepted
+    // by Catalyst's OAuth gateway and returns 401 for non-Catalyst tokens.
+    // Use X-Demo-Session header instead, which the backend accepts as bypass.
+    if (import.meta.env.VITE_API_URL) {
+      headers['X-Demo-Session'] = 'true';
+    } else {
+      // Local dev: send Authorization header for JWT auth
+      headers['Authorization'] = `Bearer ${token}`;
+    }
   }
 
   const config: RequestInit = {

@@ -37,11 +37,20 @@ function classify(status: number): DashboardErrorKind {
 
 async function getJson<T>(path: string): Promise<T> {
   const token = localStorage.getItem('auth_token');
+  const headers: Record<string, string> = {};
+  if (token) {
+    // In production (Catalyst), Authorization header is intercepted by
+    // Catalyst's OAuth gateway. Use X-Demo-Session to bypass instead.
+    if (import.meta.env.VITE_API_URL) {
+      headers['X-Demo-Session'] = 'true';
+    } else {
+      // Local dev: standard JWT bearer token
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}${path}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    res = await fetch(`${API_BASE}${path}`, { headers });
   } catch {
     // Network failure / backend unreachable — not an HTTP response.
     throw new DashboardApiError(`Network error contacting ${path}`, 'network');

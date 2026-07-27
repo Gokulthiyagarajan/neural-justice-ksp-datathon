@@ -9,7 +9,6 @@ import {
   ChevronUp, ChevronDown,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
-import { authHeaders } from '@/utils/authHeaders';
 import { SPPageSkeleton } from '@/components/sp/SPPageSkeleton';
 import { ErrorState } from '@/design-system/components/ErrorState';
 import { EmptyState } from '@/design-system/components/EmptyState';

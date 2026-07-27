@@ -7,6 +7,8 @@ import type {
   FIRSummary,
 } from '@/types/fir.types';
 
+const PAGE_SIZE = 50;
+
 const EMPTY_FILTERS: FIRFilters = {
   date_from: '',
   date_to: '',
@@ -327,6 +329,8 @@ export function useFIRData() {
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState<FIRSummary>(EMPTY_SUMMARY);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FIRFilterOptions>({
     districts: [],
     crime_types: [],
@@ -422,22 +426,27 @@ export function useFIRData() {
         const filtered = filterDemoFirs(filters);
         setFirs(filtered);
         setTotal(filtered.length);
+        setHasMore(false);
         setSummary(computeSummary(filtered));
         setLoading(false);
         return;
       }
 
-      const data = await getFIRs(filters);
+const data = await getFIRs({ ...filters, page, limit: PAGE_SIZE });
       // If the backend returns empty (no DB records), switch to demo mode
       if (data.firs.length === 0 && data.total === 0) {
         demoMode.current = true;
         const filtered = filterDemoFirs(filters);
         setFirs(filtered);
         setTotal(filtered.length);
+        setHasMore(false);
         setSummary(computeSummary(filtered));
       } else {
+        // Backend has real data - exit demo mode
+        demoMode.current = false;
         setFirs(data.firs);
         setTotal(data.total);
+        setHasMore(data.has_more ?? false);
         setSummary(data.summary);
       }
     } catch (err) {
@@ -447,15 +456,25 @@ export function useFIRData() {
       const filtered = filterDemoFirs(filters);
       setFirs(filtered);
       setTotal(filtered.length);
+      setHasMore(false);
       setSummary(computeSummary(filtered));
     } finally {
       setLoading(false);
     }
-  }, [filters, filterDemoFirs, computeSummary]);
+  }, [filters, page, filterDemoFirs, computeSummary]);
 
   useEffect(() => {
     fetchFIRs();
   }, [fetchFIRs]);
+
+  // Reset to page 1 when filters change (but not when page itself changes)
+  const prevFiltersRef = useRef(filters);
+  useEffect(() => {
+    if (prevFiltersRef.current !== filters) {
+      prevFiltersRef.current = filters;
+      setPage(1);
+    }
+  }, [filters]);
 
   const updateFilter = useCallback(
     (key: keyof FIRFilters, value: string) => {
@@ -472,6 +491,8 @@ export function useFIRData() {
     ([, v]) => v !== '' && v !== 'all',
   );
 
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
   return {
     firs,
     total,
@@ -483,5 +504,11 @@ export function useFIRData() {
     clearFilters,
     hasActiveFilters,
     refetch: fetchFIRs,
+    // Pagination
+    page,
+    setPage,
+    hasMore,
+    totalPages,
+    pageSize: PAGE_SIZE,
   };
 }
