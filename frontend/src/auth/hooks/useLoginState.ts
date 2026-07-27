@@ -305,13 +305,7 @@ export function useLoginState() {
           return false;
         }
 
-        // Accept the documented demo TOTP fallback code (123456) for admin/test123
-        const isDemoAccount =
-          state.username === 'admin' && secret === 'JBSWY3DPEHPK3PXP';
-        const isValid =
-          isDemoAccount && totpCode === '123456'
-            ? true
-            : verifyTOTPCode(secret, totpCode);
+        const isValid = verifyTOTPCode(secret, totpCode);
 
         if (isValid) {
           // On successful enrollment, persist the secret (keyed by username+selectedRole)
