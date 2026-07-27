@@ -514,7 +514,7 @@ def _handle_health():
 
 
 def _handle_root():
-    return _json_response({"status": "ok", "message": "Neural Justice API is running"})
+    return _json_response({"status": "ok", "message": "Neural Justice API is running", "version": "1.0.1-demo-fix"})
 
 
 def _handle_login(body: dict):
