@@ -18,11 +18,11 @@ export async function getUnreadCount(): Promise<{ unread_count: number }> {
 }
 
 export async function markNotificationRead(notificationId: string): Promise<{ message: string }> {
-  return api.put(`/notifications/${notificationId}/read`);
+  return api.post(`/notifications/${notificationId}/read`);
 }
 
 export async function markAllRead(): Promise<{ message: string; marked_count: number }> {
-  return api.put('/notifications/read-all');
+  return api.post('/notifications/mark-all-read');
 }
 
 /** Create a new notification (for system-generated alerts). */
@@ -37,4 +37,8 @@ export async function createNotification(data: {
   related_entity_id?: string;
 }): Promise<{ notification: Notification; message: string }> {
   return api.post('/notifications', data);
+}
+
+export async function acknowledgeNotification(notificationId: string): Promise<{ message: string }> {
+  return api.post(`/notifications/${notificationId}/acknowledge`);
 }
