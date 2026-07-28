@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { RefreshCw, FileEdit, FileText, Bot, Search, AlertTriangle } from 'lucide-react';
 import { StatusBadge } from '@/components/Common/StatusBadge';
 import { authHeaders } from '@/utils/authHeaders';
@@ -21,7 +21,6 @@ interface CaseDetail {
 
 export function PICaseDetail() {
   const { crimeNo } = useParams<{ crimeNo: string }>()
-  const navigate = useNavigate()
   const [caseData, setCaseData] = useState<CaseDetail | null>(null)
   const [aiSummary, setAiSummary] = useState<string>('')
   const [aiLoading, setAiLoading] = useState(false)
@@ -278,7 +277,7 @@ export function PICaseDetail() {
                   </p>
                   <div className="flex gap-2 mt-2">
                     <button
-                      onClick={() => navigate(`/pi/copilot?query=Summarize+case+${crimeNo}`)}
+                      onClick={() => window.dispatchEvent(new CustomEvent('copilot-open-with-query', { detail: { query: `Summarize case ${crimeNo}` } }))}
                       className="text-[10px] text-accent-cyan/60 hover:text-accent-cyan transition-colors">
                       Full Copilot →
                     </button>

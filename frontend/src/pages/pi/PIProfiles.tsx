@@ -357,7 +357,7 @@ export function PIProfiles() {
               </div>
 
               {/* AI Analysis */}
-              <button onClick={() => navigate(`/pi/copilot?query=Tell+me+about+${encodeURIComponent(selectedProfile.name)}+profile+${selectedProfile.id}`)}
+              <button onClick={() => window.dispatchEvent(new CustomEvent('copilot-open-with-query', { detail: { query: `Tell me about ${selectedProfile.name} profile ${selectedProfile.id}` } }))}
                 className="w-full flex items-center justify-center gap-2 text-xs px-4 py-2.5 rounded-lg
                            bg-cyan-500/10 text-cyan-300 border border-cyan-500/30
                            hover:bg-cyan-500/20 transition-colors">

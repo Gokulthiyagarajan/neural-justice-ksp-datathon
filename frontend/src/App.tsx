@@ -281,7 +281,7 @@ export default function App() {
           <Route path="pi/cases" element={<RoleRoute><SuspenseWrapper><PICases /></SuspenseWrapper></RoleRoute>} />
           <Route path="pi/case/:crimeNo" element={<RoleRoute><SuspenseWrapper><PICaseDetail /></SuspenseWrapper></RoleRoute>} />
           <Route path="ai" element={<Navigate to="/" replace />} />
-          <Route path="pi/copilot" element={<Navigate to="/" replace />} />
+          <Route path="pi/copilot" element={<Navigate to="/pi/dashboard" replace />} />
           <Route path="pi/network" element={<RoleRoute><SuspenseWrapper><PINetwork /></SuspenseWrapper></RoleRoute>} />
           <Route path="pi/risk" element={<RoleRoute><SuspenseWrapper><PIRisk /></SuspenseWrapper></RoleRoute>} />
           <Route path="pi/patterns" element={<RoleRoute><SuspenseWrapper><PIPatterns /></SuspenseWrapper></RoleRoute>} />

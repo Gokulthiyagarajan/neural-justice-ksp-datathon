@@ -390,9 +390,9 @@ function EmbeddedCopilot({ initialQuery }: { initialQuery?: string }) {
             AI Copilot
           </h3>
         </div>
-        <Link to="/pi/copilot" className="text-[10px] text-text-tertiary hover:text-text-secondary">
+        <button onClick={() => window.dispatchEvent(new CustomEvent('copilot-open-with-query', { detail: { query: 'Show me recent activity' } }))} className="text-[10px] text-text-tertiary hover:text-text-secondary">
           Full copilot →
-        </Link>
+        </button>
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-3" style={{ minHeight: 180, maxHeight: 340 }}>
         {messages.length === 0 ? (
@@ -1054,7 +1054,7 @@ const ACTION_CARDS: { label: string; path: string; icon: LucideIcon; desc: strin
   { label: 'Register New FIR', path: '/firs', icon: FilePlus, desc: 'File a new First Information Report' },
   { label: 'Assign Investigation', path: '/pi/cases', icon: UserPlus, desc: 'Assign cases to investigating officers' },
   { label: 'Review Pending', path: '/pi/cases?status=pending', icon: ClipboardCheck, desc: 'Review pending case files' },
-  { label: 'AI Investigation Copilot', path: '/pi/copilot', icon: Bot, desc: 'AI-powered investigation assistant' },
+  { label: 'AI Investigation Copilot', path: '/pi/dashboard', icon: Bot, desc: 'AI-powered investigation assistant' },
   { label: 'Check Early Warnings', path: '/pi/warnings', icon: Bell, desc: 'View critical alerts and warnings' },
   { label: 'View Crime Map', path: '/pi/geo', icon: Map, desc: 'Geospatial crime intelligence' },
 ]

@@ -480,10 +480,12 @@ export function FIRDetailPage() {
         } catch (clickErr) {
           console.error('Failed to trigger download:', clickErr);
           toast.error('Failed to trigger PDF download. Please check your browser settings.');
+        } finally {
+          // Remove the link AFTER the click — must be in the timeout callback,
+          // not before, or the click won't fire on the detached element.
+          document.body.removeChild(link);
         }
       }, 100);
-      
-      document.body.removeChild(link);
       
       // Clean up the object URL after download completes
       setTimeout(() => {

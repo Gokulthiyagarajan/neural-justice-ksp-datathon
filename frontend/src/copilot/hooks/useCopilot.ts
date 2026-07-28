@@ -7,8 +7,7 @@ import type { KSPRole } from '@/config/navConfig';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardHighlight } from './useDashboardHighlight';
 
-const MAX_HISTORY = 20;
-const COPILOT_API = '/api/ai/copilot/chat';
+const COPILOT_API = '/api/copilot/chat';
 
 export function useCopilot() {
   const [state, setState] = useState<CopilotState>('collapsed');
@@ -81,30 +80,7 @@ export function useCopilot() {
     inputHistoryRef.current = [query, ...inputHistoryRef.current].slice(5);
     historyIdxRef.current = -1;
 
-    // Save as session
-    if (sessions.length === 0) {
-      setSessions([{
-        id: `session-${Date.now()}`,
-        title: query.slice(0, 40),
-        messageCount: 1,
-        timestamp: new Date(),
-      }]);
-    }
-
     try {
-      const history = messages.slice(-MAX_HISTORY).map((m) => ({
-        role: m.role,
-        content: lang === 'kn' && m.role === 'user'
-          ? `Respond in Kannada (ಕನ್ನಡ). ${m.content}`
-          : m.content,
-      }));
-
-      // Include the new query in the history sent to the backend
-      const messagesPayload = [
-        ...history,
-        { role: 'user', content: lang === 'kn' ? `Respond in Kannada (ಕನ್ನಡ). ${query}` : query },
-      ];
-
       const response = await fetch(COPILOT_API, {
         method: 'POST',
         headers: {
@@ -112,7 +88,7 @@ export function useCopilot() {
           ...authHeaders(),
         },
         body: JSON.stringify({
-          messages: messagesPayload,
+          message: query,
           language: lang,
         }),
       });
@@ -122,33 +98,56 @@ export function useCopilot() {
       }
 
       const data = await response.json();
-      const rawText = data.response || '';
+      // New copilot API response: { session_id, reply_text, intent_detected, classification_confidence, evidence, ... }
+      const rawText = data.reply_text || data.content || '';
+      const sessionId: string | undefined = data.session_id;
+
+      // Parse structured markers from the response content
       const parsed = parseCopilotResponse(rawText);
-      let chartDataParsed = null;
-      if (parsed.chartData) {
-        try {
-          chartDataParsed = {
-            type: parsed.chartData.type as 'line' | 'bar' | 'pie',
-            ...JSON.parse(parsed.chartData.json),
-          };
-        } catch { /* ignore parse errors */ }
-      }
+
+      // Use intent detection info from the new API
+      const classificationConfidence: number | undefined = data.classification_confidence;
 
       const assistantMsg: Message = {
         id: assistantId,
         role: 'assistant',
-        content: parsed.cleanText,
+        content: parsed.cleanText || rawText,
         timestamp: new Date(),
-        citedCards: parsed.citedCards,
-        chartData: chartDataParsed as any,
-        confidence: data.confidence ?? parsed.confidence ?? undefined,
+        citedCards: parsed.citedCards as any,
+        chartData: parsed.chartData ? {
+          type: parsed.chartData.type as 'line' | 'bar' | 'pie',
+          ...JSON.parse(parsed.chartData.json),
+        } : undefined,
+        confidence: classificationConfidence ?? parsed.confidence ?? undefined,
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
 
-      // Highlight cited cards
-      if (parsed.citedCards.length > 0) {
-        highlight(parsed.citedCards);
+      // Update session tracking from server-provided session_id
+      if (sessionId) {
+        const existingSessionIdx = sessions.findIndex((s) => s.id === sessionId);
+        if (existingSessionIdx >= 0) {
+          setSessions((prev) => prev.map((s, i) =>
+            i === existingSessionIdx
+              ? { ...s, messageCount: s.messageCount + 1, timestamp: new Date() }
+              : s,
+          ));
+        } else {
+          setSessions((prev) => [{
+            id: sessionId,
+            title: query.slice(0, 40),
+            messageCount: 1,
+            timestamp: new Date(),
+          }, ...prev]);
+        }
+      } else if (sessions.length === 0) {
+        // Fallback: create local session
+        setSessions([{
+          id: `session-${Date.now()}`,
+          title: query.slice(0, 40),
+          messageCount: 1,
+          timestamp: new Date(),
+        }]);
       }
 
       // Reshuffle suggestions
@@ -160,7 +159,22 @@ export function useCopilot() {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, messages, sessions, highlight]);
+  }, [isLoading, messages, sessions, highlight, lang, userRole]);
+
+  // Listen for external open-with-query events (from navigation links)
+  useEffect(() => {
+    const handler = (e: CustomEvent<{ query: string }>) => {
+      const query = e.detail?.query;
+      if (query) {
+        setInput(query);
+        setState('expanded');
+        // Auto-send after a short delay
+        setTimeout(() => sendMessage(query), 300);
+      }
+    };
+    window.addEventListener('copilot-open-with-query' as any, handler);
+    return () => window.removeEventListener('copilot-open-with-query' as any, handler);
+  }, [sendMessage]);
 
   return {
     state, setState,

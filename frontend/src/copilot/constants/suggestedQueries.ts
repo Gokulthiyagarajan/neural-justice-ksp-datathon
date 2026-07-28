@@ -200,7 +200,8 @@ export interface ParsedResponse {
 
 export function parseCopilotResponse(raw: string): ParsedResponse {
   const cardRegex = /\[CARD:([\w-]+)\]/g;
-  const chartRegex = /\[CHART:(\w+):(.*?)\]/;
+  // Match [CHART:type:{...}] — use greedy match on braces to handle JSON with nested arrays
+  const chartRegex = /\[CHART:(\w+):(\{.*\})\]/;
   const confRegex = /\[CONF:(\d+)\]/;
 
   const cards: DashboardCard[] = [];
@@ -221,7 +222,7 @@ export function parseCopilotResponse(raw: string): ParsedResponse {
 
   const cleanText = raw
     .replace(/\[CARD:[\w-]+\]/g, '')
-    .replace(/\[CHART:\w+:.*?\]/g, '')
+    .replace(/\[CHART:\w+:\{.*\}\]/g, '')
     .replace(/\[CONF:\d+\]/g, '')
     .trim();
 

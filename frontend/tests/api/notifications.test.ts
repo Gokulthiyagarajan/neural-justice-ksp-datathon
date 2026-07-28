@@ -1,14 +1,13 @@
-"""Frontend API client tests for notifications service.
-
-Tests all notification-related API endpoints:
-- GET /api/notifications (with filters/pagination)
-- GET /api/notifications/unread-count
-- POST /api/notifications/{id}/read
-- POST /api/notifications/{id}/acknowledge
-- POST /api/notifications/mark-all-read
-
-Tests HTTP method consistency, error handling, and API client integration.
-"""
+// Frontend API client tests for notifications service.
+//
+// Tests all notification-related API endpoints:
+// - GET /api/notifications (with filters/pagination)
+// - GET /api/notifications/unread-count
+// - POST /api/notifications/{id}/read
+// - POST /api/notifications/{id}/acknowledge
+// - POST /api/notifications/mark-all-read
+//
+// Tests HTTP method consistency, error handling, and API client integration.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMockFuture, MockHttpClient } from './__mocks__/test-utils';

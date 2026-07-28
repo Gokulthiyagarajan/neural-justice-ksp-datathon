@@ -260,7 +260,7 @@ class CopilotService:
         import re
         import json
 
-        match = re.search(r'\[CHART:(\w+):(\{.+?\})\]', text)
+        match = re.search(r'\[CHART:(\w+):(\{.*\})\]', text)
         if match:
             try:
                 chart_data = json.loads(match.group(2))
@@ -286,7 +286,7 @@ class CopilotService:
         """Remove all [CARD], [CHART], and [CONF] markers from text for display."""
         import re
         cleaned = re.sub(r'\[CARD:[^\]]+\]', '', text)
-        cleaned = re.sub(r'\[CHART:[^\]]+\]', '', cleaned)
+        cleaned = re.sub(r'\[CHART:\w+:\{.*\}\]', '', cleaned)
         cleaned = re.sub(r'\[CONF:\d+\]', '', cleaned)
         cleaned = re.sub(r'\s+', ' ', cleaned).strip()
         return cleaned

@@ -174,7 +174,7 @@ export function PIGeo() {
                   onClose={() => setSelectedHotspot(null)}
                   onGeneratePdf={handleGenerateReport}
                   onNotifyOfficer={handleNotifyOfficer}
-                  onOpenCopilot={() => navigate(`/pi/copilot?query=Analyze hotspot at ${selectedHotspot.lat},${selectedHotspot.lng}`)}
+                  onOpenCopilot={() => window.dispatchEvent(new CustomEvent('copilot-open-with-query', { detail: { query: `Analyze hotspot at ${selectedHotspot.lat},${selectedHotspot.lng}` } }))}
                   onOpenNetwork={() => navigate(`/pi/network?lat=${selectedHotspot.lat}&lng=${selectedHotspot.lng}`)}
                   onOpenTimeline={() => toast.info('This feature is under development and will be available soon.')}
                   onLaunchCommander={() => toast.info('This feature is under development and will be available soon.')}

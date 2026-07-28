@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { useJurisdiction } from '@/hooks/useJurisdiction';
 import { JurisdictionBanner } from '@/components/Common/JurisdictionBanner';
@@ -21,7 +21,6 @@ interface FIR {
 
 export function PICases() {
   const { user } = useAuthStore()
-  const navigate = useNavigate()
   const [firs, setFIRs] = useState<FIR[]>([])
   const [selected, setSelected] = useState<string[]>([])
   const [filters, setFilters] = useState({
@@ -258,7 +257,7 @@ export function PICases() {
                         className="text-[10px] text-service-blue/60 hover:text-service-blue">View</Link>
                       <span className="text-white/20">·</span>
                       <button
-                        onClick={() => navigate(`/pi/copilot?query=Summarize+case+${encodeURIComponent(fir.crime_no)}`)}
+                        onClick={() => window.dispatchEvent(new CustomEvent('copilot-open-with-query', { detail: { query: `Summarize case ${fir.crime_no}` } }))}
                         className="text-[10px] text-purple-400/60 hover:text-purple-400">AI</button>
                     </div>
                   </td>

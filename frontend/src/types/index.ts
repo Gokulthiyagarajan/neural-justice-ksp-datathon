@@ -274,9 +274,10 @@ export interface CopilotSession {
 export interface CopilotMessage {
   id: number;
   session_id: string;
-  role: string;
+  role: 'user' | 'assistant';
   content: string;
   created_at: string;
+  intent?: string;
 }
 
 export interface Notification {
