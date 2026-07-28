@@ -14,6 +14,7 @@ class Intent(str, Enum):
     OFFICER_ASSIGNMENT = "officer_assignment"
     GENERAL_QUERY = "general_query"
     GENERAL_CHAT = "general_chat"
+    PREDICTIVE = "predictive"
 
 
 class QueryEvidence(BaseModel):

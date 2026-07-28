@@ -1,7 +1,7 @@
-"""Chat Pipeline Adapter — Routes ALL copilot messages through 4-stage processing.
+"""Chat Pipeline Adapter — Routes ALL copilot messages through 3-stage processing.
 
 Every user message goes through:
-  Stage 1 (Generation) → Stage 2 (Critical Review) → Stage 3 (Deep Reasoning) → Stage 4 (Consistency)
+  Stage 1 (Generation) → Stage 2 (Critical Review) → Stage 3 (Final Polish)
 
 Uses fast LLM models suitable for real-time chat responses.
 """
@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from backend.pipeline.nim_client import NimClient
+from backend.api.copilot.knowledge_base import get_platform_context, get_data_context
 
 logger = logging.getLogger("nj.copilot.chat_pipeline")
 
@@ -23,91 +24,82 @@ logger = logging.getLogger("nj.copilot.chat_pipeline")
 
 STAGE1_CHAT_PROMPT = """You are Drishti, the AI assistant for Bengaluru's police intelligence platform (Karnataka State Police).
 
+{platform_context}
+
 CRITICAL RULES — VIOLATION IS UNACCEPTABLE:
-1. NEVER make up crime data, statistics, or specific incidents. You do NOT have access to real crime data.
-2. NEVER say "we've been tracking" or "recent increase" unless the user provides actual data.
-3. NEVER fabricate case details, suspect names, or incident specifics.
-4. NEVER just repeat the user's question back to them.
-5. ALWAYS provide a useful, actionable response.
+1. NEVER make up crime data. Only use data provided in the context.
+2. NEVER say "I can help you with..." — actually help them with data.
+3. NEVER ask "what are you looking for?" — show what you have.
+4. ALWAYS provide actionable, useful responses with data.
+5. If data is available, acknowledge it and reference it.
+6. Be direct, concise, and professional.
 
 The user has sent a message. Generate a helpful response.
 
 RESPOND IN VALID JSON ONLY.
 
 Output format:
-{
+{{
   "response": "Your response to the user",
   "intent": "greeting|help|crime_query|general_chat|farewell|predictive|analytics|report",
   "confidence": 0.0-1.0,
+  "data_available": true|false,
   "entities_mentioned": ["any names, places, crimes mentioned"],
   "follow_up_suggestions": ["suggested follow-up questions"]
-}
+}}
 
 RULES:
 - Keep responses SHORT (1-3 sentences max)
 - For greetings: Simple hello + "How can I help?" (2 sentences max)
-- For help requests: List what you CAN do, not what HAS happened
-- For crime queries: Say "I can help you look that up" then suggest specific commands
-- For predictive/analytics questions: Explain what the platform CAN do, give examples of queries
-- For reports: Tell them what types of reports are available and how to access them
-- NEVER add unsolicited crime information or statistics
+- For data queries: Reference the data provided in context
+- For predictive queries: Use the data to provide insights
+- NEVER add unsolicited crime information — only show what's in the data
 - Be direct and concise — no fluff
-- If you don't know something specific, say what you CAN help with instead
-
-PLATFORM CAPABILITIES YOU CAN MENTION:
-- Crime trend analysis (ask: "show crime trends in [area]")
-- Suspect lookup (ask: "find suspect [name]")
-- Hotspot identification (ask: "where are crime hotspots?")
-- Station performance (ask: "how is station [name] performing?")
-- Risk assessment (ask: "what is the risk score for [person]?")
-- Case assignments (ask: "who is assigned to case [number]?")
-- Victim statistics (ask: "victim demographics in [area]")
+- If data is available, the response MUST reference it
 """
 
-STAGE2_CHAT_PROMPT = """You are a response quality reviewer. Your ONLY job is to check if the response follows the anti-hallucination rules and provides real value.
+STAGE2_CHAT_PROMPT = """You are a response quality reviewer. Your ONLY job is to check if the response provides real value and uses the available data.
 
 CRITICAL CHECK — Does the response:
-1. Make up ANY crime data, statistics, or specific incidents? → REJECT
-2. Say "we've been tracking" or "recent increase" without data? → REJECT
-3. Fabricate case details? → REJECT
-4. Is too long (>3 sentences)? → SHORTEN
-5. Just repeat the user's question back without adding value? → REWRITE
-6. Not provide useful, actionable information? → IMPROVE
+1. Actually use the data provided? → If data exists and response ignores it, REJECT
+2. Just echo the user's question? → REJECT
+3. Say "I can help you with..." instead of helping? → REJECT
+4. Provide actionable information? → If not, IMPROVE
+5. Reference specific data points? → If not, ADD THEM
 
 RESPOND IN VALID JSON ONLY.
 
 Output format:
-{
+{{
   "issues": ["list of issues found, or empty array if clean"],
   "revised_response": "Fixed response (or same if no issues)",
   "quality_score": 0.0-1.0
-}
+}}
 
 RULES:
-- If response is clean and useful, return it unchanged with empty issues array
-- If response has hallucinations, REMOVE the hallucinated content
-- If response is too long, shorten it to 1-3 sentences
-- If response just echoes the question, REWRITE to provide real value
-- NEVER add new information — only remove, rewrite, or keep existing
-- Response MUST be actionable — user should know what to do next
+- If response uses data and is useful, return it unchanged
+- If response ignores available data, ADD references to the data
+- If response is just echoing, REWRITE to provide real value
+- NEVER remove data references — only add or keep them
+- Response MUST be actionable — user should see results
 """
 
-STAGE3_CHAT_PROMPT = """You are a final reviewer for Drishti. Check the response one more time.
+STAGE3_CHAT_PROMPT = """You are the final reviewer for Drishti. Ensure the response is complete and professional.
 
 RESPOND IN VALID JSON ONLY.
 
 Output format:
-{
+{{
   "final_response": "The response to send to the user",
   "changes_made": ["what was changed, or 'none'"]
-}
+}}
 
 RULES:
 - If response is already good, return it unchanged
-- Remove any remaining hallucinations or made-up data
+- Ensure response references available data (if any)
 - Ensure response is 1-3 sentences max
 - Ensure response is helpful and professional
-- NEVER add crime statistics or specific incidents unless user provided data
+- NEVER remove data — only add if missing
 """
 
 
@@ -133,8 +125,9 @@ async def run_chat_pipeline(
     history: list[dict[str, str]] | None = None,
     intent: str = "general_chat",
     language: str = "en",
+    data_context: str = "",
 ) -> dict[str, Any]:
-    """Run all 4 stages on a chat message and return the final response.
+    """Run all 3 stages on a chat message and return the final response.
     
     Args:
         user_message: The user's message
@@ -142,12 +135,16 @@ async def run_chat_pipeline(
         history: Conversation history
         intent: Detected intent
         language: User's language
+        data_context: Pre-fetched data context for data queries
     
     Returns:
         Dict with final_response, stages, processing_time_ms, etc.
     """
     t_start = time.time()
     stages: list[ChatStageOutput] = []
+    
+    # Get full platform knowledge base
+    platform_context = get_platform_context()
     
     # Build conversation context
     history_text = ""
@@ -157,16 +154,23 @@ async def run_chat_pipeline(
             content = msg.get("content", "")
             history_text += f"{role}: {content}\n"
     
-    context = f"Conversation history:\n{history_text}\nUser's current message: {user_message}"
+    context = f"{platform_context}\n\nConversation history:\n{history_text}\nUser's current message: {user_message}"
+    
+    # Add data context if provided
+    if data_context:
+        context += f"\n\nRetrieved Data:\n{data_context}"
     
     # ── Stage 1: Generation ─────────────────────────────────────────────
     logger.info("[CHAT_PIPELINE] Stage 1: Generation")
     t1 = time.time()
     
+    # Inject platform context into system prompt
+    stage1_prompt = STAGE1_CHAT_PROMPT.format(platform_context=platform_context)
+    
     try:
         stage1_result = await _run_chat_stage(
             client=client,
-            system_prompt=STAGE1_CHAT_PROMPT,
+            system_prompt=stage1_prompt,
             user_content=context,
             stage_name="generation",
             model="meta/llama-3.1-8b-instruct",
@@ -194,8 +198,11 @@ async def run_chat_pipeline(
     logger.info("[CHAT_PIPELINE] Stage 2: Critical Review")
     t2 = time.time()
     
+    stage2_input = f"User message: {user_message}\n\nDraft response: {stage1_response}"
+    if data_context:
+        stage2_input += f"\n\nAvailable data: {data_context}"
+    
     try:
-        stage2_input = f"User message: {user_message}\n\nDraft response: {stage1_response}"
         stage2_result = await _run_chat_stage(
             client=client,
             system_prompt=STAGE2_CHAT_PROMPT,
@@ -222,8 +229,11 @@ async def run_chat_pipeline(
     logger.info("[CHAT_PIPELINE] Stage 3: Final Polish")
     t3 = time.time()
     
+    stage3_input = f"User message: {user_message}\n\nCurrent response: {stage2_response}"
+    if data_context:
+        stage3_input += f"\n\nAvailable data: {data_context}"
+    
     try:
-        stage3_input = f"User message: {user_message}\n\nCurrent response: {stage2_response}"
         stage3_result = await _run_chat_stage(
             client=client,
             system_prompt=STAGE3_CHAT_PROMPT,

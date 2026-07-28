@@ -76,34 +76,59 @@ async def chat(
     # 6. Execute query for crime data intents (SHOW ACTUAL DATA)
     evidence, rows = [], []
     
-    if intent not in (Intent.GENERAL_CHAT, Intent.GENERAL_QUERY):
+    # For predictive queries, fetch crime trends data first
+    if intent == Intent.PREDICTIVE:
+        try:
+            from backend.api.copilot.query_templates import QUERY_TEMPLATES
+            from backend.api.copilot.executor import _build_jurisdiction_filter
+            
+            # Get crime trends data for predictions
+            template = QUERY_TEMPLATES.get(Intent.CRIME_TRENDS, {})
+            sql = template.get("sql", "")
+            if sql:
+                jurisdiction_filter = _build_jurisdiction_scope(scope)
+                sql = sql.replace("{jurisdiction_filter}", jurisdiction_filter)
+                cursor = datastore.execute(sql)
+                rows = [dict(zip([desc[0] for desc in cursor.description], row)) for row in cursor.fetchall()]
+                evidence = [QueryEvidence(source_table="cases", row_count=len(rows))]
+        except Exception as e:
+            logger.warning("Predictive data fetch failed: %s", str(e)[:100])
+    elif intent not in (Intent.GENERAL_CHAT, Intent.GENERAL_QUERY):
         try:
             evidence, rows = execute_intent_query(intent, entities, scope, datastore)
-            # If we got real data, use the response generator (which formats it nicely)
-            if rows:
-                reply_text = generate_response(intent, rows, evidence, msg_lang, history)
-                # Store and return immediately — no LLM needed for data queries
-                if msg_lang == "kn":
-                    reply_text = await translate_to_kannada(reply_text)
-                session_store.add_message(session_id, "assistant", reply_text, msg_lang, intent=intent.value)
-                return ChatResponse(
-                    session_id=session_id,
-                    reply_text=reply_text,
-                    reply_language=msg_lang,
-                    intent_detected=intent,
-                    classification_confidence=confidence,
-                    classification_tier=tier,
-                    query_evidence=evidence,
-                    clarification_needed=False,
-                    clarification_prompt=None,
-                )
         except Exception as e:
             logger.warning("Evidence gathering failed: %s", str(e)[:100])
+    
+    # If we got real data, use the response generator
+    if rows:
+        reply_text = generate_response(intent, rows, evidence, msg_lang, history)
+        # Store and return immediately — no LLM needed for data queries
+        if msg_lang == "kn":
+            reply_text = await translate_to_kannada(reply_text)
+        session_store.add_message(session_id, "assistant", reply_text, msg_lang, intent=intent.value)
+        return ChatResponse(
+            session_id=session_id,
+            reply_text=reply_text,
+            reply_language=msg_lang,
+            intent_detected=intent,
+            classification_confidence=confidence,
+            classification_tier=tier,
+            query_evidence=evidence,
+            clarification_needed=False,
+            clarification_prompt=None,
+        )
 
     # 7. For general chat — run through 3-stage pipeline
     try:
         client = _get_nim_client()
         llm_history = [{"role": m.get("role", "user"), "content": m.get("content", "")} for m in history[-10:]]
+        
+        # Build data context for the pipeline
+        data_context = ""
+        if rows:
+            data_context = f"Retrieved {len(rows)} records:\n"
+            for i, r in enumerate(rows[:5], 1):
+                data_context += f"  {i}. {r}\n"
         
         pipeline_result = await run_chat_pipeline(
             user_message=query_text,
@@ -111,6 +136,7 @@ async def chat(
             history=llm_history,
             intent=intent.value,
             language=msg_lang,
+            data_context=data_context,
         )
         reply_text = pipeline_result["final_response"]
         

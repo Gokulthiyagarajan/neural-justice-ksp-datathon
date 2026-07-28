@@ -34,6 +34,10 @@ PATTERNS = [
      Intent.CRIME_TRENDS, 0.80, {}),
     (re.compile(r"(?:how\s+many|number\s+of)\s+(?:cases?|crimes?|fir)", re.I),
      Intent.CRIME_TRENDS, 0.75, {}),
+    (re.compile(r"(?:city|bengaluru|bangalore).*(?:summary|overview|intelligence|crime)", re.I),
+     Intent.CRIME_TRENDS, 0.85, {}),
+    (re.compile(r"(?:summary|overview|intelligence).*(?:crime|city|bengaluru)", re.I),
+     Intent.CRIME_TRENDS, 0.85, {}),
 
     # hotspot
     (re.compile(r"hot\s*spot| hotspot | hotspot$|^hotspot|ಹಾಟ್\u200cಸ್ಪಾಟ್", re.I),
@@ -42,6 +46,18 @@ PATTERNS = [
      Intent.HOTSPOT, 0.80, {}),
     (re.compile(r"(?:top|high)\s+(?:crime|incident)\s+(?:areas?|locations?|zones?)", re.I),
      Intent.HOTSPOT, 0.85, {}),
+    (re.compile(r"(?:bengaluru|bangalore|city).*(?:data|stats|statistics|crime)", re.I),
+     Intent.CRIME_TRENDS, 0.80, {}),
+    (re.compile(r"i\s+need.*(?:bengaluru|bangalore)", re.I),
+     Intent.CRIME_TRENDS, 0.75, {}),
+
+    # predictive
+    (re.compile(r"predict|forecast|future|next\s+\d+\s+days|prediction", re.I),
+     Intent.PREDICTIVE, 0.90, {}),
+    (re.compile(r"predictive\s+policing|crime\s+forecast|risk\s+forecast", re.I),
+     Intent.PREDICTIVE, 0.95, {}),
+    (re.compile(r"what\s+will\s+happen|what\s+to\s+expect", re.I),
+     Intent.PREDICTIVE, 0.80, {}),
 
     # suspect_lookup
     (re.compile(r"suspect\s+([A-Z][\w\s]{1,30})", re.I),
