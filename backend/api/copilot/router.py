@@ -73,30 +73,40 @@ async def chat(
     # 5. Classify intent (for evidence/context gathering)
     intent, confidence, tier, entities = await classify_intent(query_text)
 
-    # 6. Gather evidence for crime data intents
+    # 6. Execute query for crime data intents (SHOW ACTUAL DATA)
     evidence, rows = [], []
-    crime_context = ""
     
-    if intent != Intent.GENERAL_CHAT and intent != Intent.GENERAL_QUERY:
+    if intent not in (Intent.GENERAL_CHAT, Intent.GENERAL_QUERY):
         try:
             evidence, rows = execute_intent_query(intent, entities, scope, datastore)
+            # If we got real data, use the response generator (which formats it nicely)
             if rows:
-                crime_context = f"\nRelevant data from platform: {rows[:5]}"
+                reply_text = generate_response(intent, rows, evidence, msg_lang, history)
+                # Store and return immediately — no LLM needed for data queries
+                if msg_lang == "kn":
+                    reply_text = await translate_to_kannada(reply_text)
+                session_store.add_message(session_id, "assistant", reply_text, msg_lang, intent=intent.value)
+                return ChatResponse(
+                    session_id=session_id,
+                    reply_text=reply_text,
+                    reply_language=msg_lang,
+                    intent_detected=intent,
+                    classification_confidence=confidence,
+                    classification_tier=tier,
+                    query_evidence=evidence,
+                    clarification_needed=False,
+                    clarification_prompt=None,
+                )
         except Exception as e:
             logger.warning("Evidence gathering failed: %s", str(e)[:100])
 
-    # 7. Run ALL messages through the 4-stage chat pipeline
+    # 7. For general chat — run through 3-stage pipeline
     try:
         client = _get_nim_client()
         llm_history = [{"role": m.get("role", "user"), "content": m.get("content", "")} for m in history[-10:]]
         
-        # Add crime context to the message for the pipeline
-        enhanced_message = query_text
-        if crime_context:
-            enhanced_message = f"{query_text}\n{crime_context}"
-        
         pipeline_result = await run_chat_pipeline(
-            user_message=enhanced_message,
+            user_message=query_text,
             client=client,
             history=llm_history,
             intent=intent.value,

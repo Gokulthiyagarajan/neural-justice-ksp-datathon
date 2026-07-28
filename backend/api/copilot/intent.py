@@ -66,8 +66,12 @@ PATTERNS = [
      Intent.STATION_PERFORMANCE, 0.90, {}),
     (re.compile(r"(?:how\s+is|status\s+of)\s+(?:station|ps)\s+(\w[\w\s]{0,20})", re.I),
      Intent.STATION_PERFORMANCE, 0.80, {"station": 1}),
+    (re.compile(r"(?:how\s+is|status\s+of)\s+(\w[\w\s]{0,20})\s+station", re.I),
+     Intent.STATION_PERFORMANCE, 0.80, {"station": 1}),
     (re.compile(r"station\s+(\w[\w\s]{0,20})", re.I),
      Intent.STATION_PERFORMANCE, 0.70, {"station": 1}),
+    (re.compile(r"(\w[\w\s]{0,20})\s+station\s*(?:performance|status|doing)", re.I),
+     Intent.STATION_PERFORMANCE, 0.85, {"station": 1}),
 
     # officer_assignment
     (re.compile(r"officer\s*assignment|who.*assigned|assigned\s*officer|ನೇಮಕ", re.I),
@@ -76,6 +80,12 @@ PATTERNS = [
      Intent.OFFICER_ASSIGNMENT, 0.80, {}),
     (re.compile(r"(?:case|fir)\s*(?:no|number|#)?\s*(\d[\w-]{3,20})", re.I),
      Intent.OFFICER_ASSIGNMENT, 0.70, {"case_id": 1}),
+    (re.compile(r"assigned\s*cases?|cases?\s*assigned|my\s*cases?|my\s*assigned", re.I),
+     Intent.OFFICER_ASSIGNMENT, 0.85, {}),
+    (re.compile(r"what.*cases?.*(?:for\s+me|assigned\s+to)", re.I),
+     Intent.OFFICER_ASSIGNMENT, 0.80, {}),
+    (re.compile(r"cases?.*(?:yesterday|today|this\s*week|last\s*week)", re.I),
+     Intent.OFFICER_ASSIGNMENT, 0.75, {}),
 ]
 
 

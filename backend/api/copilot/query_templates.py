@@ -34,7 +34,7 @@ TEMPLATES = {
     },
     Intent.SUSPECT_LOOKUP: {
         "sql": """
-            SELECT name, age, gender, case_count, risk_score, modus_operandi, district
+            SELECT name, age, gender, case_count, risk_score, modus_operandi, crime_type
             FROM criminal_profiles
             WHERE name LIKE ? {jurisdiction_filter}
             ORDER BY case_count DESC
@@ -74,7 +74,7 @@ TEMPLATES = {
     },
     Intent.RISK_SCORE: {
         "sql": """
-            SELECT name, age, gender, case_count, risk_score, modus_operandi, district
+            SELECT name, age, gender, case_count, risk_score, modus_operandi, crime_type
             FROM criminal_profiles
             WHERE name LIKE ? {jurisdiction_filter}
             LIMIT 5

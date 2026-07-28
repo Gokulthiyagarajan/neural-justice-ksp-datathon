@@ -54,78 +54,192 @@ def generate_response(
 
 
 def _crime_trends_response(rows, evidence, lang):
-    lines = ["Based on the FIR records, here are the crime trends:\n"]
+    if not rows:
+        return "No crime trend data available. Try asking about a specific area or time period."
+    
+    lines = [
+        f"Crime Trends ({len(rows)} types)",
+        "",
+        "Crime Type        Cases     Distribution",
+        "────────────────────────────────────────────",
+    ]
+    
     for r in rows[:8]:
-        lines.append(f"- **{r.get('crime_type', 'Unknown')}**: {r.get('count', 0)} cases")
-    lines.append(f"\n_Source: {evidence[0].source_table} ({evidence[0].row_count} aggregated groups)_")
+        crime_type = r.get('crime_type', 'N/A')
+        count = r.get('count', 0)
+        bar = "█" * min(count, 15)
+        lines.append(f"{crime_type:<17} {count:<9} {bar}")
+    
+    lines.append("")
+    lines.append("Tip: Ask about a specific area like 'crime trends in Koramangala' for details.")
     return "\n".join(lines)
 
 
 def _hotspot_response(rows, evidence, lang):
-    lines = ["Based on FIR records, here are the top crime hotspots:\n"]
-    for i, r in enumerate(rows[:10], 1):
-        lines.append(f"{i}. **{r.get('station', 'Unknown')}** ({r.get('district', '')}): {r.get('case_count', 0)} cases")
-    lines.append(f"\n_Source: {evidence[0].source_table} ({evidence[0].row_count} locations)_")
+    if not rows:
+        return "No hotspot data available. Try asking about a specific district or police station."
+    
+    lines = [
+        f"Crime Hotspots ({len(rows)} locations)",
+        "",
+        "Station           District        Cases     Heat Level",
+        "─────────────────────────────────────────────────────────",
+    ]
+    
+    for r in rows[:10]:
+        station = r.get('station', 'N/A')
+        district = r.get('district', '')
+        case_count = r.get('case_count', 0)
+        heat = "HIGH" if case_count >= 5 else "MEDIUM" if case_count >= 3 else "LOW"
+        lines.append(f"{station:<17} {district:<15} {case_count:<9} {heat}")
+    
+    lines.append("")
+    lines.append("Tip: Ask 'show cases in [station]' for detailed information.")
     return "\n".join(lines)
 
 
 def _suspect_response(rows, evidence, lang):
-    lines = [f"Found {len(rows)} matching record(s):\n"]
+    if not rows:
+        return "No suspect records found. Try providing a full name or crime number."
+    
+    lines = [
+        f"Suspect Records ({len(rows)} found)",
+        "",
+        "Name            Age   Gender   Cases   Risk Score   Modus Operandi",
+        "──────────────────────────────────────────────────────────────────────",
+    ]
+    
     for r in rows[:5]:
-        lines.append(f"- **{r.get('name', 'Unknown')}** — Age: {r.get('age', 'N/A')}, Gender: {r.get('gender', 'N/A')}, Cases: {r.get('case_count', 0)}, Risk: {r.get('risk_score', 0):.0%}")
-        if r.get("modus_operandi"):
-            lines.append(f"  MO: {r['modus_operandi']}")
-    lines.append(f"\n_Source: {evidence[0].source_table} ({evidence[0].row_count} records)_")
+        name = r.get('name', 'N/A')
+        age = r.get('age', 'N/A')
+        gender = r.get('gender', 'N/A')
+        case_count = r.get('case_count', 0)
+        risk_score = r.get('risk_score', 0)
+        mo = r.get('modus_operandi', 'N/A')
+        risk_level = "HIGH" if risk_score >= 0.7 else "MEDIUM" if risk_score >= 0.4 else "LOW"
+        lines.append(f"{name:<15} {str(age):<5} {gender:<8} {case_count:<7} {risk_level} ({risk_score:.0%})   {mo}")
+    
     return "\n".join(lines)
 
 
 def _victim_stats_response(rows, evidence, lang):
-    lines = [f"Victim information from {len(rows)} record(s):\n"]
+    if not rows:
+        return "No victim statistics found. Try asking about a specific crime type."
+    
+    # Group by crime type
     by_type = {}
     for r in rows:
         ct = r.get("crime_type", "Unknown")
         by_type[ct] = by_type.get(ct, 0) + 1
-    for ct, count in sorted(by_type.items(), key=lambda x: -x[1])[:10]:
-        lines.append(f"- **{ct}**: {count} victim(s)")
-    lines.append(f"\n_Source: {evidence[0].source_table} ({evidence[0].row_count} records)_")
+    
+    lines = [f"👥 **Victim Statistics** ({len(rows)} records)\n"]
+    
+    # Table header
+    lines.append("| # | Crime Type | Victims |")
+    lines.append("|---|------------|---------|")
+    
+    for i, (ct, count) in enumerate(sorted(by_type.items(), key=lambda x: -x[1])[:10], 1):
+        lines.append(f"| {i} | {ct} | {count} |")
+    
+    lines.append("")
     return "\n".join(lines)
 
 
 def _station_performance_response(rows, evidence, lang):
-    lines = ["Station performance data:\n"]
-    for r in rows[:5]:
-        lines.append(f"- **{r.get('name', 'Unknown')}** ({r.get('district', '')}):")
-        lines.append(f"  Active cases: {r.get('active_cases', 0)}, Solved rate: {r.get('solved_rate', 0):.1f}%, Officers: {r.get('officer_count', 0)}")
-    lines.append(f"\n_Source: {evidence[0].source_table} ({evidence[0].row_count} stations)_")
+    if not rows:
+        return "No station performance data found. Try specifying a station name."
+    
+    lines = [f"🏢 **Station Performance** ({len(rows)} stations)\n"]
+    
+    # Table header
+    lines.append("| # | Station | District | Active Cases | Solved Rate | Officers |")
+    lines.append("|---|---------|----------|--------------|-------------|----------|")
+    
+    for i, r in enumerate(rows[:5], 1):
+        name = r.get('name', 'Unknown')
+        district = r.get('district', '')
+        active_cases = r.get('active_cases', 0)
+        solved_rate = r.get('solved_rate', 0)
+        officer_count = r.get('officer_count', 0)
+        
+        # Performance indicator
+        perf = "🟢" if solved_rate >= 70 else "🟡" if solved_rate >= 50 else "🔴"
+        
+        lines.append(f"| {i} | {name} | {district} | {active_cases} | {perf} {solved_rate:.1f}% | {officer_count} |")
+    
+    lines.append("")
     return "\n".join(lines)
 
 
 def _officer_assignment_response(rows, evidence, lang):
-    lines = ["Case assignment details:\n"]
+    if not rows:
+        return "No case assignments found. Try specifying a date range or case number."
+    
+    open_count = sum(1 for r in rows if r.get('status', '').lower() == 'open')
+    closed_count = sum(1 for r in rows if r.get('status', '').lower() == 'closed')
+    
+    lines = [
+        f"Case Assignments ({len(rows)} records) — Open: {open_count} | Closed: {closed_count}",
+        "",
+        "Case No          Crime Type      Station         Status      Accused",
+        "─────────────────────────────────────────────────────────────────────────",
+    ]
+    
     for r in rows[:5]:
-        accused = r.get("accused_names", "[]")
-        lines.append(f"- **Case {r.get('crime_no', 'Unknown')}**: {r.get('crime_type', '')} at {r.get('station', '')}")
-        lines.append(f"  Status: {r.get('status', '')}, Accused: {accused}")
-    lines.append(f"\n_Source: {evidence[0].source_table} ({evidence[0].row_count} records)_")
+        crime_no = r.get('crime_no', 'N/A')
+        crime_type = r.get('crime_type', 'N/A')
+        station = r.get('station', 'N/A')
+        status = r.get('status', 'N/A').upper()
+        accused = r.get('accused_names', 'N/A')
+        
+        lines.append(f"{crime_no:<16} {crime_type:<15} {station:<15} {status:<11} {accused}")
+    
     return "\n".join(lines)
 
 
 def _risk_score_response(rows, evidence, lang):
     """Risk score MUST include factor breakdown, never a bare number."""
-    lines = ["Risk assessment:\n"]
-    for r in rows[:3]:
-        score = r.get("risk_score", 0)
-        lines.append(f"- **{r.get('name', 'Unknown')}** — Risk Score: {score:.0%}")
-        lines.append(f"  Age: {r.get('age', 'N/A')}, Gender: {r.get('gender', 'N/A')}, Prior cases: {r.get('case_count', 0)}")
-        if r.get("modus_operandi"):
-            lines.append(f"  Modus Operandi: {r['modus_operandi']}")
+    if not rows:
+        return "No risk score data found. Try providing a suspect name or crime number."
+    
+    lines = [f"⚠️ **Risk Assessment** ({len(rows)} profiles)\n"]
+    
+    # Table header
+    lines.append("| # | Name | Age | Gender | Cases | Risk Score | Level |")
+    lines.append("|---|------|-----|--------|-------|------------|-------|")
+    
+    for i, r in enumerate(rows[:3], 1):
+        name = r.get('name', 'Unknown')
+        age = r.get('age', 'N/A')
+        gender = r.get('gender', 'N/A')
+        case_count = r.get('case_count', 0)
+        score = r.get('risk_score', 0)
+        
+        # Risk level with recommendation
         if score >= 0.7:
-            lines.append("  Warning: High risk — repeat offender pattern detected")
+            level = "🔴 HIGH"
+            rec = "Monitor closely"
         elif score >= 0.4:
-            lines.append("  Medium risk — monitor recommended")
+            level = "🟡 MEDIUM"
+            rec = "Regular monitoring"
         else:
-            lines.append("  Low risk")
-    lines.append(f"\n_Source: {evidence[0].source_table} ({evidence[0].row_count} records)_")
+            level = "🟢 LOW"
+            rec = "Standard oversight"
+        
+        lines.append(f"| {i} | {name} | {age} | {gender} | {case_count} | {score:.0%} | {level} |")
+    
+    lines.append("")
+    
+    # Add recommendations
+    lines.append("**Recommendations:**")
+    for r in rows[:3]:
+        name = r.get('name', 'Unknown')
+        score = r.get('risk_score', 0)
+        if score >= 0.7:
+            lines.append(f"- ⚠️ {name}: High risk — consider enhanced surveillance")
+        elif score >= 0.4:
+            lines.append(f"- 👁️ {name}: Medium risk — regular check-ins recommended")
+    
     return "\n".join(lines)
 
 
@@ -152,7 +266,19 @@ def _empty_response(intent, lang):
         Intent.RISK_SCORE: "risk score",
     }
     label = intent_labels.get(intent, "data")
-    return f"No matching {label} records found in the current dataset. Try refining your search or check if the data exists in the system."
+    
+    # Provide specific, actionable guidance based on intent
+    guidance = {
+        Intent.OFFICER_ASSIGNMENT: "No case assignments found. Try specifying a date range or case number.",
+        Intent.SUSPECT_LOOKUP: "No suspect records found. Try providing a full name or crime number.",
+        Intent.CRIME_TRENDS: "No crime trend data available. Try asking about a specific area or time period.",
+        Intent.HOTSPOT: "No hotspot data available. Try asking about a specific district or police station.",
+        Intent.STATION_PERFORMANCE: "No station performance data found. Try specifying a station name.",
+        Intent.VICTIM_STATS: "No victim statistics found. Try asking about a specific crime type.",
+        Intent.RISK_SCORE: "No risk score data found. Try providing a suspect name or crime number.",
+    }
+    
+    return guidance.get(intent, f"No matching {label} records found. Try refining your search with specific details.")
 
 
 def _generic_response(rows, evidence, lang):

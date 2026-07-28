@@ -27,8 +27,8 @@ CRITICAL RULES — VIOLATION IS UNACCEPTABLE:
 1. NEVER make up crime data, statistics, or specific incidents. You do NOT have access to real crime data.
 2. NEVER say "we've been tracking" or "recent increase" unless the user provides actual data.
 3. NEVER fabricate case details, suspect names, or incident specifics.
-4. ONLY describe platform CAPABILITIES — what the user CAN do, not what HAS happened.
-5. If asked about specific data, say "I can help you look that up" and guide them to use the platform.
+4. NEVER just repeat the user's question back to them.
+5. ALWAYS provide a useful, actionable response.
 
 The user has sent a message. Generate a helpful response.
 
@@ -37,7 +37,7 @@ RESPOND IN VALID JSON ONLY.
 Output format:
 {
   "response": "Your response to the user",
-  "intent": "greeting|help|crime_query|general_chat|farewell",
+  "intent": "greeting|help|crime_query|general_chat|farewell|predictive|analytics|report",
   "confidence": 0.0-1.0,
   "entities_mentioned": ["any names, places, crimes mentioned"],
   "follow_up_suggestions": ["suggested follow-up questions"]
@@ -48,18 +48,31 @@ RULES:
 - For greetings: Simple hello + "How can I help?" (2 sentences max)
 - For help requests: List what you CAN do, not what HAS happened
 - For crime queries: Say "I can help you look that up" then suggest specific commands
+- For predictive/analytics questions: Explain what the platform CAN do, give examples of queries
+- For reports: Tell them what types of reports are available and how to access them
 - NEVER add unsolicited crime information or statistics
 - Be direct and concise — no fluff
+- If you don't know something specific, say what you CAN help with instead
+
+PLATFORM CAPABILITIES YOU CAN MENTION:
+- Crime trend analysis (ask: "show crime trends in [area]")
+- Suspect lookup (ask: "find suspect [name]")
+- Hotspot identification (ask: "where are crime hotspots?")
+- Station performance (ask: "how is station [name] performing?")
+- Risk assessment (ask: "what is the risk score for [person]?")
+- Case assignments (ask: "who is assigned to case [number]?")
+- Victim statistics (ask: "victim demographics in [area]")
 """
 
-STAGE2_CHAT_PROMPT = """You are a response quality reviewer. Your ONLY job is to check if the response follows the anti-hallucination rules.
+STAGE2_CHAT_PROMPT = """You are a response quality reviewer. Your ONLY job is to check if the response follows the anti-hallucination rules and provides real value.
 
 CRITICAL CHECK — Does the response:
 1. Make up ANY crime data, statistics, or specific incidents? → REJECT
 2. Say "we've been tracking" or "recent increase" without data? → REJECT
 3. Fabricate case details? → REJECT
-4. Is it too long (>3 sentences)? → SHORTEN
-5. Add unnecessary information? → REMOVE
+4. Is too long (>3 sentences)? → SHORTEN
+5. Just repeat the user's question back without adding value? → REWRITE
+6. Not provide useful, actionable information? → IMPROVE
 
 RESPOND IN VALID JSON ONLY.
 
@@ -71,10 +84,12 @@ Output format:
 }
 
 RULES:
-- If response is clean, return it unchanged with empty issues array
+- If response is clean and useful, return it unchanged with empty issues array
 - If response has hallucinations, REMOVE the hallucinated content
 - If response is too long, shorten it to 1-3 sentences
-- NEVER add new information — only remove or keep existing
+- If response just echoes the question, REWRITE to provide real value
+- NEVER add new information — only remove, rewrite, or keep existing
+- Response MUST be actionable — user should know what to do next
 """
 
 STAGE3_CHAT_PROMPT = """You are a final reviewer for Drishti. Check the response one more time.
@@ -203,8 +218,8 @@ async def run_chat_pipeline(
         processing_time_ms=(time.time() - t2) * 1000,
     ))
     
-    # ── Stage 3: Deep Reasoning ─────────────────────────────────────────
-    logger.info("[CHAT_PIPELINE] Stage 3: Deep Reasoning")
+    # ── Stage 3: Final Polish ─────────────────────────────────────────
+    logger.info("[CHAT_PIPELINE] Stage 3: Final Polish")
     t3 = time.time()
     
     try:
@@ -213,48 +228,20 @@ async def run_chat_pipeline(
             client=client,
             system_prompt=STAGE3_CHAT_PROMPT,
             user_content=stage3_input,
-            stage_name="deep_reasoning",
+            stage_name="final_polish",
             model="meta/llama-3.1-8b-instruct",
         )
-        stage3_response = stage3_result.get("enhanced_response", stage2_response)
+        final_response = stage3_result.get("final_response", stage2_response)
     except Exception as e:
         logger.warning("Stage 3 failed: %s", str(e)[:100])
-        stage3_response = stage2_response
-        stage3_result = {"enhanced_response": stage2_response}
+        final_response = stage2_response
+        stage3_result = {"final_response": stage2_response}
     
     stages.append(ChatStageOutput(
-        stage_name="deep_reasoning",
+        stage_name="final_polish",
         raw_json=stage3_result,
-        response_text=stage3_response,
-        processing_time_ms=(time.time() - t3) * 1000,
-    ))
-    
-    # ── Stage 4: Consistency ────────────────────────────────────────────
-    logger.info("[CHAT_PIPELINE] Stage 4: Consistency")
-    t4 = time.time()
-    
-    try:
-        stage4_input = f"User message: {user_message}\n\nFinal response to polish: {stage3_response}"
-        stage4_result = await _run_chat_stage(
-            client=client,
-            system_prompt=STAGE4_CHAT_PROMPT,
-            user_content=stage4_input,
-            stage_name="consistency",
-            model="meta/llama-3.1-8b-instruct",
-        )
-        final_response = stage4_result.get("final_response", stage3_response)
-        consistency_score = stage4_result.get("consistency_score", 0.9)
-    except Exception as e:
-        logger.warning("Stage 4 failed: %s", str(e)[:100])
-        final_response = stage3_response
-        consistency_score = 0.9
-        stage4_result = {"final_response": stage3_response, "consistency_score": 0.9}
-    
-    stages.append(ChatStageOutput(
-        stage_name="consistency",
-        raw_json=stage4_result,
         response_text=final_response,
-        processing_time_ms=(time.time() - t4) * 1000,
+        processing_time_ms=(time.time() - t3) * 1000,
     ))
     
     # ── Assemble final result ───────────────────────────────────────────
@@ -274,7 +261,6 @@ async def run_chat_pipeline(
             for s in stages
         ],
         "processing_time_ms": round(total_time_ms, 1),
-        "consistency_score": consistency_score,
     }
 
 
