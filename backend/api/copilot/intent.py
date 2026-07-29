@@ -62,12 +62,14 @@ PATTERNS = [
     # suspect_lookup
     (re.compile(r"suspect\s+([A-Z][\w\s]{1,30})", re.I),
      Intent.SUSPECT_LOOKUP, 0.85, {"name": 1}),
-    (re.compile(r"suspect|accused|ಆರೋಪಿ|ಖತೀಬ", re.I),
+    (re.compile(r"suspect|accused|ಆರೋಪಿ|ಖತೀಬ|shakki|sandiga", re.I),
      Intent.SUSPECT_LOOKUP, 0.85, {}),
     (re.compile(r"find.*(?:person|man|woman|individual)", re.I),
      Intent.SUSPECT_LOOKUP, 0.70, {}),
     (re.compile(r"(?:search|look\s*up|find)\s+([A-Z][\w\s]{1,30})", re.I),
      Intent.SUSPECT_LOOKUP, 0.75, {"name": 1}),
+    (re.compile(r"ಹುಡುಕು|ಹುಡುಕಿ|shakki\s+helu", re.I),
+     Intent.SUSPECT_LOOKUP, 0.80, {}),
 
     # victim_stats
     (re.compile(r"victim|ಸಂತ್ರಸ್ತ|受害", re.I),

@@ -101,7 +101,7 @@ async def chat(
     
     # If we got real data, use the response generator
     if rows:
-        reply_text = generate_response(intent, rows, evidence, msg_lang, history)
+        reply_text = generate_response(intent, rows, evidence, msg_lang, history, query_text)
         # Store and return immediately — no LLM needed for data queries
         if msg_lang == "kn":
             reply_text = await translate_to_kannada(reply_text)

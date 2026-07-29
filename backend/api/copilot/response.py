@@ -51,18 +51,40 @@ def generate_response(
     }
 
     builder = builders.get(intent, _generic_response)
+    # Pass user_message to builders that need it
+    if intent == Intent.CRIME_TRENDS:
+        return builder(rows, evidence, language, user_message)
     return builder(rows, evidence, language)
 
 
-def _crime_trends_response(rows, evidence, lang):
+def _crime_trends_response(rows, evidence, lang, user_message=""):
     if not rows:
         return "No crime trend data available. Try asking about a specific area or time period."
+    
+    # Check if user mentioned a specific area
+    area_mentioned = False
+    if user_message:
+        area_keywords = ["in ", "at ", "for ", "area", "station", "layout", "nagar", "road", "bengaluru", "bangalore"]
+        area_mentioned = any(kw in user_message.lower() for kw in area_keywords)
+    
+    # If no area mentioned, ask for clarification
+    if not area_mentioned and len(rows) > 3:
+        return (
+            "Which area would you like crime trends for?\n\n"
+            "Available options:\n"
+            "  • Koramangala\n"
+            "  • HSR Layout\n"
+            "  • Whitefield\n"
+            "  • Indiranagar\n"
+            "  • Jayanagar\n\n"
+            "Example: 'crime trends in Koramangala'"
+        )
     
     # Calculate totals
     total_cases = sum(r.get('count', 0) for r in rows)
     
     lines = [
-        f"City-Wide Crime Intelligence Summary — Bengaluru",
+        f"Crime Intelligence Summary — Bengaluru",
         f"Total Cases: {total_cases} | Crime Types: {len(rows)}",
         "",
         "Crime Type        Cases     % Share    Distribution",
