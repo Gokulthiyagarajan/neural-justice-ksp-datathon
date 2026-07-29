@@ -2,9 +2,9 @@
   "project_id": "52367000000021001",
   "project_name": "Neural-justice",
   "client": {
-    "path": ".",
+    "path": "frontend/dist",
     "stack": "reactjs",
-    "code": ".",
+    "code": "frontend/dist",
     "config": "{\"spa\":{\"enabled\":true}}"
   },
   "functions": {
