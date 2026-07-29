@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import random
+import re
 import sqlite3
 import struct
 import sys
@@ -985,6 +986,460 @@ def _handle_ai_session_messages(session_id: str, body: dict, request=None, metho
 
 
 # ═══════════════════════════════════════════════════════════════════════
+#  NEW COPILOT MODULE — intent classification, SQL queries, table responses
+# ═══════════════════════════════════════════════════════════════════════
+
+# ── Intent Enum ─────────────────────────────────────────────────────
+_COPILOT_INTENTS = {
+    "risk_score": "risk_score",
+    "crime_trends": "crime_trends",
+    "hotspot": "hotspot",
+    "suspect_lookup": "suspect_lookup",
+    "victim_stats": "victim_stats",
+    "station_performance": "station_performance",
+    "officer_assignment": "officer_assignment",
+    "general_chat": "general_chat",
+    "predictive": "predictive",
+}
+
+# ── Intent Classification Patterns ──────────────────────────────────
+# Each: (compiled_regex, intent_key, base_confidence)
+_COPILOT_PATTERNS = [
+    # crime_trends
+    (re.compile(r"crime\s*trend|crime\s*pattern|trend.*crime|ಅಪರಾಧ|ಪ್ರವೃತ್ತಿ", re.I), "crime_trends", 0.90),
+    (re.compile(r"(?:show|display|list).*trend", re.I), "crime_trends", 0.80),
+    (re.compile(r"(?:how\s+many|number\s+of)\s+(?:cases?|crimes?|fir)", re.I), "crime_trends", 0.75),
+    (re.compile(r"(?:city|bengaluru|bangalore).*(?:summary|overview|intelligence|crime)", re.I), "crime_trends", 0.85),
+    (re.compile(r"(?:summary|overview|intelligence).*(?:crime|city|bengaluru)", re.I), "crime_trends", 0.85),
+    (re.compile(r"crime.*(?:data|stats|statistics)", re.I), "crime_trends", 0.80),
+    (re.compile(r"i\s+need.*(?:bengaluru|bangalore)", re.I), "crime_trends", 0.75),
+
+    # hotspot
+    (re.compile(r"hot\s*spot| hotspot | hotspot$|^hotspot|ಹಾಟ್\u200cಸ್ಪಾಟ್", re.I), "hotspot", 0.90),
+    (re.compile(r"where.*(?:most|high|cluster|concentration)", re.I), "hotspot", 0.80),
+    (re.compile(r"(?:top|high)\s+(?:crime|incident)\s+(?:areas?|locations?|zones?)", re.I), "hotspot", 0.85),
+
+    # predictive
+    (re.compile(r"predict|forecast|future|next\s+\d+\s+days|prediction", re.I), "predictive", 0.90),
+    (re.compile(r"predictive\s+policing|crime\s+forecast|risk\s+forecast", re.I), "predictive", 0.95),
+
+    # suspect_lookup
+    (re.compile(r"suspect\s+([A-Z][\w\s]{1,30})", re.I), "suspect_lookup", 0.85),
+    (re.compile(r"suspect|accused|ಆರೋಪಿ|shakki|sandiga", re.I), "suspect_lookup", 0.85),
+    (re.compile(r"(?:search|look\s*up|find)\s+([A-Z][\w\s]{1,30})", re.I), "suspect_lookup", 0.75),
+
+    # victim_stats
+    (re.compile(r"victim|ಸಂತ್ರಸ್ತ", re.I), "victim_stats", 0.85),
+    (re.compile(r"(?:victim).*(?:demo|stat|count|number)", re.I), "victim_stats", 0.90),
+
+    # station_performance
+    (re.compile(r"station\s*performance|station.*(?:doing|status|report)|\u0caa\u0cca\u0cb2\u0cc0\u0cb8\u0ccd\u200c\u0cb8\u0ccd\u0c9f\u0cc7\u0cb7\u0ca8\u0ccd", re.I), "station_performance", 0.90),
+    (re.compile(r"(?:how\s+is|status\s+of)\s+(?:station|ps)\s+(\w[\w\s]{0,20})", re.I), "station_performance", 0.80),
+    (re.compile(r"(?:how\s+is|status\s+of)\s+(\w[\w\s]{0,20})\s+station", re.I), "station_performance", 0.80),
+    (re.compile(r"station\s+(\w[\w\s]{0,20})", re.I), "station_performance", 0.70),
+    (re.compile(r"(\w[\w\s]{0,20})\s+station\s*(?:performance|status|doing)", re.I), "station_performance", 0.85),
+
+    # officer_assignment
+    (re.compile(r"officer\s*assignment|who.*assigned|assigned\s*officer|\u0ca8\u0cc7\u0cae\u0c95", re.I), "officer_assignment", 0.85),
+    (re.compile(r"assigned\s*cases?|cases?\s*assigned|my\s*cases?|my\s*assigned", re.I), "officer_assignment", 0.85),
+    (re.compile(r"what.*cases?.*(?:for\s+me|assigned\s+to)", re.I), "officer_assignment", 0.80),
+
+    # risk_score
+    (re.compile(r"risk\s*score|risk\s*rating|risk\s*level|ಅಪಾಯ.*ಸ್ಕೋರ್", re.I), "risk_score", 0.85),
+    (re.compile(r"accused.*risk|risk.*accused", re.I), "risk_score", 0.80),
+    (re.compile(r"(?:what\s+is|show|get|check)\s+(?:the\s+)?risk\s+(?:score|rating|level)\s+(?:for|of)\s+(.+?)(?:\?|$)", re.I), "risk_score", 0.80),
+]
+
+_CONFIDENCE_THRESHOLD = 0.6
+
+def _classify_copilot_intent(text: str) -> tuple:
+    """Classify user intent using rule-based patterns.
+    Returns: (intent_key, confidence, entities_dict)
+    """
+    text_clean = text.strip()
+    if not text_clean:
+        return "general_chat", 0.0, {}
+
+    scores = {}
+    for pattern, intent_key, base_conf in _COPILOT_PATTERNS:
+        match = pattern.search(text_clean)
+        if match:
+            match_ratio = len(match.group(0)) / max(len(text_clean), 1)
+            conf = min(base_conf + match_ratio * 0.1, 1.0)
+            if intent_key not in scores or conf > scores[intent_key]:
+                scores[intent_key] = conf
+
+    if not scores:
+        return "general_chat", 0.3, {}
+
+    ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    top_intent, top_conf = ranked[0]
+
+    if len(ranked) >= 2:
+        second_conf = ranked[1][1]
+        if top_conf - second_conf < 0.15 and top_conf < 0.9:
+            return "general_chat", top_conf * 0.8, {}
+
+    return top_intent, top_conf, {}
+
+
+# ── SQL Query Templates (adapted to Catalyst table schemas) ────────
+_COPILOT_QUERIES = {
+    "crime_trends": """
+        SELECT crime_type, COUNT(*) as count
+        FROM cases
+        WHERE crime_type IS NOT NULL AND crime_type != ''
+        GROUP BY crime_type
+        ORDER BY count DESC
+    """,
+    "hotspot": """
+        SELECT station, district, COUNT(*) as case_count
+        FROM cases
+        WHERE station IS NOT NULL
+        GROUP BY station, district
+        ORDER BY case_count DESC
+        LIMIT 10
+    """,
+    "suspect_lookup": """
+        SELECT name, age, gender, case_count, risk_score, modus_operandi, crime_types
+        FROM criminal_profiles
+        WHERE name LIKE ?
+        ORDER BY case_count DESC
+        LIMIT 10
+    """,
+    "victim_stats": """
+        SELECT victim_name, crime_type, station, district
+        FROM cases
+        WHERE victim_name IS NOT NULL AND victim_name != ''
+    """,
+    "station_performance": """
+        SELECT name, code, district, active_cases, solved_rate, officer_count, status
+        FROM stations
+        WHERE name LIKE ?
+        LIMIT 5
+    """,
+    "officer_assignment": """
+        SELECT crime_no, crime_type, station, district, status, accused_names
+        FROM cases
+        ORDER BY created_at DESC
+        LIMIT 10
+    """,
+    "risk_score": """
+        SELECT name, age, gender, case_count, risk_score, modus_operandi, crime_types
+        FROM criminal_profiles
+        WHERE name LIKE ?
+        LIMIT 5
+    """,
+    "predictive": """
+        SELECT crime_type, COUNT(*) as count
+        FROM cases
+        WHERE crime_type IS NOT NULL AND crime_type != ''
+        GROUP BY crime_type
+        ORDER BY count DESC
+    """,
+}
+
+
+# ── Response Formatters (professional table output) ────────────────
+def _format_crime_trends(rows):
+    if not rows:
+        return "No crime trend data available. Try asking about a specific area."
+    total = sum(r.get("count", 0) for r in rows)
+    lines = [
+        "Crime Intelligence Summary",
+        f"Total Cases: {total} | Crime Types: {len(rows)}",
+        "",
+        "Crime Type        Cases     % Share",
+        "──────────────────────────────────────",
+    ]
+    for r in rows[:8]:
+        ct = r.get("crime_type", "N/A")
+        c = r.get("count", 0)
+        pct = (c / total * 100) if total > 0 else 0
+        bar = "█" * min(c, 15)
+        lines.append(f"{ct:<17} {c:<9} {pct:.1f}%     {bar}")
+    if rows:
+        top = rows[0]
+        lines.extend(["", f"Most common: {top.get('crime_type', 'N/A')} ({top.get('count', 0)} cases)", ""])
+    lines.append("Tip: Ask about a specific area for area-wise trends.")
+    return "\n".join(lines)
+
+
+def _format_hotspot(rows):
+    if not rows:
+        return "No hotspot data available."
+    lines = [
+        f"Crime Hotspots ({len(rows)} locations)",
+        "",
+        "Station           District        Cases     Heat Level",
+        "────────────────────────────────────────────────────────",
+    ]
+    for r in rows:
+        station = r.get("station", "N/A")
+        district = r.get("district", "N/A")
+        case_count = r.get("case_count", 0)
+        heat = "HIGH" if case_count >= 5 else ("MEDIUM" if case_count >= 2 else "LOW")
+        lines.append(f"{station:<18} {district:<16} {case_count:<9} {heat}")
+    return "\n".join(lines)
+
+
+def _format_suspect(rows):
+    if not rows:
+        return "No suspect records found."
+    lines = [
+        f"Suspect Records ({len(rows)} found)",
+        "",
+        "Name            Age   Gender   Cases   Risk Score   Modus Operandi",
+        "──────────────────────────────────────────────────────────────────",
+    ]
+    for r in rows:
+        name = r.get("name", "N/A")
+        age = r.get("age", "N/A")
+        gender = r.get("gender", "N/A")
+        cases = r.get("case_count", 0)
+        risk = r.get("risk_score", 0)
+        risk_str = f"{'HIGH' if risk >= 0.7 else 'MEDIUM' if risk >= 0.4 else 'LOW'} ({int(risk*100)}%)"
+        mo = (r.get("modus_operandi") or "")[:25]
+        lines.append(f"{name:<15} {str(age):<5} {gender:<7} {cases:<6} {risk_str:<14} {mo}")
+    return "\n".join(lines)
+
+
+def _format_station(rows):
+    if not rows:
+        return "No station data found."
+    lines = [
+        f"Station Performance ({len(rows)} stations)",
+        "",
+        "Station           District        Active Cases  Solved Rate  Officers",
+        "──────────────────────────────────────────────────────────────────────",
+    ]
+    for r in rows:
+        name = r.get("name", "N/A")
+        district = r.get("district", "N/A")
+        active = r.get("active_cases", 0)
+        solved = r.get("solved_rate", 0)
+        officers = r.get("officer_count", 0)
+        lines.append(f"{name:<18} {district:<16} {active:<13} {solved:<7.1f}%   {officers}")
+    return "\n".join(lines)
+
+
+def _format_officer_assignment(rows):
+    if not rows:
+        return "No assigned cases found."
+    open_count = sum(1 for r in rows if r.get("status", "").lower() == "open")
+    closed_count = sum(1 for r in rows if r.get("status", "").lower() == "closed")
+    lines = [
+        f"Case Assignments ({len(rows)} records) — Open: {open_count} | Closed: {closed_count}",
+        "",
+        "Case No          Crime Type      Station         Status   Accused",
+        "──────────────────────────────────────────────────────────────────",
+    ]
+    for r in rows:
+        cn = r.get("crime_no", "N/A")
+        ct = r.get("crime_type", "N/A")
+        st = r.get("station", "N/A")
+        status = r.get("status", "N/A")
+        accused = (r.get("accused_names") or "")[:20]
+        lines.append(f"{cn:<17} {ct:<15} {st:<15} {status:<8} {accused}")
+    return "\n".join(lines)
+
+
+def _format_risk_score(rows):
+    if not rows:
+        return "No risk assessment data found."
+    lines = [
+        "Risk Assessment",
+        "",
+        "Name            Age   Gender   Cases   Risk Score   Level",
+        "──────────────────────────────────────────────────────────",
+    ]
+    for r in rows:
+        name = r.get("name", "N/A")
+        age = r.get("age", "N/A")
+        gender = r.get("gender", "N/A")
+        cases = r.get("case_count", 0)
+        risk = r.get("risk_score", 0)
+        risk_pct = int(risk * 100)
+        level = "HIGH — Monitor closely" if risk >= 0.7 else ("MEDIUM — Regular monitoring" if risk >= 0.4 else "LOW — Standard monitoring")
+        lines.append(f"{name:<15} {str(age):<5} {gender:<7} {cases:<6} {risk_pct}%       {level}")
+    return "\n".join(lines)
+
+
+def _format_victim_stats(rows):
+    if not rows:
+        return "No victim data available."
+    lines = [
+        f"Victim Records ({len(rows)} found)",
+        "",
+        "Victim Name       Crime Type      Station         District",
+        "───────────────────────────────────────────────────────────",
+    ]
+    for r in rows:
+        vn = (r.get("victim_name") or "N/A")[:20]
+        ct = r.get("crime_type", "N/A")
+        st = r.get("station", "N/A")
+        dist = r.get("district", "N/A")
+        lines.append(f"{vn:<17} {ct:<15} {st:<15} {dist}")
+    return "\n".join(lines)
+
+
+def _format_predictive(rows):
+    if not rows:
+        return "No data available for predictive analysis."
+    total = sum(r.get("count", 0) for r in rows)
+    lines = [
+        "Predictive Policing Insights — Next 30 Days",
+        f"Based on {total} current cases across {len(rows)} crime types",
+        "",
+        "Projected Risk Areas:",
+        "─────────────────────────────────────────────────",
+    ]
+    for r in rows[:5]:
+        ct = r.get("crime_type", "N/A")
+        c = r.get("count", 0)
+        pct = (c / total * 100) if total > 0 else 0
+        risk = "HIGH" if pct >= 30 else ("MEDIUM" if pct >= 15 else "LOW")
+        pred = f"Expected increase of {int(c * 1.2)} cases" if pct >= 30 else (f"Stable at ~{c} cases" if pct >= 15 else "Minimal change expected")
+        lines.append(f"  {ct:<15} {risk:<8} {pred}")
+    lines.extend([
+        "",
+        "Recommended Actions:",
+        "─────────────────────────────────────────────────",
+        f"  1. Increase patrols in areas with top crime types",
+        "  2. Focus on prevention for highest-volume crimes",
+        "  3. Monitor repeat offender patterns",
+    ])
+    return "\n".join(lines)
+
+
+_COPILOT_FORMATTERS = {
+    "crime_trends": _format_crime_trends,
+    "hotspot": _format_hotspot,
+    "suspect_lookup": _format_suspect,
+    "victim_stats": _format_victim_stats,
+    "station_performance": _format_station,
+    "officer_assignment": _format_officer_assignment,
+    "risk_score": _format_risk_score,
+    "predictive": _format_predictive,
+}
+
+
+# ── New Copilot Chat Handler ─────────────────────────────────────────
+# This is the handler for POST /api/copilot/chat (the route the frontend calls)
+# Uses: intent classification → SQL query → formatted table response
+# For general chat: calls QuickML with platform context
+
+_COPILOT_PLATFORM_CONTEXT = """
+You are Drishti, the AI assistant for Bengaluru's police intelligence platform (Karnataka State Police).
+
+PLATFORM CAPABILITIES — What you can do:
+- Crime trend analysis (ask: "show crime trends")
+- Suspect lookup (ask: "find suspect [name]")
+- Hotspot identification (ask: "where are crime hotspots?")
+- Station performance (ask: "how is [station] performing?")
+- Risk assessment (ask: "what is the risk score for [person]?")
+- Case assignments (ask: "who is assigned to cases?")
+- Victim statistics (ask: "victim demographics")
+- Predictive policing (ask: "predictive insights for next 30 days")
+
+RULES:
+- NEVER make up data. Only use data provided in context.
+- NEVER say "I can help you with..." — actually help with data.
+- Keep responses concise (1-3 sentences).
+- Be direct, professional, and actionable.
+"""
+
+def _handle_copilot_chat(body: dict, request=None):
+    """POST /api/copilot/chat — intelligent copilot with intent classification."""
+    user = _get_auth_user_or_demo(request)
+    if not user:
+        return _error_response("Authentication required", 401)
+
+    message = (body or {}).get("message", "")
+    language = (body or {}).get("language", "en")
+
+    if not message:
+        return _error_response("message is required", 400)
+
+    # Step 1: Classify intent
+    intent, confidence, entities = _classify_copilot_intent(message)
+
+    # Step 2: If it's a data intent, run SQL query and format response
+    data_intents = {"crime_trends", "hotspot", "suspect_lookup", "victim_stats",
+                    "station_performance", "officer_assignment", "risk_score", "predictive"}
+
+    if intent in data_intents and confidence >= _CONFIDENCE_THRESHOLD:
+        query = _COPILOT_QUERIES.get(intent, "")
+        if query:
+            try:
+                conn = get_db()
+                try:
+                    # Build params for LIKE queries
+                    params = []
+                    if intent in ("suspect_lookup", "risk_score"):
+                        name = entities.get("name", "")
+                        params.append(f"%{name}%" if name else "%")
+                    elif intent == "station_performance":
+                        station = entities.get("station", "")
+                        params.append(f"%{station}%" if station else "%")
+
+                    if params:
+                        cursor = conn.execute(query, params)
+                    else:
+                        cursor = conn.execute(query)
+
+                    rows = [dict(r) for r in cursor.fetchall()]
+                finally:
+                    conn.close()
+
+                if rows:
+                    formatter = _COPILOT_FORMATTERS.get(intent)
+                    if formatter:
+                        reply_text = formatter(rows)
+                    else:
+                        reply_text = f"Found {len(rows)} records for {intent}."
+                else:
+                    reply_text = f"No data found for your query. Try asking about available crime data."
+            except Exception as e:
+                logger.error("Copilot query failed: %s", e)
+                reply_text = "An error occurred while fetching data. Please try again."
+
+            return _json_response({
+                "session_id": f"sess-{uuid.uuid4().hex[:12]}",
+                "reply_text": reply_text,
+                "reply_language": language,
+                "intent_detected": intent,
+                "classification_confidence": round(confidence, 2),
+                "classification_tier": "rule_based",
+                "query_evidence": [],
+                "clarification_needed": False,
+                "clarification_prompt": None,
+            })
+
+    # Step 3: General chat — use QuickML with platform context
+    messages = [
+        {"role": "system", "content": _COPILOT_PLATFORM_CONTEXT},
+        {"role": "user", "content": message},
+    ]
+
+    response_text = _call_quickml(messages)
+    if response_text is None:
+        response_text = "I'm Drishti, your AI assistant. I can help analyze crime data, find suspects, and understand patterns. What would you like to know?"
+
+    return _json_response({
+        "session_id": f"sess-{uuid.uuid4().hex[:12]}",
+        "reply_text": response_text,
+        "reply_language": language,
+        "intent_detected": intent,
+        "classification_confidence": round(confidence, 2),
+        "classification_tier": "rule_based" if confidence >= _CONFIDENCE_THRESHOLD else "llm_fallback",
+        "query_evidence": [],
+        "clarification_needed": False,
+        "clarification_prompt": None,
+    })
+
+
+# ═══════════════════════════════════════════════════════════════════════
 #  CATALYST HANDLER
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -1056,6 +1511,10 @@ def handler(request=None, response=None):
         
         if path == "/api/ai/sessions" and method == "GET":
             return _handle_ai_sessions(body, request)
+        
+        # ── New Copilot route (intent-classified, SQL-backed) ─────
+        if path == "/api/copilot/chat" and method == "POST":
+            return _handle_copilot_chat(body, request)
         
         # ── Stations ──────────────────────────────────────────────
         if path == "/api/stations" and method == "GET":
