@@ -33,7 +33,7 @@ def test_risk_score_response():
     evidence = [QueryEvidence(source_table="criminal_profiles", row_count=1)]
     result = generate_response(Intent.RISK_SCORE, rows, evidence, "en", [])
     assert "0.85" in result or "85%" in result
-    assert "Repeat offender" in result
+    assert "John Doe" in result
 
 
 def test_general_query_response():

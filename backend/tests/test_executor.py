@@ -27,7 +27,7 @@ def seed_db():
         id INTEGER PRIMARY KEY, name TEXT, age INTEGER, gender TEXT,
         case_count INTEGER, status TEXT, risk_score REAL, last_active TEXT,
         modus_operandi TEXT, aliases TEXT, phone TEXT, address TEXT,
-        photo_url TEXT, district TEXT, crime_types TEXT, created_at TEXT
+        photo_url TEXT, district TEXT, crime_type TEXT, created_at TEXT
     )""")
     ds.execute("INSERT INTO cases (crime_no, crime_type, status, station, district, occurrence_date, accused_names, victim_name) VALUES ('KL-2024-001', 'Theft', 'under_investigation', 'Koramangala PS', 'Bengaluru Urban', '2024-06-15', '[\"John Doe\"]', 'Jane Smith')")
     ds.execute("INSERT INTO cases (crime_no, crime_type, status, station, district, occurrence_date, accused_names, victim_name) VALUES ('KL-2024-002', 'Assault', 'closed', 'HSR Layout PS', 'Bengaluru Urban', '2024-07-01', '[\"Bob\"]', 'Alice')")
