@@ -1001,6 +1001,98 @@ def _handle_ai_copilot_chat(body: dict, request=None):
     if not messages:
         return _error_response("messages are required", 400)
 
+    # ── Extract the last user message for pre-checks ──
+    last_user_msg = ""
+    for m in reversed(messages):
+        if m.get("role") == "user":
+            last_user_msg = m.get("content", "").strip()
+            break
+
+    # ── Greeting handler ──
+    if last_user_msg:
+        greeting_match = re.match(
+            r"^(?:hi|hello|hey|good\s*(?:morning|afternoon|evening)|yo|nam(?:aste|askara)?|hii|h(?:e|a)llo|👋|ಹಲೋ|ನಮಸ್ಕಾರ)\b",
+            last_user_msg, re.I
+        )
+        if greeting_match or last_user_msg.lower() in ("hi", "hello", "hey", "namaste", "namaskara", "yo", "hii", "hlo"):
+            return _json_response({
+                "response": (
+                    "Hello! I'm Drishti, your Bengaluru Police Intelligence copilot.\n\n"
+                    "I can help with:\n"
+                    "• Crime trend analysis (e.g., 'show crime trends')\n"
+                    "• Policy recommendations (e.g., 'policy recommendations based on crime')\n"
+                    "• Suspect lookup (e.g., 'find suspect Kumar')\n"
+                    "• Hotspot mapping (e.g., 'where are crime hotspots?')\n"
+                    "• Station performance (e.g., 'how is Nandini Layout station?')\n"
+                    "• Predictive analysis (e.g., 'predict crime trends')\n"
+                    "• Victim statistics and more\n\n"
+                    "What would you like to explore?"
+                ),
+                "confidence": 1.0,
+                "_greeting_handler": True,
+            })
+
+    # ── Policy recommendations handler ──
+    if last_user_msg and re.search(
+        r"policy\s*recommend|recommendation.*crime|crime.*recommend|recommend.*action|strateg|suggest.*(?:crime|action|measure|initiative|policy)",
+        last_user_msg, re.I
+    ):
+        data = _get_data_context()
+        crime_dist = data.get("crime_distribution", [])
+        if crime_dist:
+            total = sum(c.get("count", 0) for c in crime_dist)
+            lines = [
+                "Policy Recommendations Based on Crime Data",
+                f"Analysis of {total} total cases across {len(crime_dist)} crime types",
+                "",
+                "═══════════════════════════════════════════════════",
+                "KEY FINDINGS",
+                "═══════════════════════════════════════════════════",
+            ]
+            for r in crime_dist[:5]:
+                ct = r.get("crime_type", "N/A")
+                c = r.get("count", 0)
+                pct = (c / total * 100) if total > 0 else 0
+                lines.append(f"  • {ct}: {c} cases ({pct:.1f}%)")
+
+            lines.extend([
+                "",
+                "═══════════════════════════════════════════════════",
+                "RECOMMENDATIONS",
+                "═══════════════════════════════════════════════════",
+            ])
+            for r in crime_dist[:5]:
+                ct = r.get("crime_type", "N/A")
+                c = r.get("count", 0)
+                pct = (c / total * 100) if total > 0 else 0
+                if pct >= 10:
+                    lines.append(f"  [HIGH] {ct} ({pct:.1f}%) — Allocate specialized units")
+                    if any(k in ct.lower() for k in ["death", "murder"]):
+                        lines.append("     → Strengthen forensic investigation teams")
+                    elif any(k in ct.lower() for k in ["theft", "vehicle"]):
+                        lines.append("     → Increase surveillance in hotspots")
+                    elif any(k in ct.lower() for k in ["fraud", "cyber", "hacking"]):
+                        lines.append("     → Establish dedicated cyber crime units")
+                    elif any(k in ct.lower() for k in ["assault", "robbery", "dacoity"]):
+                        lines.append("     → Deploy rapid response teams")
+                    else:
+                        lines.append("     → Allocate dedicated investigation resources")
+
+            lines.extend([
+                "",
+                "═══════════════════════════════════════════════════",
+                "STRATEGIC ACTIONS",
+                "═══════════════════════════════════════════════════",
+                "  1. Data-driven patrol allocation based on crime patterns",
+                "  2. Community policing programs in high-incident areas",
+                "  3. Enhanced inter-agency coordination for cross-border crimes",
+            ])
+
+            return _json_response({
+                "response": "\n".join(lines),
+                "confidence": 1.0,
+            })
+
     # Get real data context
     data = _get_data_context()
     data_summary = f"""
