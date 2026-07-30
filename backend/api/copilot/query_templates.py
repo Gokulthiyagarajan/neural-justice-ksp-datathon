@@ -82,4 +82,26 @@ TEMPLATES = {
         "source_table": "criminal_profiles",
         "params": {"name": "%{name}%"},
     },
+    Intent.PREDICTIVE: {
+        "sql": """
+            SELECT crime_type, COUNT(*) as count
+            FROM cases
+            WHERE crime_type IS NOT NULL AND crime_type != '' {jurisdiction_filter}
+            GROUP BY crime_type
+            ORDER BY count DESC
+        """,
+        "source_table": "cases",
+        "params": {},
+    },
+    Intent.POLICY_RECOMMENDATIONS: {
+        "sql": """
+            SELECT crime_type, COUNT(*) as count
+            FROM cases
+            WHERE crime_type IS NOT NULL AND crime_type != '' {jurisdiction_filter}
+            GROUP BY crime_type
+            ORDER BY count DESC
+        """,
+        "source_table": "cases",
+        "params": {},
+    },
 }

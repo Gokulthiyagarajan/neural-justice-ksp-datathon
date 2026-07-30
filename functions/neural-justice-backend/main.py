@@ -856,7 +856,99 @@ def _handle_ai_copilot(body: dict, request=None):
     if not message:
         return _error_response("message is required", 400)
 
-    # Get real data context
+    # ── Intent pre-check: handle common queries without QuickML ──
+    msg_lower = message.lower().strip()
+
+    # 1. Greeting detection — also add blanket match for very short greets
+    greeting_patterns = re.compile(r"^(?:hi|hello|hey|good\s*(?:morning|afternoon|evening)|yo|nam(?:aste|askara)?|hii|h(?:e|a)llo|👋|ಹಲೋ|ನಮಸ್ಕಾರ)\b", re.I)
+    if greeting_patterns.match(msg_lower) or msg_lower in ("hi", "hello", "hey", "namaste", "namaskara", "yo", "hii", "hlo"):
+        return _json_response({
+            "response": (
+                "Hello! I'm Drishti, your Bengaluru Police Intelligence copilot.\n\n"
+                "I can help with:\n"
+                "• Crime trend analysis (e.g., 'show crime trends')\n"
+                "• Policy recommendations (e.g., 'policy recommendations based on crime')\n"
+                "• Suspect lookup (e.g., 'find suspect Kumar')\n"
+                "• Hotspot mapping (e.g., 'where are crime hotspots?')\n"
+                "• Station performance (e.g., 'how is Nandini Layout station?')\n"
+                "• Predictive analysis (e.g., 'predict crime trends')\n"
+                "• Victim statistics and more\n\n"
+                "What would you like to explore?"
+            ),
+            "mode": mode,
+            "confidence": 1.0,
+            "requires_review": False,
+            "sources": [],
+            "_greeting_handler": True,  # diagnostic: confirms greeting handler code ran
+        })
+
+    # 2. Policy recommendations / strategy
+    policy_pattern = re.compile(r"policy\s*recommend|recommendation.*crime|crime.*recommend|recommend.*action|strateg|suggest.*(?:crime|action|measure|initiative|policy)", re.I)
+    if policy_pattern.search(message):
+        data = _get_data_context()
+        crime_dist = data.get("crime_distribution", [])
+        if crime_dist:
+            total = sum(c.get("count", 0) for c in crime_dist)
+            lines = [
+                "Policy Recommendations Based on Crime Data",
+                f"Analysis of {total} total cases across {len(crime_dist)} crime types",
+                "",
+                "═══════════════════════════════════════════════════",
+                "KEY FINDINGS",
+                "═══════════════════════════════════════════════════",
+            ]
+            for r in crime_dist[:5]:
+                ct = r.get("crime_type", "N/A")
+                c = r.get("count", 0)
+                pct = (c / total * 100) if total > 0 else 0
+                lines.append(f"  • {ct}: {c} cases ({pct:.1f}%)")
+
+            lines.extend([
+                "",
+                "═══════════════════════════════════════════════════",
+                "RECOMMENDATIONS",
+                "═══════════════════════════════════════════════════",
+            ])
+            for r in crime_dist[:5]:
+                ct = r.get("crime_type", "N/A")
+                c = r.get("count", 0)
+                pct = (c / total * 100) if total > 0 else 0
+                if pct >= 10:
+                    lines.append(f"  [HIGH] {ct} ({pct:.1f}%) — Allocate specialized units")
+                    if any(k in ct.lower() for k in ["death", "murder"]):
+                        lines.append("     → Strengthen forensic investigation teams")
+                    elif any(k in ct.lower() for k in ["theft", "vehicle"]):
+                        lines.append("     → Increase surveillance in hotspots")
+                    elif any(k in ct.lower() for k in ["fraud", "cyber", "hacking"]):
+                        lines.append("     → Establish dedicated cyber crime units")
+                    elif any(k in ct.lower() for k in ["assault", "robbery", "dacoity"]):
+                        lines.append("     → Deploy rapid response teams")
+                    else:
+                        lines.append("     → Allocate dedicated investigation resources")
+
+            lines.extend([
+                "",
+                "═══════════════════════════════════════════════════",
+                "STRATEGIC ACTIONS",
+                "═══════════════════════════════════════════════════",
+                "  1. Data-driven patrol allocation based on crime patterns",
+                "  2. Community policing in high-incident areas",
+                "  3. Enhanced inter-agency coordination",
+                "  4. Regular training updates for investigating officers",
+            ])
+            reply = "\n".join(lines)
+        else:
+            reply = "No crime data available to generate policy recommendations."
+
+        return _json_response({
+            "response": reply,
+            "mode": mode,
+            "confidence": 1.0,
+            "requires_review": False,
+            "sources": ["ksp_database"],
+        })
+
+    # ── General: use QuickML with data context ──
     data = _get_data_context()
     data_summary = f"""
 Recent Cases (top 10): {len(data['recent_cases'])} cases
@@ -945,6 +1037,92 @@ def _handle_ai_query(body: dict, request=None):
     if not query:
         return _error_response("query is required", 400)
 
+    # ── Greeting handler ──
+    greeting_match = re.match(
+        r"^(?:hi|hello|hey|good\s*(?:morning|afternoon|evening)|yo|nam|hii|hlo|👋|ಹಲೋ|ನಮಸ್ಕಾರ)\b",
+        query.strip(), re.I
+    )
+    if greeting_match:
+        return _json_response({
+            "response": "Hello! I'm Drishti, your Bengaluru Police Intelligence copilot. I can help with:\n• Crime trend analysis (e.g., 'show crime trends')\n• Policy recommendations (e.g., 'policy recommendations based on crime')\n• Suspect lookup (e.g., 'find suspect Kumar')\n• Hotspot mapping (e.g., 'where are crime hotspots?')\n• Station performance (e.g., 'how is Nandini Layout station?')\n• Predictive analysis (e.g., 'predict crime trends')\n• Victim statistics and more\n\nWhat would you like to explore?",
+            "confidence": 1.0,
+            "status": "success",
+            "sources": [],
+            "_greeting_handler": True,
+        })
+
+    # ── Policy recommendations handler ──
+    policy_match = re.search(
+        r"policy\s*recommend|recommendation.*crime|crime.*recommend|policy.*crime|recommend.*action|strateg|suggest.*(?:crime|action|measure|initiative)",
+        query, re.I
+    )
+    if policy_match:
+        # Get crime distribution for data-driven recommendations
+        try:
+            conn = get_db()
+            try:
+                rows = conn.execute("""
+                    SELECT crime_type, COUNT(*) as count
+                    FROM cases
+                    WHERE crime_type IS NOT NULL AND crime_type != ''
+                    GROUP BY crime_type
+                    ORDER BY count DESC
+                    LIMIT 10
+                """).fetchall()
+                if rows:
+                    total = sum(r["count"] for r in rows)
+                    top = rows[:5]
+                    rec_lines = [
+                        "📊 **Policy Recommendations Based on Crime Data**",
+                        f"Analysis of {total} cases across {len(rows)} crime types",
+                        "",
+                        "**Key Findings:**",
+                    ]
+                    for r in top:
+                        pct = (r["count"] / total * 100) if total > 0 else 0
+                        rec_lines.append(f"• {r['crime_type']}: {r['count']} cases ({pct:.1f}%)")
+
+                    rec_lines.extend([
+                        "",
+                        "**Recommendations:**",
+                    ])
+                    for r in top:
+                        pct = (r["count"] / total * 100) if total > 0 else 0
+                        if pct >= 10:
+                            ct = r["crime_type"].lower()
+                            rec_lines.append(f"🔴 **HIGH PRIORITY — {r['crime_type']} ({pct:.1f}%)**")
+                            if "theft" in ct or "vehicle" in ct:
+                                rec_lines.append("   → Increase surveillance in hotspots")
+                                rec_lines.append("   → Launch public awareness campaigns")
+                            elif "fraud" in ct or "cyber" in ct:
+                                rec_lines.append("   → Strengthen cyber crime units")
+                                rec_lines.append("   → Conduct digital literacy programs")
+                            elif "assault" in ct or "robbery" in ct:
+                                rec_lines.append("   → Deploy rapid response teams")
+                                rec_lines.append("   → Increase night patrols in affected areas")
+                            else:
+                                rec_lines.append("   → Allocate dedicated investigation resources")
+                                rec_lines.append("   → Implement targeted prevention programs")
+
+                    rec_lines.extend([
+                        "",
+                        "**Strategic Actions:**",
+                        "1. Data-driven patrol allocation based on crime patterns",
+                        "2. Community policing programs in high-incident areas",
+                        "3. Enhanced inter-agency coordination for cross-border crimes",
+                    ])
+
+                    return _json_response({
+                        "response": "\n".join(rec_lines),
+                        "confidence": 0.95,
+                        "status": "success",
+                        "sources": ["cases_table"],
+                    })
+            finally:
+                conn.close()
+        except Exception as e:
+            logger.error("Policy recommendations query failed: %s", e)
+
     messages = [
         {"role": "system", "content": f"You are Neural Justice AI, a police intelligence copilot for Karnataka State Police. Mode: {mode}. Provide concise, actionable insights."},
         {"role": "user", "content": query},
@@ -1013,6 +1191,9 @@ _COPILOT_PATTERNS = [
     (re.compile(r"(?:summary|overview|intelligence).*(?:crime|city|bengaluru)", re.I), "crime_trends", 0.85),
     (re.compile(r"crime.*(?:data|stats|statistics)", re.I), "crime_trends", 0.80),
     (re.compile(r"i\s+need.*(?:bengaluru|bangalore)", re.I), "crime_trends", 0.75),
+
+    # policy_recommendations
+    (re.compile(r"policy\s*recommend|recommendation.*crime|crime.*recommend|policy.*crime|suggest.*(?:crime|action|measure|initiative)|recommend.*action|strateg", re.I), "policy_recommendations", 0.90),
 
     # hotspot
     (re.compile(r"hot\s*spot| hotspot | hotspot$|^hotspot|ಹಾಟ್\u200cಸ್ಪಾಟ್", re.I), "hotspot", 0.90),
@@ -1131,6 +1312,13 @@ _COPILOT_QUERIES = {
         LIMIT 5
     """,
     "predictive": """
+        SELECT crime_type, COUNT(*) as count
+        FROM cases
+        WHERE crime_type IS NOT NULL AND crime_type != ''
+        GROUP BY crime_type
+        ORDER BY count DESC
+    """,
+    "policy_recommendations": """
         SELECT crime_type, COUNT(*) as count
         FROM cases
         WHERE crime_type IS NOT NULL AND crime_type != ''
@@ -1312,6 +1500,81 @@ def _format_predictive(rows):
     return "\n".join(lines)
 
 
+def _format_policy_recommendations(rows):
+    """Generate policy recommendations based on actual crime data."""
+    if not rows:
+        return "No crime data available to generate policy recommendations."
+    
+    total = sum(r.get("count", 0) for r in rows)
+    top_crimes = rows[:5]
+    
+    lines = [
+        "Policy Recommendations Based on Crime Data",
+        f"Analysis of {total} total cases across {len(rows)} crime types",
+        "",
+        "═══════════════════════════════════════════════════",
+        "KEY FINDINGS",
+        "═══════════════════════════════════════════════════",
+    ]
+    
+    for r in top_crimes:
+        ct = r.get("crime_type", "N/A")
+        c = r.get("count", 0)
+        pct = (c / total * 100) if total > 0 else 0
+        lines.append(f"  • {ct}: {c} cases ({pct:.1f}%)")
+    
+    lines.extend([
+        "",
+        "═══════════════════════════════════════════════════",
+        "RECOMMENDATIONS",
+        "═══════════════════════════════════════════════════",
+    ])
+    
+    # Generate recommendations based on data patterns
+    for r in top_crimes:
+        ct = r.get("crime_type", "N/A")
+        c = r.get("count", 0)
+        pct = (c / total * 100) if total > 0 else 0
+        
+        if pct >= 10:
+            lines.append(f"  🔴 HIGH PRIORITY — {ct} ({pct:.1f}%)")
+            if "death" in ct.lower() or "murder" in ct.lower():
+                lines.append(f"     → Strengthen forensic investigation units")
+                lines.append(f"     → Deploy additional crime scene teams")
+            elif "theft" in ct.lower() or "vehicle" in ct.lower():
+                lines.append(f"     → Increase surveillance in hotspots")
+                lines.append(f"     → Launch public awareness campaigns")
+            elif "fraud" in ct.lower() or "cyber" in ct.lower() or "hacking" in ct.lower():
+                lines.append(f"     → Establish dedicated cyber crime units")
+                lines.append(f"     → Conduct digital literacy programs")
+            elif "assault" in ct.lower() or "robbery" in ct.lower() or "dacoity" in ct.lower():
+                lines.append(f"     → Deploy rapid response teams")
+                lines.append(f"     → Increase night patrols in affected areas")
+            elif "breach" in ct.lower() or "financial" in ct.lower():
+                lines.append(f"     → Strengthen financial crime investigation")
+                lines.append(f"     → Coordinate with banking institutions")
+            else:
+                lines.append(f"     → Allocate dedicated investigation resources")
+                lines.append(f"     → Implement targeted prevention programs")
+    
+    lines.extend([
+        "",
+        "═══════════════════════════════════════════════════",
+        "STRATEGIC ACTIONS",
+        "═══════════════════════════════════════════════════",
+        "  1. Data-driven patrol allocation based on crime patterns",
+        "  2. Community policing programs in high-incident areas",
+        "  3. Enhanced inter-agency coordination for cross-border crimes",
+        "  4. Regular training updates for investigating officers",
+        "  5. Public reporting mechanisms to improve crime data quality",
+        "",
+        "Note: Recommendations are generated based on current crime data patterns.",
+        "Regular review and adjustment of strategies is recommended.",
+    ])
+    
+    return "\n".join(lines)
+
+
 _COPILOT_FORMATTERS = {
     "crime_trends": _format_crime_trends,
     "hotspot": _format_hotspot,
@@ -1321,6 +1584,7 @@ _COPILOT_FORMATTERS = {
     "officer_assignment": _format_officer_assignment,
     "risk_score": _format_risk_score,
     "predictive": _format_predictive,
+    "policy_recommendations": _format_policy_recommendations,
 }
 
 
@@ -1366,7 +1630,8 @@ def _handle_copilot_chat(body: dict, request=None):
 
     # Step 2: If it's a data intent, run SQL query and format response
     data_intents = {"crime_trends", "hotspot", "suspect_lookup", "victim_stats",
-                    "station_performance", "officer_assignment", "risk_score", "predictive"}
+                    "station_performance", "officer_assignment", "risk_score", "predictive",
+                    "policy_recommendations"}
 
     if intent in data_intents and confidence >= _CONFIDENCE_THRESHOLD:
         query = _COPILOT_QUERIES.get(intent, "")
@@ -1416,7 +1681,23 @@ def _handle_copilot_chat(body: dict, request=None):
                 "clarification_prompt": None,
             })
 
-    # Step 3: General chat — use QuickML with platform context
+    # Step 3: Handle greetings directly (avoid QuickML mock)
+    greeting_patterns = re.compile(r"^(?:hi|hello|hey|good\s*(?:morning|afternoon|evening)|yo|nam|hii|hlo|👋|ಹಲೋ|ನಮಸ್ಕಾರ)\b", re.I)
+    if greeting_patterns.match(message.strip()):
+        reply_text = "Hello! I'm Drishti, your Bengaluru Police Intelligence copilot. I can help with:\n• Crime trend analysis (e.g., 'show crime trends')\n• Policy recommendations (e.g., 'policy recommendations based on crime')\n• Suspect lookup (e.g., 'find suspect Kumar')\n• Hotspot mapping (e.g., 'where are crime hotspots?')\n• Station performance (e.g., 'how is Nandini Layout station?')\n• Predictive analysis (e.g., 'predict crime trends')\n• Victim statistics and more\n\nWhat would you like to explore?"
+        return _json_response({
+            "session_id": f"sess-{uuid.uuid4().hex[:12]}",
+            "reply_text": reply_text,
+            "reply_language": language,
+            "intent_detected": "greeting",
+            "classification_confidence": 1.0,
+            "classification_tier": "rule_based",
+            "query_evidence": [],
+            "clarification_needed": False,
+            "clarification_prompt": None,
+        })
+
+    # Step 4: General chat — use QuickML with platform context
     messages = [
         {"role": "system", "content": _COPILOT_PLATFORM_CONTEXT},
         {"role": "user", "content": message},

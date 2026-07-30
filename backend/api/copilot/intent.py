@@ -36,8 +36,14 @@ PATTERNS = [
      Intent.CRIME_TRENDS, 0.75, {}),
     (re.compile(r"(?:city|bengaluru|bangalore).*(?:summary|overview|intelligence|crime)", re.I),
      Intent.CRIME_TRENDS, 0.85, {}),
-    (re.compile(r"(?:summary|overview|intelligence).*(?:crime|city|bengaluru)", re.I),
+     (re.compile(r"(?:summary|overview|intelligence).*(?:crime|city|bengaluru)", re.I),
      Intent.CRIME_TRENDS, 0.85, {}),
+
+    # policy_recommendations
+    (re.compile(r"policy\s*recommend|recommendation.*crime|crime.*recommend|policy.*crime|recommend.*action|strateg|suggest.*(?:crime|action|measure|initiative)", re.I),
+     Intent.POLICY_RECOMMENDATIONS, 0.90, {}),
+    (re.compile(r"what\s*(?:are\s+)?(?:some\s+)?recommend", re.I),
+     Intent.POLICY_RECOMMENDATIONS, 0.85, {}),
 
     # hotspot
     (re.compile(r"hot\s*spot| hotspot | hotspot$|^hotspot|ಹಾಟ್\u200cಸ್ಪಾಟ್", re.I),

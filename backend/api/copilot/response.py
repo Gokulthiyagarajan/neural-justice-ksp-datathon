@@ -13,6 +13,7 @@ SUGGESTED_QUERIES = [
     "How is Station Y performing?",
     "Victim demographics in Karnataka",
     "Who is assigned to case Z?",
+    "Policy recommendations based on crime data",
 ]
 
 
@@ -48,6 +49,7 @@ def generate_response(
         Intent.OFFICER_ASSIGNMENT: _officer_assignment_response,
         Intent.RISK_SCORE: _risk_score_response,
         Intent.PREDICTIVE: _predictive_response,
+        Intent.POLICY_RECOMMENDATIONS: _policy_recommendations_response,
     }
 
     builder = builders.get(intent, _generic_response)
@@ -282,6 +284,8 @@ def _empty_response(intent, lang):
         Intent.STATION_PERFORMANCE: "station",
         Intent.OFFICER_ASSIGNMENT: "case assignment",
         Intent.RISK_SCORE: "risk score",
+        Intent.PREDICTIVE: "predictive",
+        Intent.POLICY_RECOMMENDATIONS: "policy recommendation",
     }
     label = intent_labels.get(intent, "data")
     
@@ -294,6 +298,8 @@ def _empty_response(intent, lang):
         Intent.STATION_PERFORMANCE: "No station performance data found. Try specifying a station name.",
         Intent.VICTIM_STATS: "No victim statistics found. Try asking about a specific crime type.",
         Intent.RISK_SCORE: "No risk score data found. Try providing a suspect name or crime number.",
+        Intent.PREDICTIVE: "No data available for predictive analysis. Try asking about crime trends first.",
+        Intent.POLICY_RECOMMENDATIONS: "No crime data available to generate policy recommendations. Try asking about crime trends first.",
     }
     
     return guidance.get(intent, f"No matching {label} records found. Try refining your search with specific details.")
@@ -393,6 +399,80 @@ def _predictive_response(rows, evidence, lang):
         "",
         "Confidence: Based on historical patterns in current dataset",
         "Note: Predictive accuracy improves with more historical data",
+    ])
+    
+    return "\n".join(lines)
+
+
+def _policy_recommendations_response(rows, evidence, lang):
+    """Generate policy recommendations based on actual crime data."""
+    if not rows:
+        return "No crime data available to generate policy recommendations."
+    
+    total = sum(r.get("count", 0) for r in rows)
+    top_crimes = rows[:5]
+    
+    lines = [
+        "Policy Recommendations Based on Crime Data",
+        f"Analysis of {total} total cases across {len(rows)} crime types",
+        "",
+        "═══════════════════════════════════════════════════",
+        "KEY FINDINGS",
+        "═══════════════════════════════════════════════════",
+    ]
+    
+    for r in top_crimes:
+        ct = r.get("crime_type", "N/A")
+        c = r.get("count", 0)
+        pct = (c / total * 100) if total > 0 else 0
+        lines.append(f"  • {ct}: {c} cases ({pct:.1f}%)")
+    
+    lines.extend([
+        "",
+        "═══════════════════════════════════════════════════",
+        "RECOMMENDATIONS",
+        "═══════════════════════════════════════════════════",
+    ])
+    
+    for r in top_crimes:
+        ct = r.get("crime_type", "N/A")
+        c = r.get("count", 0)
+        pct = (c / total * 100) if total > 0 else 0
+        
+        if pct >= 10:
+            lines.append(f"  🔴 HIGH PRIORITY — {ct} ({pct:.1f}%)")
+            if "death" in ct.lower() or "murder" in ct.lower():
+                lines.append("     → Strengthen forensic investigation units")
+                lines.append("     → Deploy additional crime scene teams")
+            elif "theft" in ct.lower() or "vehicle" in ct.lower():
+                lines.append("     → Increase surveillance in hotspots")
+                lines.append("     → Launch public awareness campaigns")
+            elif "fraud" in ct.lower() or "cyber" in ct.lower() or "hacking" in ct.lower():
+                lines.append("     → Establish dedicated cyber crime units")
+                lines.append("     → Conduct digital literacy programs")
+            elif "assault" in ct.lower() or "robbery" in ct.lower() or "dacoity" in ct.lower():
+                lines.append("     → Deploy rapid response teams")
+                lines.append("     → Increase night patrols in affected areas")
+            elif "breach" in ct.lower() or "financial" in ct.lower():
+                lines.append("     → Strengthen financial crime investigation")
+                lines.append("     → Coordinate with banking institutions")
+            else:
+                lines.append("     → Allocate dedicated investigation resources")
+                lines.append("     → Implement targeted prevention programs")
+    
+    lines.extend([
+        "",
+        "═══════════════════════════════════════════════════",
+        "STRATEGIC ACTIONS",
+        "═══════════════════════════════════════════════════",
+        "  1. Data-driven patrol allocation based on crime patterns",
+        "  2. Community policing programs in high-incident areas",
+        "  3. Enhanced inter-agency coordination for cross-border crimes",
+        "  4. Regular training updates for investigating officers",
+        "  5. Public reporting mechanisms to improve crime data quality",
+        "",
+        "Note: Recommendations are generated based on current crime data patterns.",
+        "Regular review and adjustment of strategies is recommended.",
     ])
     
     return "\n".join(lines)

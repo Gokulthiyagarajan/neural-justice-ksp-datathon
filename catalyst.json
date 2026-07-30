@@ -20,6 +20,6 @@
     ]
   },
   "apig": {
-    "enabled": false
+    "enabled": true
   }
 }
