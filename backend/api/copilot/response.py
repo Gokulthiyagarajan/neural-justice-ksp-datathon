@@ -47,6 +47,8 @@ def generate_response(
         Intent.VICTIM_STATS: _victim_stats_response,
         Intent.STATION_PERFORMANCE: _station_performance_response,
         Intent.OFFICER_ASSIGNMENT: _officer_assignment_response,
+        Intent.CASE_TIMELINE: _case_timeline_response,
+        Intent.FINANCIAL_INTELLIGENCE: _financial_intelligence_response,
         Intent.RISK_SCORE: _risk_score_response,
         Intent.PREDICTIVE: _predictive_response,
         Intent.POLICY_RECOMMENDATIONS: _policy_recommendations_response,
@@ -210,8 +212,12 @@ def _officer_assignment_response(rows, evidence, lang):
     if not rows:
         return "No case assignments found. Try specifying a date range or case number."
     
-    open_count = sum(1 for r in rows if r.get('status', '').lower() == 'open')
-    closed_count = sum(1 for r in rows if r.get('status', '').lower() == 'closed')
+    # Single case lookup → produce a clear case roadmap
+    if len(rows) == 1:
+        return _case_roadmap(rows[0], lang)
+    
+    open_count = sum(1 for r in rows if r.get('status', '').lower() in ('open', 'under_investigation'))
+    closed_count = sum(1 for r in rows if r.get('status', '').lower() not in ('open', 'under_investigation'))
     
     lines = [
         f"Case Assignments ({len(rows)} records) — Open: {open_count} | Closed: {closed_count}",
@@ -229,6 +235,287 @@ def _officer_assignment_response(rows, evidence, lang):
         
         lines.append(f"{crime_no:<16} {crime_type:<15} {station:<15} {status:<11} {accused}")
     
+    return "\n".join(lines)
+
+
+def _case_roadmap(r: dict, lang: str) -> str:
+    """Build a clear, structured roadmap for a single case lookup."""
+    crime_no = r.get('crime_no', 'N/A')
+    crime_type = r.get('crime_type', 'N/A')
+    status = r.get('status', 'N/A')
+    station = r.get('station', 'N/A')
+    district = r.get('district', 'N/A')
+
+    # Case narrative — prefer rich description fields
+    brief_facts = r.get('brief_facts') or r.get('description') or r.get('facts') or ""
+    
+    # Dates (different schema variants)
+    occurrence = r.get('occurrence_date') or r.get('date_reported') or ""
+    filing = r.get('filing_date') or ""
+    
+    victim = r.get('victim_name') or ""
+    complainant = r.get('complainant_name') or ""
+    accused = r.get('accused_names') or ""
+    assigned = r.get('assigned_to') or ""
+    is_solved = r.get('is_solved')
+    
+    # Normalize accused list (may be JSON string or plain text)
+    accused_text = accused
+    if isinstance(accused, str) and accused.startswith("["):
+        try:
+            import json
+            names = json.loads(accused)
+            accused_text = ", ".join(names) if names else "Not recorded"
+        except Exception:
+            accused_text = accused.strip("[]") or "Not recorded"
+    elif not accused:
+        accused_text = "Not recorded"
+    
+    status_label = status
+    if is_solved in (1, "1", True) and status.lower() not in ("closed", "resolved"):
+        status_label = "Closed / Solved"
+    
+    sections = [
+        f"Case Roadmap — {crime_no}",
+        f"Crime Type: {crime_type}  |  Status: {status_label}",
+        f"Station: {station} ({district})",
+    ]
+    
+    if occurrence:
+        sections.append(f"Occurrence Date: {occurrence}")
+    if filing:
+        sections.append(f"Filed: {filing}")
+    
+    if brief_facts:
+        sections.append(f"\n**What happened:**\n{brief_facts}")
+    else:
+        sections.append("\n**What happened:** Details not recorded in the FIR.")
+    
+    sections.append("")
+    sections.append("**Case Details:**")
+    sections.append(f"• Victim: {victim if victim else 'Not recorded'}")
+    if complainant:
+        sections.append(f"• Complainant: {complainant}")
+    sections.append(f"• Accused: {accused_text}")
+    if assigned:
+        sections.append(f"• Investigating Officer: {assigned}")
+    
+    sections.append("")
+    sections.append("**Next steps:** Review the FIR at the station for investigation updates, evidence log, and chargesheet status.")
+    
+    return "\n".join(sections)
+
+
+def _case_timeline_response(rows, evidence, lang):
+    """Stage 3 — deterministic, factual chronology for a single case.
+
+    Merges the cases / activity / orders / notifications rows (tagged by
+    _source) into a chronological timeline rendered as GFM tables (the
+    frontend Markdown renderer displays these as real HTML tables).
+
+    Every cell is grounded in a real column value; anything absent is stated
+    as "Not recorded". Never invents events, never predicts, never
+    characterizes individuals.
+    """
+    if not rows:
+        return (
+            "No case timeline found for that crime number in the platform database. "
+            "Case timelines can only be built from recorded FIR data, case activity, "
+            "investigation orders, and alerts. Verify the crime number and try again."
+        )
+
+    case_rows = [r for r in rows if r.get("_source") == "cases"]
+    if not case_rows:
+        # Related records without the master case record should never be
+        # rendered (RBAC or data integrity guard).
+        return (
+            "No case record found for that crime number within your jurisdiction. "
+            "Verify the crime number and your access scope, then try again."
+        )
+    case_row = case_rows[0]
+    activity_rows = [r for r in rows if r.get("_source") == "activity"]
+    order_rows = [r for r in rows if r.get("_source") == "orders"]
+    notif_rows = [r for r in rows if r.get("_source") == "notifications"]
+
+    crime_no = case_row.get("crime_no", "N/A")
+    crime_type = case_row.get("crime_type", case_row.get("crime_head", "N/A"))
+    status = case_row.get("status", "N/A")
+    station = case_row.get("station", "N/A")
+    district = case_row.get("district", "N/A")
+
+    lines = [
+        f"**Case Timeline — {crime_no}**",
+        "",
+        f"**Crime Type:** {crime_type}  |  **Status:** {status}  |  **Station:** {station} ({district})",
+        "",
+    ]
+
+    # ── Timeline table (chronological, one row per recorded event) ──
+    entries = []  # (sort_key, date_label, event_label, details)
+
+    occurrence = case_row.get("occurrence_date") or case_row.get("date_reported")
+    filing = case_row.get("filing_date")
+
+    if occurrence:
+        entries.append((occurrence, occurrence, "Incident reported", ""))
+    if filing:
+        entries.append((filing, filing, "FIR filed", ""))
+
+    for a in activity_rows:
+        ts = a.get("timestamp") or a.get("created_at") or ""
+        action = a.get("action", "Case update")
+        actor = a.get("user_name", "")
+        desc = a.get("description", "")
+        # Humanize snake_case action → title case label
+        label = action.replace("_", " ").strip().title() or "Case update"
+        details = desc or ""
+        if actor:
+            details = (details + " — by " + actor).strip()
+        entries.append((ts, ts, label, details))
+
+    for o in order_rows:
+        ts = o.get("created_at") or ""
+        num = o.get("order_number", "")
+        title = o.get("title", "Investigation order")
+        priority = o.get("priority", "")
+        issued_by = o.get("issued_by", "")
+        label = f"Order {num}".strip() if num else "Order"
+        details = title or ""
+        if priority:
+            details += f" (priority: {priority})"
+        if issued_by:
+            details += f" — issued by {issued_by}"
+        entries.append((ts, ts, label, details))
+
+    for n in notif_rows:
+        ts = n.get("created_at") or ""
+        title = n.get("title", "Alert")
+        severity = n.get("severity", "")
+        details = title or ""
+        if severity:
+            details += f" (severity: {severity})"
+        entries.append((ts, ts, "Alert", details))
+
+    entries.sort(key=lambda e: (str(e[0] or ""), e[2], e[3]))
+
+    if entries:
+        lines.append("**Timeline of recorded events:**")
+        lines.append("")
+        lines.append("| Date/Time | Event | Details |")
+        lines.append("|-----------|-------|---------|")
+        for _, date_label, label, details in entries:
+            dl = date_label.replace("T", " ") if date_label else "Not recorded"
+            lines.append(f"| {dl} | {label} | {details if details else '—'} |")
+    else:
+        lines.append("**Timeline:** No dated events are recorded for this case in the database.")
+    lines.append("")
+
+    # ── Case facts table (grounded only) ──
+    brief_facts = case_row.get("brief_facts") or case_row.get("description") or case_row.get("facts")
+    victim = case_row.get("victim_name") or "Not recorded"
+    complainant = case_row.get("complainant_name") or "Not recorded"
+
+    accused = case_row.get("accused_names")
+    if accused:
+        try:
+            import json
+            names = json.loads(accused) if isinstance(accused, str) and accused.startswith("[") else accused
+            if isinstance(names, list):
+                accused_text = ", ".join(names) if names else "Not recorded"
+            else:
+                accused_text = str(accused)
+        except Exception:
+            accused_text = str(accused).strip("[]") or "Not recorded"
+    else:
+        accused_text = "Not recorded"
+
+    assigned = case_row.get("assigned_to") or "Not recorded"
+
+    lines.append("**Case facts (from FIR record):**")
+    lines.append("")
+    lines.append("| Field | Value |")
+    lines.append("|-------|-------|")
+    lines.append(f"| What happened | {brief_facts if brief_facts else 'Not recorded'} |")
+    lines.append(f"| Victim | {victim} |")
+    lines.append(f"| Complainant | {complainant} |")
+    lines.append(f"| Accused | {accused_text} |")
+    lines.append(f"| Investigating Officer | {assigned} |")
+    lines.append("")
+
+    # ── What is NOT in the database (stated explicitly, never invented) ──
+    missing = []
+    if not activity_rows:
+        missing.append("no case activity events (e.g. arrest, chargesheet)")
+    if not order_rows:
+        missing.append("no investigation orders")
+    if not notif_rows:
+        missing.append("no system alerts")
+    if missing:
+        lines.append("**Not recorded in the platform:** " + "; ".join(missing) + ".")
+        lines.append("")
+    lines.append("_Timeline built from platform records only — no events are inferred._")
+
+    return "\n".join(lines)
+
+
+def _financial_intelligence_response(rows, evidence, lang):
+    """Stage 3 — deterministic Suspicious Transaction Report.
+
+    Renders aggregate fraud-family counts plus recently registered
+    case-scoped FIR rows as GFM tables. Aggregate/case-level data only —
+    never individual risk profiles, never inferred transactions.
+    """
+    agg_rows = [r for r in rows if r.get("_kind") == "aggregate"]
+    recent_rows = [r for r in rows if r.get("_kind") == "recent"]
+
+    if not agg_rows:
+        return (
+            "No fraud-type FIR records found within your jurisdiction scope "
+            "in the platform database. The Suspicious Transaction Report is "
+            "built only from recorded FIR data — nothing is inferred."
+        )
+
+    lines = [
+        "**Financial Intelligence — Suspicious Transaction Report**",
+        "",
+        "**Scope:** " + (
+            evidence[0].filters_applied.get("jurisdiction", "state-wide")
+            if evidence else "state-wide"
+        ),
+        "",
+        "**Fraud-family FIR overview (recorded cases only):**",
+        "",
+        "| Crime Type | Total FIRs | Solved | Unresolved |",
+        "|------------|-----------:|-------:|-----------:|",
+    ]
+    for r in agg_rows:
+        lines.append(
+            f"| {r.get('crime_type', 'Unknown')} | {r.get('total', 0)} "
+            f"| {r.get('solved', 0)} | {r.get('unresolved', 0)} |"
+        )
+    lines.append("")
+
+    if recent_rows:
+        lines.append("**Most recently registered fraud-type FIRs:**")
+        lines.append("")
+        lines.append("| Crime No | Crime Type | Station | District | Occurrence Date | Status |")
+        lines.append("|----------|------------|---------|----------|-----------------|--------|")
+        for r in recent_rows:
+            lines.append(
+                f"| {r.get('crime_no', 'N/A')} | {r.get('crime_type', 'N/A')} "
+                f"| {r.get('station') or 'Not recorded'} | {r.get('district') or 'Not recorded'} "
+                f"| {str(r.get('occurrence_date') or 'Not recorded').replace('T', ' ')} "
+                f"| {r.get('status', 'N/A')} |"
+            )
+        lines.append("")
+    else:
+        lines.append("**Most recently registered fraud-type FIRs:** none recorded.")
+        lines.append("")
+
+    lines.append(
+        "_Report built from recorded FIR data only — no individual risk profiles "
+        "are produced and no transactions are inferred._"
+    )
     return "\n".join(lines)
 
 
@@ -283,6 +570,8 @@ def _empty_response(intent, lang):
         Intent.VICTIM_STATS: "victim",
         Intent.STATION_PERFORMANCE: "station",
         Intent.OFFICER_ASSIGNMENT: "case assignment",
+        Intent.CASE_TIMELINE: "case timeline",
+        Intent.FINANCIAL_INTELLIGENCE: "suspicious transaction report",
         Intent.RISK_SCORE: "risk score",
         Intent.PREDICTIVE: "predictive",
         Intent.POLICY_RECOMMENDATIONS: "policy recommendation",
@@ -292,6 +581,8 @@ def _empty_response(intent, lang):
     # Provide specific, actionable guidance based on intent
     guidance = {
         Intent.OFFICER_ASSIGNMENT: "No case assignments found. Try specifying a date range or case number.",
+        Intent.CASE_TIMELINE: "No case timeline found for that crime number in the platform database. Case timelines are built only from recorded FIR data, case activity, investigation orders, and alerts. Verify the crime number and try again.",
+        Intent.FINANCIAL_INTELLIGENCE: "No fraud-type FIR records found within your jurisdiction scope in the platform database. The Suspicious Transaction Report is built only from recorded FIR data — nothing is inferred.",
         Intent.SUSPECT_LOOKUP: "No suspect records found. Try providing a full name or crime number.",
         Intent.CRIME_TRENDS: "No crime trend data available. Try asking about a specific area or time period.",
         Intent.HOTSPOT: "No hotspot data available. Try asking about a specific district or police station.",

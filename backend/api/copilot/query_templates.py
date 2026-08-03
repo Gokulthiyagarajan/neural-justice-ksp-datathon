@@ -64,7 +64,7 @@ TEMPLATES = {
     },
     Intent.OFFICER_ASSIGNMENT: {
         "sql": """
-            SELECT crime_no, crime_type, station, district, status, accused_names
+            SELECT *
             FROM cases
             WHERE crime_no LIKE ? {jurisdiction_filter}
             LIMIT 5

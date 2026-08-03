@@ -12,6 +12,8 @@ class Intent(str, Enum):
     VICTIM_STATS = "victim_stats"
     STATION_PERFORMANCE = "station_performance"
     OFFICER_ASSIGNMENT = "officer_assignment"
+    CASE_TIMELINE = "case_timeline"
+    FINANCIAL_INTELLIGENCE = "financial_intelligence"
     GENERAL_QUERY = "general_query"
     GENERAL_CHAT = "general_chat"
     PREDICTIVE = "predictive"

@@ -175,8 +175,40 @@ function buildRichDetail(
   const rand = seededRandom(seed);
   const r = () => rand();
 
-  const crimeType = fir.crime_head_name || 'Unknown';
-  const stationName = fir.station_name || 'Unknown Station';
+  // The deployed API enriches the FirCase shape; fall back to raw DB
+  // column names too so the page never renders "Unknown"/"N/A" when the
+  // underlying record actually has data.
+  const crimeType =
+    (fir as any).crime_head_name ||
+    (fir as any).crime_head ||
+    (fir as any).crime_type ||
+    'Unknown';
+  const stationName =
+    (fir as any).station_name ||
+    (fir as any).station ||
+    'Unknown Station';
+  const registeredBy =
+    (fir as any).registered_by ||
+    (fir as any).complainant_name ||
+    'N/A';
+  const lat = (fir as any).lat ?? (fir as any).latitude;
+  const lng = (fir as any).lng ?? (fir as any).longitude;
+  const location = lat !== null && lat !== undefined && lat !== 0 && lng
+    ? `${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`
+    : 'N/A';
+
+  // Accused — prefer extra (route state), then API-enriched accused_name,
+  // then raw accused_names JSON string.
+  let accusedName = extra?.accused_name || (fir as any).accused_name;
+  if (!accusedName && (fir as any).accused_names) {
+    try {
+      const parsed = JSON.parse((fir as any).accused_names);
+      if (Array.isArray(parsed) && parsed.length > 0) accusedName = parsed.join(', ');
+    } catch {
+      accusedName = String((fir as any).accused_names).replace(/^\[|\]$/g, '');
+    }
+  }
+  const victimName = extra?.victim_name || (fir as any).victim_name || 'Under Investigation';
 
   const evidenceItems: EvidenceItem[] = [
     { id: 'EV-001', type: 'Document', description: 'Written complaint / statement of complainant', seized_from: 'Complainant', seized_date: fir.occurrence_date || fir.created_at || 'N/A', status: 'in_custody', value: null },
@@ -195,13 +227,13 @@ function buildRichDetail(
   ];
 
   const diary: CaseDiaryEntry[] = [
-    { date: fir.occurrence_date || 'N/A', officer: fir.registered_by || 'IO', entry: 'FIR registered and investigation initiated.', progress: 'On Track' },
+    { date: fir.occurrence_date || 'N/A', officer: registeredBy === 'N/A' ? 'IO' : registeredBy, entry: 'FIR registered and investigation initiated.', progress: 'On Track' },
   ];
 
   const timeline: FIRTimelineEvent[] = events.map((e: any) => ({
     date: e.timestamp ? new Date(e.timestamp).toISOString().slice(0, 10) : fir.occurrence_date || 'N/A',
     event: e.event,
-    officer: e._officer || fir.registered_by || 'IO',
+    officer: e._officer || registeredBy || 'IO',
   }));
 
   const detail: FIRDetailType = {
@@ -209,19 +241,19 @@ function buildRichDetail(
     fir_number: fir.crime_no,
     date: fir.occurrence_date || '',
     crime_type: crimeType,
-    district: extra?.district || '',
+    district: extra?.district || (fir as any).district || '',
     station: stationName,
-    accused_name: extra?.accused_name || 'Under Investigation',
+    accused_name: accusedName || 'Under Investigation',
     accused_id: extra?.accused_id || 'N/A',
-    victim_name: extra?.victim_name || 'Under Investigation',
+    victim_name: victimName,
     status: (fir.status as any) || 'open',
     severity: 'medium' as const,
-    officer_assigned: fir.registered_by || 'N/A',
+    officer_assigned: registeredBy,
     days_open: fir.occurrence_date ? Math.floor((Date.now() - new Date(fir.occurrence_date).getTime()) / (86400000)) : 0,
     linked_cases: extra?.linked_cases ?? 0,
     is_repeat_offender: extra?.is_repeat_offender ?? false,
     description: fir.brief_facts || 'No description available.',
-    location: fir.lat && fir.lng ? `${fir.lat.toFixed(5)}, ${fir.lng.toFixed(5)}` : 'N/A',
+    location,
     rowid: 0,
     accused_age: null,
     accused_gender: null,
@@ -240,7 +272,7 @@ function buildRichDetail(
     linked_case_details: [],
     case_diary: diary,
     court: null,
-    investigation_officers: [fir.registered_by || 'N/A'],
+    investigation_officers: [registeredBy],
     case_category: 'Cognizable',
     modus_operandi: generateMo(crimeType),
     documents: ['Complaint Copy (Form 1)', 'FIR Form (Form 3)', 'Scene of Crime Panchnama', 'Seizure Memo'],

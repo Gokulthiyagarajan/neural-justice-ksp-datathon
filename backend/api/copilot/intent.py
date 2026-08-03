@@ -97,7 +97,33 @@ PATTERNS = [
     (re.compile(r"(\w[\w\s]{0,20})\s+station\s*(?:performance|status|doing)", re.I),
      Intent.STATION_PERFORMANCE, 0.85, {"station": 1}),
 
-    # officer_assignment
+    # case_timeline — roadmap / timeline / what happened / history of a case
+    # (EN + KN). These must outrank officer_assignment for timeline phrasings,
+    # and MUST capture the case_id entity so the handler knows which case.
+    (re.compile(r"road\s*map|roadmap", re.I),
+     Intent.CASE_TIMELINE, 0.93, {}),
+    (re.compile(r"timeline|history\s+of\s+this\s+case|case\s+history|ಕಾಲರೇಖೆ|ಇತಿಹಾಸ|ಟೈಮ್ಲಾಯಿನ್|ಟೈಮ್\s*ಲೈನ್", re.I),
+     Intent.CASE_TIMELINE, 0.92, {}),
+    (re.compile(r"what\s+(?:was\s+)?happened|what\s+happened|what\s+went\s+down|ಏನಾಯಿತು|ಏನು\s+ಆಯ್ತು", re.I),
+     Intent.CASE_TIMELINE, 0.90, {}),
+    (re.compile(r"case\s*(?:timeline|roadmap|history|events|sequence|chronology)", re.I),
+     Intent.CASE_TIMELINE, 0.92, {}),
+    # Timeline keyword near a case ID — capture the ID (single capture group 1).
+    # Lazy .{0,40}? so the ID is not truncated by greedy backtracking.
+    (re.compile(r"(?:roadmap|timeline|what\s+happened|history|events?|summary|status|details|ಕಾಲರೇಖೆ|ಇತಿಹಾಸ|ಟೈಮ್ಲಾಯಿನ್).{0,40}?([A-Z]{1,4}[-/]?\d{4}[-/]?\d{1,10}|[0-9]{10,20})", re.I),
+     Intent.CASE_TIMELINE, 0.91, {"case_id": 1}),
+    # Case ID first, timeline keyword after — capture the ID (group 1)
+    (re.compile(r"([A-Z]{1,4}[-/]?\d{4}[-/]?\d{1,10}|[0-9]{10,20}).{0,40}?(?:roadmap|timeline|what\s+happened|history|events?|summary|details|ಕಾಲರೇಖೆ|ಇತಿಹಾಸ|ಟೈಮ್ಲಾಯಿನ್)", re.I),
+     Intent.CASE_TIMELINE, 0.91, {"case_id": 1}),
+    (re.compile(r"(?:roadmap|timeline|what\s+happened|history|events?|summary).{0,40}?(?:case|fir|crime|ಕೇಸ್)", re.I),
+     Intent.CASE_TIMELINE, 0.88, {}),
+
+    # financial_intelligence — suspicious transaction report (EN + KN).
+    # Bounded, data-only intent: never reaches the LLM / MOCK_AI guard.
+    (re.compile(r"financial\s*intelligence|suspicious\s*transaction|money\s*trail|anomalous\s*transaction|ಹಣಕಾಸು\s*ಗುಪ್ತಚರ|ಅನುಮಾನಾಸ್ಪದ\s*ವಹಿವಾಟು|ವಹಿವಾಟು\s*ವರದಿ", re.I),
+     Intent.FINANCIAL_INTELLIGENCE, 0.92, {}),
+
+    # officer_assignment / case lookup
     (re.compile(r"officer\s*assignment|who.*assigned|assigned\s*officer|ನೇಮಕ", re.I),
      Intent.OFFICER_ASSIGNMENT, 0.85, {}),
     (re.compile(r"(?:which|who)\s+officer.*(?:case|fir)", re.I),
@@ -110,6 +136,14 @@ PATTERNS = [
      Intent.OFFICER_ASSIGNMENT, 0.80, {}),
     (re.compile(r"cases?.*(?:yesterday|today|this\s*week|last\s*week)", re.I),
      Intent.OFFICER_ASSIGNMENT, 0.75, {}),
+    # Case IDs in CR-YYYY-NNNNN / 400090023202400001 format — match anywhere
+    # (user often leads with the case number, e.g. "CR-2026-49637 give me the roadmap")
+    (re.compile(r"\b([A-Z]{1,4}[-/]?\d{4}[-/]?\d{1,10}|[0-9]{10,20})\b", re.I),
+     Intent.OFFICER_ASSIGNMENT, 0.85, {"case_id": 1}),
+    (re.compile(r"(?:case|fir)\s*(?:roadmap|summary|status|details|what|timeline)", re.I),
+     Intent.OFFICER_ASSIGNMENT, 0.80, {}),
+    (re.compile(r"(?:roadmap|summary|status|details|timeline).*(?:case|fir)", re.I),
+     Intent.OFFICER_ASSIGNMENT, 0.80, {}),
 ]
 
 

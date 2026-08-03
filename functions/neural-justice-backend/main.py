@@ -1093,6 +1093,36 @@ def _handle_ai_copilot_chat(body: dict, request=None):
                 "confidence": 1.0,
             })
 
+    # ── Case timeline handler (bounded, never LLM — mirrors /api/copilot/chat) ──
+    if last_user_msg and re.search(
+        r"road\s*map|roadmap|timeline|history\s+of\s+this\s+case|case\s+history|"
+        r"what\s+(?:was\s+)?happened|what\s+happened|ಕಾಲರೇಖೆ|ಇತಿಹಾಸ|ಟೈಮ್ಲಾಯಿನ್",
+        last_user_msg, re.I
+    ):
+        case_id = _extract_case_id(last_user_msg)
+        if not case_id:
+            return _json_response({
+                "response": (
+                    "I can build a case timeline, but I need the crime number. "
+                    "Example: 'give me a timeline for CR-2026-49637'."
+                ),
+                "confidence": 0.0,
+                "clarification_needed": True,
+            })
+        user_info = _get_auth_user_or_demo(request) or {}
+        evidence, rows = _fetch_case_timeline(
+            case_id,
+            user_info.get("station_id"),
+            user_info.get("district_id"),
+        )
+        return _json_response({
+            "response": _format_case_timeline(rows),
+            "confidence": 1.0,
+            "intent_detected": "case_timeline",
+            "query_evidence": evidence,
+            "clarification_needed": False,
+        })
+
     # Get real data context
     data = _get_data_context()
     data_summary = f"""
@@ -1101,6 +1131,19 @@ KSP Database Context:
 - {len(data['top_stations'])} active stations
 - Crime types: {', '.join([c['crime_type'] for c in data['crime_distribution'][:5]])}
 """
+
+    # Master-prompt rule: MOCK_AI=true is an explicit ERROR STATE, never a
+    # silent mock fallback. Grounded data handlers above still work.
+    if os.environ.get("MOCK_AI", "false").lower() in ("1", "true", "yes"):
+        return _json_response({
+            "response": (
+                "AI generation is currently unavailable: the deployment is in "
+                "MOCK_AI=true state (no real model configured). Set MOCK_AI=false "
+                "and configure QuickML credentials to enable AI responses."
+            ),
+            "confidence": 0.0,
+            "ai_state": "mock_disabled_error",
+        }, 503)
 
     system_msg = {"role": "system", "content": f"You are Neural Justice AI, a police intelligence copilot for Karnataka State Police. Respond in {'Kannada (ಕನ್ನಡ)' if lang == 'kn' else 'English'}. Use real data:\n{data_summary}"}
     full_messages = [system_msg] + messages
@@ -1316,6 +1359,20 @@ _COPILOT_PATTERNS = [
     (re.compile(r"officer\s*assignment|who.*assigned|assigned\s*officer|\u0ca8\u0cc7\u0cae\u0c95", re.I), "officer_assignment", 0.85),
     (re.compile(r"assigned\s*cases?|cases?\s*assigned|my\s*cases?|my\s*assigned", re.I), "officer_assignment", 0.85),
     (re.compile(r"what.*cases?.*(?:for\s+me|assigned\s+to)", re.I), "officer_assignment", 0.80),
+
+    # case_timeline — roadmap / timeline / what happened / history (EN + KN)
+    # Placed after officer_assignment but with higher base confidence so
+    # timeline phrasings outrank generic case lookups.
+    (re.compile(r"road\s*map|roadmap", re.I), "case_timeline", 0.93),
+    (re.compile(r"timeline|history\s+of\s+this\s+case|case\s+history|\u0c95\u0cbe\u0cb2\u0cb0\u0cc7\u0c96\u0cc6|\u0c87\u0ca4\u0cbf\u0cb9\u0cbe\u0cb8|\u0c9f\u0cc8\u0cae\u0ccd\u0cb2\u0cbe\u0caf\u0cbf\u0ca8\u0ccd|\u0c9f\u0cc8\u0cae\u0ccd\u200c\u0cb2\u0cc8\u0ca8\u0ccd", re.I), "case_timeline", 0.92),
+    (re.compile(r"what\s+(?:was\s+)?happened|what\s+happened|what\s+went\s+down|\u0c8f\u0ca8\u0cbe\u0caf\u0cbf\u0ca4\u0cc1|\u0c8f\u0ca8\u0cc1\s+\u0c86\u0caf\u0ccd\u0ca4\u0cc1", re.I), "case_timeline", 0.90),
+    (re.compile(r"case\s*(?:timeline|roadmap|history|events|sequence|chronology)", re.I), "case_timeline", 0.92),
+    (re.compile(r"(?:roadmap|timeline|what\s+happened|history|events?|summary|status|details).{0,40}?([A-Z]{1,4}[-/]?\d{4}[-/]?\d{1,10}|[0-9]{10,20})", re.I), "case_timeline", 0.91),
+    (re.compile(r"([A-Z]{1,4}[-/]?\d{4}[-/]?\d{1,10}|[0-9]{10,20}).{0,40}?(?:roadmap|timeline|what\s+happened|history|events?|summary|details)", re.I), "case_timeline", 0.91),
+
+    # financial_intelligence — suspicious transaction report (EN + KN).
+    # Bounded, data-only intent: never reaches the LLM / MOCK_AI guard.
+    (re.compile(r"financial\s*intelligence|suspicious\s*transaction|money\s*trail|anomalous\s*transaction|ಹಣಕಾಸು\s*ಗುಪ್ತಚರ|ಅನುಮಾನಾಸ್ಪದ\s*ವಹಿವಾಟು|ವಹಿವಾಟು\s*ವರದಿ", re.I), "financial_intelligence", 0.92),
 
     # risk_score
     (re.compile(r"risk\s*score|risk\s*rating|risk\s*level|ಅಪಾಯ.*ಸ್ಕೋರ್", re.I), "risk_score", 0.85),
@@ -1667,6 +1724,404 @@ def _format_policy_recommendations(rows):
     return "\n".join(lines)
 
 
+def _fetch_case_timeline(case_id: str, station_id=None, district_id=None):
+    """Stage 2 — multi-source joined fetch for case timeline (deployed mirror).
+
+    Schema-verifies each table, applies station/district jurisdiction to the
+    master case lookup, and refuses to return related records for cases that
+    fall outside the caller's jurisdiction (RBAC gate).
+
+    Returns (evidence_list, merged_rows) where each row is tagged _source.
+    """
+    evidence = []
+    merged = []
+    like = f"%{case_id.strip().upper()}%"
+
+    try:
+        conn = get_db()
+        try:
+            def _cols(table):
+                return [r[1] for r in conn.execute(f"PRAGMA table_info({table})")]
+
+            # 1. Master case record (jurisdiction-scoped)
+            cases_cols = _cols("cases")
+            if "crime_no" not in cases_cols:
+                evidence.append({"source_table": "cases", "row_count": 0,
+                                 "filters_applied": {"error": "cases.crime_no column missing"}})
+                return evidence, []
+            scope_sql = ""
+            if station_id:
+                scope_sql = " AND station IN (SELECT name FROM stations WHERE id = ?)"
+            elif district_id:
+                scope_sql = " AND district IN (SELECT name FROM districts WHERE id = ?)"
+            params = [like] + ([int(station_id)] if station_id else [int(district_id)] if district_id else [])
+            case_rows = [dict(r) for r in conn.execute(
+                f"SELECT * FROM cases WHERE crime_no LIKE ?{scope_sql}", params).fetchall()]
+            evidence.append({"source_table": "cases", "row_count": len(case_rows),
+                             "filters_applied": {"crime_no_like": like}})
+            for r in case_rows:
+                r["_source"] = "cases"
+                merged.append(r)
+
+            # RBAC gate — out-of-scope case: never leak related records
+            if (station_id or district_id) and not case_rows:
+                evidence.append({"source_table": "activity", "row_count": 0,
+                                 "filters_applied": {"blocked_by_jurisdiction": "station" if station_id else "district"}})
+                return evidence, merged
+
+            # 2. Activity events
+            if "entity_id" in _cols("activity"):
+                act_rows = [dict(r) for r in conn.execute(
+                    "SELECT * FROM activity WHERE entity_id LIKE ?", (like,)).fetchall()]
+                evidence.append({"source_table": "activity", "row_count": len(act_rows),
+                                 "filters_applied": {"entity_id_like": like}})
+                for r in act_rows:
+                    r["_source"] = "activity"
+                    merged.append(r)
+            else:
+                evidence.append({"source_table": "activity", "row_count": 0,
+                                 "filters_applied": {"error": "activity.entity_id column missing"}})
+
+            # 3. Orders referencing the case
+            if "title" in _cols("orders"):
+                ord_rows = [dict(r) for r in conn.execute(
+                    "SELECT * FROM orders WHERE title LIKE ? OR description LIKE ?", (like, like)).fetchall()]
+                evidence.append({"source_table": "orders", "row_count": len(ord_rows),
+                                 "filters_applied": {"title_or_description_like": like}})
+                for r in ord_rows:
+                    r["_source"] = "orders"
+                    merged.append(r)
+            else:
+                evidence.append({"source_table": "orders", "row_count": 0,
+                                 "filters_applied": {"error": "orders table missing"}})
+
+            # 4. Notifications referencing the case
+            if "title" in _cols("notifications"):
+                n_rows = [dict(r) for r in conn.execute(
+                    "SELECT * FROM notifications WHERE title LIKE ? OR message LIKE ?", (like, like)).fetchall()]
+                evidence.append({"source_table": "notifications", "row_count": len(n_rows),
+                                 "filters_applied": {"title_or_message_like": like}})
+                for r in n_rows:
+                    r["_source"] = "notifications"
+                    merged.append(r)
+            else:
+                evidence.append({"source_table": "notifications", "row_count": 0,
+                                 "filters_applied": {"error": "notifications table missing"}})
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.error("Timeline fetch failed: %s", e)
+        evidence.append({"source_table": "cases", "row_count": 0,
+                         "filters_applied": {"error": str(e)[:200]}})
+    return evidence, merged
+
+
+def _format_case_timeline(rows):
+    """Stage 3 — deterministic, factual chronology (deployed mirror).
+
+    Rendered as GFM tables so the frontend Markdown renderer displays a
+    real HTML table. Every cell is grounded in a real column value; absent
+    data is stated as "Not recorded". Never invents events, never predicts,
+    never characterizes individuals.
+    """
+    if not rows:
+        return (
+            "No case timeline found for that crime number in the platform database. "
+            "Case timelines can only be built from recorded FIR data, case activity, "
+            "investigation orders, and alerts. Verify the crime number and try again."
+        )
+
+    case_rows = [r for r in rows if r.get("_source") == "cases"]
+    if not case_rows:
+        return (
+            "No case record found for that crime number within your jurisdiction. "
+            "Verify the crime number and your access scope, then try again."
+        )
+    case_row = case_rows[0]
+    activity_rows = [r for r in rows if r.get("_source") == "activity"]
+    order_rows = [r for r in rows if r.get("_source") == "orders"]
+    notif_rows = [r for r in rows if r.get("_source") == "notifications"]
+
+    crime_no = case_row.get("crime_no", "N/A")
+    crime_type = case_row.get("crime_type") or case_row.get("crime_head") or "N/A"
+    status = case_row.get("status", "N/A")
+    station = case_row.get("station", "N/A")
+    district = case_row.get("district", "N/A")
+
+    lines = [
+        f"**Case Timeline — {crime_no}**",
+        "",
+        f"**Crime Type:** {crime_type}  |  **Status:** {status}  |  **Station:** {station} ({district})",
+        "",
+    ]
+
+    # ── Timeline table (chronological, one row per recorded event) ──
+    entries = []  # (sort_key, date_label, event_label, details)
+    occurrence = case_row.get("occurrence_date") or case_row.get("date_reported")
+    filing = case_row.get("filing_date")
+    if occurrence:
+        entries.append((occurrence, occurrence, "Incident reported", ""))
+    if filing:
+        entries.append((filing, filing, "FIR filed", ""))
+
+    for a in activity_rows:
+        ts = a.get("timestamp") or a.get("created_at") or ""
+        action = a.get("action", "Case update")
+        actor = a.get("user_name", "")
+        desc = a.get("description", "")
+        label = action.replace("_", " ").strip().title() or "Case update"
+        details = desc or ""
+        if actor:
+            details = (details + " \u2014 by " + actor).strip()
+        entries.append((ts, ts, label, details))
+
+    for o in order_rows:
+        ts = o.get("created_at") or ""
+        num = o.get("order_number", "")
+        title = o.get("title", "Investigation order")
+        priority = o.get("priority", "")
+        issued_by = o.get("issued_by", "")
+        label = f"Order {num}".strip() if num else "Order"
+        details = title or ""
+        if priority:
+            details += f" (priority: {priority})"
+        if issued_by:
+            details += f" \u2014 issued by {issued_by}"
+        entries.append((ts, ts, label, details))
+
+    for n in notif_rows:
+        ts = n.get("created_at") or ""
+        title = n.get("title", "Alert")
+        severity = n.get("severity", "")
+        details = title or ""
+        if severity:
+            details += f" (severity: {severity})"
+        entries.append((ts, ts, "Alert", details))
+
+    entries.sort(key=lambda e: (str(e[0] or ""), e[2], e[3]))
+
+    if entries:
+        lines.append("**Timeline of recorded events:**")
+        lines.append("")
+        lines.append("| Date/Time | Event | Details |")
+        lines.append("|-----------|-------|---------|")
+        dash = "\u2014"
+        for _, date_label, label, details in entries:
+            dl = date_label.replace("T", " ") if date_label else "Not recorded"
+            lines.append(f"| {dl} | {label} | {details if details else dash} |")
+    else:
+        lines.append("**Timeline:** No dated events are recorded for this case in the database.")
+    lines.append("")
+
+    # ── Case facts table (grounded only) ──
+    brief_facts = case_row.get("brief_facts") or case_row.get("description") or case_row.get("facts")
+    victim = case_row.get("victim_name") or "Not recorded"
+    complainant = case_row.get("complainant_name") or "Not recorded"
+    accused = case_row.get("accused_names")
+    if accused:
+        try:
+            names = json.loads(accused) if isinstance(accused, str) and accused.startswith("[") else accused
+            if isinstance(names, list):
+                accused_text = ", ".join(names) if names else "Not recorded"
+            else:
+                accused_text = str(accused)
+        except Exception:
+            accused_text = str(accused).strip("[]") or "Not recorded"
+    else:
+        accused_text = "Not recorded"
+    assigned = case_row.get("assigned_to") or "Not recorded"
+
+    lines.append("**Case facts (from FIR record):**")
+    lines.append("")
+    lines.append("| Field | Value |")
+    lines.append("|-------|-------|")
+    lines.append(f"| What happened | {brief_facts if brief_facts else 'Not recorded'} |")
+    lines.append(f"| Victim | {victim} |")
+    lines.append(f"| Complainant | {complainant} |")
+    lines.append(f"| Accused | {accused_text} |")
+    lines.append(f"| Investigating Officer | {assigned} |")
+    lines.append("")
+
+    # ── Explicitly-not-recorded section ──
+    missing = []
+    if not activity_rows:
+        missing.append("no case activity events (e.g. arrest, chargesheet)")
+    if not order_rows:
+        missing.append("no investigation orders")
+    if not notif_rows:
+        missing.append("no system alerts")
+    if missing:
+        lines.append("**Not recorded in the platform:** " + "; ".join(missing) + ".")
+        lines.append("")
+    lines.append("_Timeline built from platform records only — no events are inferred._")
+
+    return "\n".join(lines)
+
+
+# ── Financial Intelligence (Suspicious Transaction Report) ─────────────
+# Bounded, data-only intent: aggregate fraud-family FIR statistics plus
+# recently registered case-scoped rows. Never produces individual risk
+# profiles, never fabricates transactions.
+
+_FRAUD_FAMILY_TYPES = [
+    "Criminal Breach of Trust (Financial)",
+    "Cheating & Fraud",
+    "Online Financial Fraud",
+    "Identity Theft",
+    "Criminal Breach of Trust",
+    "Cyber Fraud",
+    "Cheating",
+    "Fraud",
+]
+
+
+def _format_financial_intelligence(agg_rows, recent_rows, scope_label):
+    """Stage 3 — deterministic, factual Suspicious Transaction Report.
+
+    Aggregate fraud-family counts and recently registered case-scoped FIR
+    rows only. No person-level scores, no inferred transactions.
+    """
+    if not agg_rows:
+        return (
+            "No fraud-type FIR records found within your jurisdiction scope "
+            "in the platform database. The Suspicious Transaction Report is "
+            "built only from recorded FIR data — nothing is inferred."
+        )
+
+    lines = [
+        "**Financial Intelligence — Suspicious Transaction Report**",
+        "",
+        f"**Scope:** {scope_label}",
+        "",
+        "**Fraud-family FIR overview (recorded cases only):**",
+        "",
+        "| Crime Type | Total FIRs | Solved | Unresolved |",
+        "|------------|-----------:|-------:|-----------:|",
+    ]
+    for r in agg_rows:
+        lines.append(
+            f"| {r.get('crime_type', 'Unknown')} | {r.get('total', 0)} "
+            f"| {r.get('solved', 0)} | {r.get('unresolved', 0)} |"
+        )
+    lines.append("")
+
+    if recent_rows:
+        lines.append("**Most recently registered fraud-type FIRs:**")
+        lines.append("")
+        lines.append("| Crime No | Crime Type | Station | District | Occurrence Date | Status |")
+        lines.append("|----------|------------|---------|----------|-----------------|--------|")
+        for r in recent_rows:
+            lines.append(
+                f"| {r.get('crime_no', 'N/A')} | {r.get('crime_type', 'N/A')} "
+                f"| {r.get('station') or 'Not recorded'} | {r.get('district') or 'Not recorded'} "
+                f"| {str(r.get('occurrence_date') or 'Not recorded').replace('T', ' ')} "
+                f"| {r.get('status', 'N/A')} |"
+            )
+        lines.append("")
+    else:
+        lines.append("**Most recently registered fraud-type FIRs:** none recorded.")
+        lines.append("")
+
+    lines.append(
+        "_Report built from recorded FIR data only — no individual risk profiles "
+        "are produced and no transactions are inferred._"
+    )
+    return "\n".join(lines)
+
+
+def _fetch_financial_intelligence(user):
+    """Stage 2 — fraud-family FIR aggregates for the Suspicious Transaction Report.
+
+    Jurisdiction-scoped (station → stations lookup, district → districts
+    lookup, fail-closed if unresolvable). Returns (reply_text, evidence).
+    """
+    evidence = []
+    station_id = user.get("station_id")
+    district_id = user.get("district_id")
+
+    try:
+        conn = get_db()
+        try:
+            def _cols(table):
+                return [r[1] for r in conn.execute(f"PRAGMA table_info({table})")]
+
+            cases_cols = _cols("cases")
+            if "crime_type" not in cases_cols:
+                evidence.append({"source_table": "cases", "row_count": 0,
+                                 "filters_applied": {"error": "cases.crime_type column missing"}})
+                return _format_financial_intelligence([], [], "Unresolved jurisdiction"), evidence
+
+            # Schema-adaptive: deployed DB uses is_solved + occurrence_date/filing_date;
+            # never query a missing column.
+            if "is_solved" in cases_cols:
+                solved_expr = "COALESCE(SUM(CASE WHEN is_solved = 1 THEN 1 ELSE 0 END), 0)"
+            else:
+                solved_expr = "COALESCE(SUM(CASE WHEN status LIKE '%closed%' OR status LIKE '%solved%' THEN 1 ELSE 0 END), 0)"
+            if "occurrence_date" in cases_cols and "filing_date" in cases_cols:
+                order_expr = "COALESCE(occurrence_date, filing_date)"
+                date_cols = "occurrence_date, filing_date"
+            elif "date_reported" in cases_cols:
+                order_expr = "date_reported"
+                date_cols = "date_reported"
+            else:
+                order_expr = "id"
+                date_cols = ""
+
+            scope_sql = ""
+            scope_label = "State-wide (all districts)"
+            params = []
+            if station_id:
+                row = conn.execute("SELECT name FROM stations WHERE id = ?", (int(station_id),)).fetchone()
+                if not row:
+                    evidence.append({"source_table": "stations", "row_count": 0,
+                                     "filters_applied": {"error": "station not found"}})
+                    return _format_financial_intelligence([], [], "Unresolved jurisdiction"), evidence
+                scope_sql = " AND station = ?"
+                params = [row[0]]
+                scope_label = f"Station: {row[0]}"
+            elif district_id:
+                row = conn.execute("SELECT name FROM districts WHERE id = ?", (int(district_id),)).fetchone()
+                if not row:
+                    evidence.append({"source_table": "districts", "row_count": 0,
+                                     "filters_applied": {"error": "district not found or districts table unavailable"}})
+                    return _format_financial_intelligence([], [], "Unresolved jurisdiction"), evidence
+                scope_sql = " AND district = ?"
+                params = [row[0]]
+                scope_label = f"District: {row[0]}"
+
+            placeholders = ", ".join("?" * len(_FRAUD_FAMILY_TYPES))
+            base_where = f"crime_type IN ({placeholders})"
+            filters = {"crime_types": _FRAUD_FAMILY_TYPES, "scope": scope_label}
+
+            agg_sql = (
+                "SELECT crime_type, COUNT(*) AS total, "
+                f"{solved_expr} AS solved "
+                f"FROM cases WHERE {base_where}{scope_sql} "
+                "GROUP BY crime_type ORDER BY total DESC"
+            )
+            agg_rows = [dict(r) for r in conn.execute(agg_sql, params + list(_FRAUD_FAMILY_TYPES)).fetchall()]
+            for r in agg_rows:
+                r["unresolved"] = max(int(r.get("total", 0)) - int(r.get("solved", 0)), 0)
+            evidence.append({"source_table": "cases", "row_count": sum(r["total"] for r in agg_rows),
+                             "filters_applied": filters})
+
+            recent_sql = (
+                "SELECT crime_no, crime_type, station, district, status"
+                f"{', ' + date_cols if date_cols else ''} "
+                f"FROM cases WHERE {base_where}{scope_sql} "
+                f"ORDER BY {order_expr} DESC LIMIT 8"
+            )
+            recent_rows = [dict(r) for r in conn.execute(recent_sql, params + list(_FRAUD_FAMILY_TYPES)).fetchall()]
+
+            return _format_financial_intelligence(agg_rows, recent_rows, scope_label), evidence
+        finally:
+            conn.close()
+    except Exception as e:
+        evidence.append({"source_table": "cases", "row_count": 0,
+                         "filters_applied": {"error": str(e)[:200]}})
+        return _format_financial_intelligence([], [], "Unresolved jurisdiction"), evidence
+
+
 _COPILOT_FORMATTERS = {
     "crime_trends": _format_crime_trends,
     "hotspot": _format_hotspot,
@@ -1677,6 +2132,7 @@ _COPILOT_FORMATTERS = {
     "risk_score": _format_risk_score,
     "predictive": _format_predictive,
     "policy_recommendations": _format_policy_recommendations,
+    "case_timeline": _format_case_timeline,
 }
 
 
@@ -1705,6 +2161,12 @@ RULES:
 - Be direct, professional, and actionable.
 """
 
+def _extract_case_id(text: str) -> str:
+    """Extract a crime/case number from free text (mirror of local intent.py)."""
+    m = re.search(r"([A-Z]{1,4}[-/]?\d{4}[-/]?\d{1,10}|[0-9]{10,20})", text or "", re.I)
+    return m.group(1).upper() if m else ""
+
+
 def _handle_copilot_chat(body: dict, request=None):
     """POST /api/copilot/chat — intelligent copilot with intent classification."""
     user = _get_auth_user_or_demo(request)
@@ -1723,9 +2185,75 @@ def _handle_copilot_chat(body: dict, request=None):
     # Step 2: If it's a data intent, run SQL query and format response
     data_intents = {"crime_trends", "hotspot", "suspect_lookup", "victim_stats",
                     "station_performance", "officer_assignment", "risk_score", "predictive",
-                    "policy_recommendations"}
+                    "policy_recommendations", "case_timeline", "financial_intelligence"}
 
     if intent in data_intents and confidence >= _CONFIDENCE_THRESHOLD:
+        # ── Case timeline: multi-source joined fetch (bounded, never LLM) ──
+        if intent == "case_timeline":
+            case_id = _extract_case_id(message)
+            station_id = user.get("station_id")
+            district_id = user.get("district_id")
+            if not case_id:
+                return _json_response({
+                    "session_id": f"sess-{uuid.uuid4().hex[:12]}",
+                    "reply_text": (
+                        "I can build a case timeline, but I need the crime number. "
+                        "Example: 'give me a timeline for CR-2026-49637'."
+                    ),
+                    "reply_language": language,
+                    "intent_detected": intent,
+                    "classification_confidence": round(confidence, 2),
+                    "classification_tier": "rule_based",
+                    "query_evidence": [],
+                    "clarification_needed": True,
+                    "clarification_prompt": "Provide the crime/case number.",
+                })
+            evidence, rows = _fetch_case_timeline(case_id, station_id, district_id)
+            reply_text = _format_case_timeline(rows)
+            return _json_response({
+                "session_id": f"sess-{uuid.uuid4().hex[:12]}",
+                "reply_text": reply_text,
+                "reply_language": language,
+                "intent_detected": intent,
+                "classification_confidence": round(confidence, 2),
+                "classification_tier": "rule_based",
+                "query_evidence": evidence,
+                "clarification_needed": False,
+                "clarification_prompt": None,
+            })
+
+        # ── Financial intelligence: fraud-family FIR aggregates (bounded, never LLM) ──
+        if intent == "financial_intelligence":
+            # Role gate: this report is a state-level command feature.
+            roles = user.get("roles") or []
+            if "SUPER_ADMIN" not in roles:
+                return _json_response({
+                    "session_id": f"sess-{uuid.uuid4().hex[:12]}",
+                    "reply_text": (
+                        "The Financial Intelligence — Suspicious Transaction Report is a "
+                        "state-level command feature. You do not have permission to view it."
+                    ),
+                    "reply_language": language,
+                    "intent_detected": intent,
+                    "classification_confidence": round(confidence, 2),
+                    "classification_tier": "rule_based",
+                    "query_evidence": [],
+                    "clarification_needed": False,
+                    "clarification_prompt": None,
+                })
+            reply_text, fin_evidence = _fetch_financial_intelligence(user)
+            return _json_response({
+                "session_id": f"sess-{uuid.uuid4().hex[:12]}",
+                "reply_text": reply_text,
+                "reply_language": language,
+                "intent_detected": intent,
+                "classification_confidence": round(confidence, 2),
+                "classification_tier": "rule_based",
+                "query_evidence": fin_evidence,
+                "clarification_needed": False,
+                "clarification_prompt": None,
+            })
+
         query = _COPILOT_QUERIES.get(intent, "")
         if query:
             try:
@@ -1790,6 +2318,28 @@ def _handle_copilot_chat(body: dict, request=None):
         })
 
     # Step 4: General chat — use QuickML with platform context
+    # Master-prompt rule: MOCK_AI=true is an explicit ERROR STATE, never a
+    # silent mock fallback. Surface it so operators fix config.
+    if os.environ.get("MOCK_AI", "false").lower() in ("1", "true", "yes"):
+        return _json_response({
+            "session_id": f"sess-{uuid.uuid4().hex[:12]}",
+            "reply_text": (
+                "AI generation is currently unavailable: the deployment is in "
+                "MOCK_AI=true state (no real model configured). Set MOCK_AI=false "
+                "and configure QuickML credentials to enable AI responses. "
+                "Grounded data queries (trends, cases, timelines, hotspots) "
+                "continue to work."
+            ),
+            "reply_language": language,
+            "intent_detected": intent,
+            "classification_confidence": round(confidence, 2),
+            "classification_tier": "rule_based" if confidence >= _CONFIDENCE_THRESHOLD else "llm_fallback",
+            "query_evidence": [],
+            "clarification_needed": False,
+            "clarification_prompt": None,
+            "ai_state": "mock_disabled_error",
+        }, 503)
+
     messages = [
         {"role": "system", "content": _COPILOT_PLATFORM_CONTEXT},
         {"role": "user", "content": message},
@@ -2374,7 +2924,52 @@ def handler(request=None, response=None):
                 try:
                     if len(parts) == 4:  # /api/firs/{crime_no}
                         row = conn.execute("SELECT * FROM cases WHERE crime_no=?", (crime_no,)).fetchone()
-                        return _json_response(dict(row) if row else {})
+                        if not row:
+                            return _json_response({})
+                        r = dict(row)
+                        # Frontend expects the enriched FirCase shape —
+                        # map DB columns to the fields FIRDetailPage reads.
+                        try:
+                            accused_list = json.loads(r.get("accused_names") or "[]")
+                            accused_name = ", ".join(accused_list) if isinstance(accused_list, list) and accused_list else (r.get("accused_names") or "Not recorded")
+                        except Exception:
+                            accused_name = (r.get("accused_names") or "").strip("[]") or "Not recorded"
+                        # Registered By = officer who registered the case (from activity log)
+                        reg_row = conn.execute(
+                            "SELECT user_name FROM activity WHERE entity_id=? AND action='case_registered' "
+                            "AND user_name IS NOT NULL AND user_name != '' LIMIT 1",
+                            (crime_no,),
+                        ).fetchone()
+                        registered_by = reg_row["user_name"] if reg_row else ""
+                        return _json_response({
+                            "crime_no": r.get("crime_no", ""),
+                            "crime_type": r.get("crime_type") or r.get("crime_head") or "Unknown",
+                            "crime_head_name": r.get("crime_head") or r.get("crime_type") or "Unknown",
+                            "station": r.get("station") or "Unknown Station",
+                            "station_name": r.get("station") or "Unknown Station",
+                            "station_id": r.get("station_id"),
+                            "district": r.get("district") or "",
+                            "registered_by": registered_by or "N/A",
+                            "occurrence_date": r.get("occurrence_date") or "",
+                            "occurrence_time": r.get("occurrence_time") or "",
+                            "filing_date": r.get("filing_date") or "",
+                            "lat": r.get("latitude"),
+                            "lng": r.get("longitude"),
+                            "brief_facts": r.get("brief_facts") or "",
+                            "status": r.get("status") or "open",
+                            "is_solved": r.get("is_solved"),
+                            "fir_type": r.get("fir_type") or "",
+                            "created_at": r.get("created_at") or "",
+                            "updated_at": r.get("updated_at") or "",
+                            "accused_names": r.get("accused_names") or "",
+                            "accused_name": accused_name,
+                            "victim_name": r.get("victim_name") or "Not recorded",
+                            "complainant_name": r.get("complainant_name") or "Not recorded",
+                            "num_accused": r.get("num_accused"),
+                            "crime_head": r.get("crime_head") or "",
+                            "latitude": r.get("latitude"),
+                            "longitude": r.get("longitude"),
+                        })
                     elif len(parts) == 5 and parts[4] == "timeline":  # /api/firs/{crime_no}/timeline
                         row = conn.execute("SELECT crime_no, status, occurrence_date, filing_date, station FROM cases WHERE crime_no=?", (crime_no,)).fetchone()
                         if row:

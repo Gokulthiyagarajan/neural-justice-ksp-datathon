@@ -13,7 +13,7 @@ from fastapi.responses import Response
 from backend.api.copilot.models import ChatRequest, ChatResponse, Intent
 from backend.api.copilot.auth import get_current_user, get_jurisdiction_scope, CurrentUser, JurisdictionScope
 from backend.api.copilot.intent import classify_intent
-from backend.api.copilot.executor import execute_intent_query
+from backend.api.copilot.executor import execute_intent_query, execute_case_timeline_query, execute_financial_intelligence_query
 from backend.api.copilot.response import generate_response
 from backend.api.copilot.chat_pipeline import run_chat_pipeline
 from backend.api.copilot.datastore import DataStore, get_datastore
@@ -79,20 +79,30 @@ async def chat(
     # For predictive queries, fetch crime trends data first
     if intent == Intent.PREDICTIVE:
         try:
-            from backend.api.copilot.query_templates import QUERY_TEMPLATES
+            from backend.api.copilot.query_templates import TEMPLATES
             from backend.api.copilot.executor import _build_jurisdiction_filter
             
             # Get crime trends data for predictions
-            template = QUERY_TEMPLATES.get(Intent.CRIME_TRENDS, {})
+            template = TEMPLATES.get(Intent.CRIME_TRENDS, {})
             sql = template.get("sql", "")
             if sql:
-                jurisdiction_filter = _build_jurisdiction_scope(scope)
+                jurisdiction_filter = _build_jurisdiction_filter(scope)
                 sql = sql.replace("{jurisdiction_filter}", jurisdiction_filter)
                 cursor = datastore.execute(sql)
                 rows = [dict(zip([desc[0] for desc in cursor.description], row)) for row in cursor.fetchall()]
                 evidence = [QueryEvidence(source_table="cases", row_count=len(rows))]
         except Exception as e:
             logger.warning("Predictive data fetch failed: %s", str(e)[:100])
+    elif intent == Intent.CASE_TIMELINE:
+        try:
+            evidence, rows = execute_case_timeline_query(entities, scope, datastore)
+        except Exception as e:
+            logger.warning("Timeline evidence gathering failed: %s", str(e)[:100])
+    elif intent == Intent.FINANCIAL_INTELLIGENCE:
+        try:
+            evidence, rows = execute_financial_intelligence_query(scope, datastore)
+        except Exception as e:
+            logger.warning("Financial intelligence evidence gathering failed: %s", str(e)[:100])
     elif intent not in (Intent.GENERAL_CHAT, Intent.GENERAL_QUERY):
         try:
             evidence, rows = execute_intent_query(intent, entities, scope, datastore)
@@ -105,6 +115,23 @@ async def chat(
         # Store and return immediately — no LLM needed for data queries
         if msg_lang == "kn":
             reply_text = await translate_to_kannada(reply_text)
+        session_store.add_message(session_id, "assistant", reply_text, msg_lang, intent=intent.value)
+        return ChatResponse(
+            session_id=session_id,
+            reply_text=reply_text,
+            reply_language=msg_lang,
+            intent_detected=intent,
+            classification_confidence=confidence,
+            classification_tier=tier,
+            query_evidence=evidence,
+            clarification_needed=False,
+            clarification_prompt=None,
+        )
+
+    # Case lookups must NEVER go to the free-form LLM (avoids hallucinating
+    # case details for IDs that don't exist). Return a bounded response.
+    if intent in (Intent.OFFICER_ASSIGNMENT, Intent.SUSPECT_LOOKUP, Intent.RISK_SCORE, Intent.CASE_TIMELINE, Intent.FINANCIAL_INTELLIGENCE):
+        reply_text = generate_response(intent, [], [], msg_lang, history, query_text)
         session_store.add_message(session_id, "assistant", reply_text, msg_lang, intent=intent.value)
         return ChatResponse(
             session_id=session_id,
