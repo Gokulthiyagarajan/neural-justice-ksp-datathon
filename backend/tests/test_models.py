@@ -19,12 +19,12 @@ def test_chat_request_with_session():
 
 
 def test_intent_enum_values():
-    valid = {"risk_score", "crime_trends", "hotspot", "suspect_lookup",
-             "victim_stats", "station_performance", "officer_assignment",
-             "general_query", "general_chat", "predictive"}
+    """RISK_SCORE intent was removed; replaced by RISK_SCORE_DENIED (bounded refusal)."""
     actual = {i.value for i in Intent}
-    # At minimum these must be present
-    assert "risk_score" in actual
+    # Individual risk scoring is intentionally absent from valid intents.
+    assert "risk_score" not in actual
+    assert "risk_score_denied" in actual
+    # The remaining grounded data intents stay valid.
     assert "crime_trends" in actual
     assert "hotspot" in actual
     assert "suspect_lookup" in actual

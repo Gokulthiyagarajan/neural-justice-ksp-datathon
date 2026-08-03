@@ -148,15 +148,6 @@ export const NAV_ITEMS: NavItem[] = [
     hideForCP: true,
   },
   {
-    label: 'Risk Intelligence',
-    labelKn: 'ಅಪಾಯ ಗುಪ್ತಚರ',
-    path: '/risk',
-    icon: ShieldAlert,
-    minRole: 'ANALYST',
-    group: 'sidebar.int',
-    hideForCP: true,
-  },
-  {
     label: 'Criminal Network',
     labelKn: 'ಅಪರಾಧಿ ಜಾಲ',
     path: '/network',
@@ -608,14 +599,14 @@ export const KPI_CARDS: KPICard[] = [
 
   // INVESTIGATOR and above (PI+)
   {
-    id: 'high_risk_accused',
-    label: 'High Risk Accused',
-    labelKn: 'ಅಧಿಕ ಅಪಾಯದ ಆರೋಪಿಗಳು',
+    id: 'high_priority_cases',
+    label: 'High-Priority FIRs',
+    labelKn: 'ಆಯ್ಕಾನಯಿತ ಫਾਰ್‌ಮ್‌ಗಳು',
     metricKey: 'active_cases',
     icon: ShieldAlert,
     color: 'alert-red',
     minRole: 'INVESTIGATOR',
-    description: 'Active high-risk cases',
+    description: 'High-priority open cases',
   },
   {
     id: 'early_warnings',

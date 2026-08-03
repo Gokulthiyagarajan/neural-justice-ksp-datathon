@@ -21,8 +21,8 @@ export function StatsPanel({ data, onClose, onNodeClick }: StatsPanelProps) {
     typeCounts.set(n.type, (typeCounts.get(n.type) || 0) + 1);
   });
 
-  // High-risk nodes
-  const highRisk = nodes.filter((n) => (n.risk_score ?? 0) > 0.7);
+  // Nodes involved in multiple FIRs (factual involvement, not risk scoring)
+  const multiFir = nodes.filter((n) => (n.fir_count ?? 0) >= 2);
 
   // Top-degree nodes (top 5 by fir_count or just first 5 if no counts)
   const topNodes = [...nodes]
@@ -57,10 +57,10 @@ export function StatsPanel({ data, onClose, onNodeClick }: StatsPanelProps) {
           <MetricBox label="Density" value={`${(density * 100).toFixed(1)}%`} color="#F59E0B" />
         </div>
 
-        {highRisk.length > 0 && (
-          <div className="flex items-center gap-2 text-[11px] px-2 py-1.5 rounded-lg" style={{ background: 'rgba(255,51,102,0.1)', color: '#FF3366' }}>
-            <span className="w-2 h-2 rounded-full bg-[#FF3366]" />
-            {highRisk.length} high-risk entit{highRisk.length === 1 ? 'y' : 'ies'}
+        {multiFir.length > 0 && (
+          <div className="flex items-center gap-2 text-[11px] px-2 py-1.5 rounded-lg" style={{ background: 'rgba(43,127,255,0.1)', color: '#2B7FFF' }}>
+            <span className="w-2 h-2 rounded-full bg-[#2B7FFF]" />
+            {multiFir.length} multi-FIR entit{multiFir.length === 1 ? 'y' : 'ies'}
           </div>
         )}
 

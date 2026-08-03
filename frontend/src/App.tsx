@@ -37,7 +37,6 @@ const CPActivity = lazy(() => import('@/pages/cp/CPActivity').then(m => ({ defau
 const CPNotifications = lazy(() => import('@/pages/cp/CPNotifications').then(m => ({ default: m.CPNotifications })));
 const CPPatrol = lazy(() => import('@/pages/cp/CPPatrol').then(m => ({ default: m.CPPatrol })));
 const CPPatterns = lazy(() => import('@/pages/cp/CPPatterns').then(m => ({ default: m.CPPatterns })));
-const RiskDashboardPage = lazy(() => import('@/pages/RiskDashboardPage').then(m => ({ default: m.RiskDashboardPage })));
 const BehaviorProfilesPage = lazy(() => import('@/pages/BehaviorProfilesPage').then(m => ({ default: m.BehaviorProfilesPage })));
 const CrimePatternsPage = lazy(() => import('@/pages/CrimePatternsPage').then(m => ({ default: m.CrimePatternsPage })));
 const EarlyWarningsPage = lazy(() => import('@/pages/EarlyWarningsPage').then(m => ({ default: m.EarlyWarningsPage })));
@@ -83,7 +82,6 @@ const PIDashboard = lazy(() => import('@/pages/dashboards/PIDashboard').then(m =
 const PICases = lazy(() => import('@/pages/pi/PICases').then(m => ({ default: m.PICases })));
 const PICaseDetail = lazy(() => import('@/pages/pi/PICaseDetail').then(m => ({ default: m.PICaseDetail })));
 const PINetwork = lazy(() => import('@/pages/pi/PINetwork').then(m => ({ default: m.PINetwork })));
-const PIRisk = lazy(() => import('@/pages/pi/PIRisk').then(m => ({ default: m.PIRisk })));
 // PI pages — extended
 const PIPatterns = lazy(() => import('@/pages/pi/PIPatterns').then(m => ({ default: m.PIPatterns })));
 const PIWarnings = lazy(() => import('@/pages/pi/PIWarnings').then(m => ({ default: m.PIWarnings })));
@@ -197,7 +195,6 @@ export default function App() {
           <Route path="firs/:crimeNo" element={<RoleRoute><SuspenseWrapper><FIRDetailPage /></SuspenseWrapper></RoleRoute>} />
           <Route path="analytics" element={<RoleRoute><SuspenseWrapper><AnalyticsPage /></SuspenseWrapper></RoleRoute>} />
 
-          <Route path="intelligence/risk" element={<RoleRoute><SuspenseWrapper><RiskDashboardPage /></SuspenseWrapper></RoleRoute>} />
           <Route path="intelligence/profiles" element={<RoleRoute><SuspenseWrapper><BehaviorProfilesPage /></SuspenseWrapper></RoleRoute>} />
           <Route path="intelligence/patterns" element={<RoleRoute><SuspenseWrapper><CrimePatternsPage /></SuspenseWrapper></RoleRoute>} />
           <Route path="intelligence/warnings" element={<RoleRoute><SuspenseWrapper><EarlyWarningsPage /></SuspenseWrapper></RoleRoute>} />
@@ -234,7 +231,7 @@ export default function App() {
           <Route path="forecast" element={<RoleAwareRedirect pc="/psi/forecast" psi="/psi/forecast" pi="/pi/forecast" sp="/sp/forecast" />} />
           <Route path="stations" element={<StationRedirect />} />
           <Route path="districts" element={<Navigate to="/cp/districts" replace />} />
-          <Route path="risk" element={<RoleAwareRedirect pc="/psi/risk" psi="/psi/risk" pi="/pi/risk" sp="/sp/warnings" />} />
+          <Route path="risk" element={<RoleAwareRedirect pc="/psi/warnings" psi="/psi/warnings" pi="/pi/warnings" sp="/sp/warnings" />} />
           <Route path="network" element={<RoleAwareRedirect pc="/psi/network" psi="/psi/network" pi="/pi/network" sp="/sp/network" />} />
           <Route path="profiles" element={<RoleAwareRedirect pc="/" psi="/" pi="/pi/profiles" sp="/sp/officers" />} />
           <Route path="geo" element={<RoleAwareRedirect pc="/pi/geo" psi="/pi/geo" pi="/pi/geo" sp="/sp/map" />} />
@@ -253,7 +250,6 @@ export default function App() {
           <Route path="psi/orders" element={<RoleRoute><SuspenseWrapper><PCOrders /></SuspenseWrapper></RoleRoute>} />
           <Route path="psi/activity" element={<RoleRoute><SuspenseWrapper><PCActivity /></SuspenseWrapper></RoleRoute>} />
           <Route path="psi/notifications" element={<RoleRoute><SuspenseWrapper><PCNotifications /></SuspenseWrapper></RoleRoute>} />
-          <Route path="psi/risk" element={<RoleRoute><SuspenseWrapper><PIRisk /></SuspenseWrapper></RoleRoute>} />
           <Route path="psi/network" element={<RoleRoute><SuspenseWrapper><PINetwork /></SuspenseWrapper></RoleRoute>} />
           <Route path="psi/warnings" element={<RoleRoute><SuspenseWrapper><PIWarnings /></SuspenseWrapper></RoleRoute>} />
           <Route path="psi/finance" element={<RoleRoute><SuspenseWrapper><SPFinance /></SuspenseWrapper></RoleRoute>} />
@@ -283,7 +279,6 @@ export default function App() {
           <Route path="ai" element={<Navigate to="/" replace />} />
           <Route path="pi/copilot" element={<Navigate to="/pi/dashboard" replace />} />
           <Route path="pi/network" element={<RoleRoute><SuspenseWrapper><PINetwork /></SuspenseWrapper></RoleRoute>} />
-          <Route path="pi/risk" element={<RoleRoute><SuspenseWrapper><PIRisk /></SuspenseWrapper></RoleRoute>} />
           <Route path="pi/patterns" element={<RoleRoute><SuspenseWrapper><PIPatterns /></SuspenseWrapper></RoleRoute>} />
           <Route path="pi/warnings" element={<RoleRoute><SuspenseWrapper><PIWarnings /></SuspenseWrapper></RoleRoute>} />
           <Route path="pi/profiles" element={<RoleRoute><SuspenseWrapper><PIProfiles /></SuspenseWrapper></RoleRoute>} />

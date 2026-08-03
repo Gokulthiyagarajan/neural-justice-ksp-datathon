@@ -130,7 +130,7 @@ async def chat(
 
     # Case lookups must NEVER go to the free-form LLM (avoids hallucinating
     # case details for IDs that don't exist). Return a bounded response.
-    if intent in (Intent.OFFICER_ASSIGNMENT, Intent.SUSPECT_LOOKUP, Intent.RISK_SCORE, Intent.CASE_TIMELINE, Intent.FINANCIAL_INTELLIGENCE):
+    if intent in (Intent.OFFICER_ASSIGNMENT, Intent.SUSPECT_LOOKUP, Intent.RISK_SCORE_DENIED, Intent.CASE_TIMELINE, Intent.FINANCIAL_INTELLIGENCE):
         reply_text = generate_response(intent, [], [], msg_lang, history, query_text)
         session_store.add_message(session_id, "assistant", reply_text, msg_lang, intent=intent.value)
         return ChatResponse(

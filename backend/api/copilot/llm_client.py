@@ -200,8 +200,7 @@ def _fallback_response(user_message: str) -> str:
             "- **Crime Trends**: Show patterns and statistics\n"
             "- **Suspect Lookup**: Find accused persons\n"
             "- **Hotspots**: Identify high-crime areas\n"
-            "- **Station Performance**: Check police station metrics\n"
-            "- **Risk Assessment**: Evaluate suspect risk levels\n\n"
+            "- **Station Performance**: Check police station metrics\n\n"
             "Try asking something like 'Show crime trends in Bengaluru' or 'Find suspect John Doe'."
         )
     

@@ -12,7 +12,6 @@ interface CriminalProfile {
   alias?: string;
   age: number;
   gender?: string;
-  risk_score: number;
   primary_crime: string;
   status: string;
   last_active: string;
@@ -26,7 +25,6 @@ interface ProfileDetail {
   name: string;
   age?: number;
   gender?: string;
-  risk_score?: number;
   address?: string;
   crime_type?: string;
   firs?: { crime_no: string; crime_type: string; status: string }[];
@@ -55,12 +53,11 @@ export function PIProfiles() {
           alias: undefined,
           age: 0,
           gender: undefined,
-          risk_score: a.risk_score ?? 0,
           primary_crime: a.crime_type || 'Unknown',
           status: a.review_status || 'active',
           last_active: '—',
           fir_count: a.fir_count || 0,
-          network_size: a.shap_features?.length || 0,
+          network_size: a.network_size || a.degree || 0,
           location: 'Bengaluru Urban',
         })));
         setLoading(false);
@@ -76,7 +73,6 @@ export function PIProfiles() {
         alias: a.alias,
         age: a.age || 0,
         gender: a.gender,
-        risk_score: a.risk_score ?? 0,
         primary_crime: a.crime_type || a.primary_crime || 'Unknown',
         status: a.status || a.review_status || 'active',
         last_active: a.last_active || '—',
@@ -103,7 +99,6 @@ export function PIProfiles() {
           id: profile.id,
           name: profile.name,
           age: profile.age || 0,
-          risk_score: profile.risk_score,
           crime_type: profile.primary_crime,
           firs: [{ crime_no: 'KSP-2026-042', crime_type: profile.primary_crime, status: 'active' }],
           associates: [{ name: 'Venkatesh G', relation: 'co-accused' }],
@@ -121,7 +116,6 @@ export function PIProfiles() {
         name: data.accused_name || profile.name,
         age: profile.age || 0,
         gender: profile.gender,
-        risk_score: profile.risk_score,
         address: profile.location,
         crime_type: profile.primary_crime,
         firs: (data.preferred_crime_types ?? []).map((ct: string, i: number) => ({
@@ -216,11 +210,9 @@ export function PIProfiles() {
                   <h4 className="text-sm font-medium text-text-primary group-hover:text-accent-cyan transition-colors">
                     {p.name} {p.alias && <span className="text-text-tertiary text-xs font-normal">({p.alias})</span>}
                   </h4>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    p.risk_score >= 80 ? 'bg-red-500/20 text-red-400' :
-                    p.risk_score >= 60 ? 'bg-amber-500/20 text-amber-400' :
-                    'bg-green-500/20 text-green-400'
-                  }`}>{p.risk_score}</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400">
+                    {p.fir_count} FIR{p.fir_count !== 1 ? 's' : ''}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-[10px] text-text-tertiary">
                   <span>{p.primary_crime}</span>
@@ -265,18 +257,10 @@ export function PIProfiles() {
                     {selectedProfile.gender && <span>· {selectedProfile.gender}</span>}
                     <span>· {selectedProfile.location}</span>
                   </div>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span className={`text-lg font-bold tabular-nums ${
-                    selectedProfile.risk_score >= 80 ? 'text-red-400' :
-                    selectedProfile.risk_score >= 60 ? 'text-amber-400' :
-                    'text-green-400'
-                  }`}>{selectedProfile.risk_score}</span>
-                  <span className="text-[9px] text-text-tertiary">Risk Score</span>
-                </div>
-              </div>
+                 </div>
+               </div>
 
-              {/* Quick stats */}
+               {/* Quick stats */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20 text-center">
                   <p className="text-sm font-bold text-red-400 tabular-nums">{selectedProfile.fir_count}</p>

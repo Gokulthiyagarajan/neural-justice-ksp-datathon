@@ -36,7 +36,7 @@ import CytoscapeCanvas from '@/components/NetworkGraph/CytoscapeCanvas';
 import {
   fetchPIMetrics,
   type PIMetrics,
-  type PIRiskAccused,
+  type PIHighPriorityCase,
   type PIWarning,
 } from '@/services/dashboardApi';
 import { queryCopilot } from '@/api/copilot';
@@ -150,7 +150,7 @@ const STATION_KPIS = [
   { id: 'station_firs', label: 'Station FIRs', icon: FileText, color: CYAN, metricKey: 'total_firs' as const },
   { id: 'open_cases', label: 'Open Cases', icon: FolderOpen, color: AMBER, metricKey: 'open_cases' as const },
   { id: 'solved_rate', label: 'Solved Rate', icon: CheckCircle2, color: GREEN, metricKey: 'solved_rate' as const, suffix: '%' },
-  { id: 'high_risk', label: 'High Risk Accused', icon: ShieldAlert, color: RED, metricKey: 'high_risk_count' as const, urgent: true },
+  { id: 'high_priority', label: 'High-Priority Cases', icon: ShieldAlert, color: RED, metricKey: 'high_priority_count' as const, urgent: true },
 ]
 
 function StationKPIStrip({ metrics }: { metrics: PIMetrics }) {
@@ -480,47 +480,47 @@ function EmbeddedCopilot({ initialQuery }: { initialQuery?: string }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SECTION 5 — HIGH RISK ACCUSED
+// SECTION 5 — HIGH-PRIORITY CASES
 // ═══════════════════════════════════════════════════════════════════════════════
-function HighRiskAccusedPanel({ accused }: { accused: PIRiskAccused[] }) {
+function HighPriorityCasesPanel({ cases }: { cases: PIHighPriorityCase[] }) {
   return (
-    <SectionCard title="High Risk Accused" icon={ShieldAlert} action={
-      <Link to="/pi/risk" className="text-[10px] text-text-tertiary hover:text-text-secondary">
+    <SectionCard title="High-Priority Cases" icon={ShieldAlert} action={
+      <Link to="#/firs" className="text-[10px] text-text-tertiary hover:text-text-secondary">
         View all →
       </Link>
     }>
       <div className="divide-y divide-border-primary">
-        {accused.length === 0 && (
-          <p className="text-[10px] text-text-tertiary py-4 text-center">No high risk accused</p>
+        {cases.length === 0 && (
+          <p className="text-[10px] text-text-tertiary py-4 text-center">No high-priority cases</p>
         )}
-        {accused.map(a => (
+        {cases.map(c => (
           <div
-            key={a.id}
+            key={c.fir_no}
             className="flex items-center gap-3 px-2 py-2.5 hover:bg-bg-secondary transition-colors"
           >
             <div
               className="flex items-center justify-center h-8 w-8 rounded-full text-xs font-bold flex-shrink-0"
               style={{
-                background: a.risk_score >= 90 ? RED_12 : a.risk_score >= 75 ? AMBER_12 : CYAN_12,
-                color: a.risk_score >= 90 ? RED : a.risk_score >= 75 ? AMBER : CYAN,
+                background: c.days_open >= 40 ? RED_12 : c.days_open >= 20 ? AMBER_12 : CYAN_12,
+                color: c.days_open >= 40 ? RED : c.days_open >= 20 ? AMBER : CYAN,
               }}
             >
-              {a.risk_score}
+              {c.days_open}d
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-text-primary font-medium truncate">{a.name}</p>
+              <p className="text-xs text-text-primary font-medium truncate">{c.fir_no}</p>
               <p className="text-[10px] text-text-tertiary">
-                {a.fir_count} FIRs · {a.crime_type}
+                {c.crime_type} · {c.station}
               </p>
             </div>
             <Link
-              to={`/fir-operations?search=${encodeURIComponent(a.name)}`}
+              to="#/firs"
               className="text-[10px] flex-shrink-0 transition-colors"
               style={{ color: `${CYAN}80` }}
               onMouseEnter={e => (e.currentTarget.style.color = CYAN)}
               onMouseLeave={e => (e.currentTarget.style.color = `${CYAN}80`)}
             >
-              Cases →
+              Open →
             </Link>
           </div>
         ))}
@@ -1121,10 +1121,10 @@ export function PIDashboard() {
         fir_trend: 12.5,
         open_cases: 18,
         solved_rate: 38.2,
-        high_risk_count: 4,
-        high_risk_accused: [
-          { id: 1, name: 'Ravi Kumar', fir_count: 5, crime_type: 'Robbery', risk_score: 92 },
-          { id: 2, name: 'Suresh Patel', fir_count: 3, crime_type: 'Assault', risk_score: 88 },
+        high_priority_count: 2,
+        high_priority_cases: [
+          { fir_no: 'FIR-100-2026', crime_type: 'Robbery', station: 'Vijayanagar PS', days_open: 45 },
+          { fir_no: 'FIR-101-2026', crime_type: 'Assault', station: 'Jayanagar PS', days_open: 38 },
         ],
         active_warnings: [],
         trend_3m: [],
@@ -1241,8 +1241,8 @@ export function PIDashboard() {
           {/* Team Status */}
           <TeamStatus />
 
-          {/* High Risk Accused */}
-          <HighRiskAccusedPanel accused={metrics.high_risk_accused ?? []} />
+           {/* High-Priority Cases */}
+           <HighPriorityCasesPanel cases={metrics.high_priority_cases ?? []} />
 
           {/* Early Warnings */}
           <EarlyWarningsPanel

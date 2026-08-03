@@ -56,41 +56,6 @@ export function FilterPanel({ filters, onChange, onClose }: FilterPanelProps) {
       </div>
 
       <div className="px-3 py-2.5 max-h-80 overflow-y-auto space-y-4" style={{ scrollbarWidth: 'thin' }}>
-        {/* ── Risk score range ────────────────────────────────────────── */}
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#5C6573' }}>
-            Risk Score: {filters.minRisk}–{filters.maxRisk}
-          </p>
-          <div className="flex gap-2 items-center">
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={filters.minRisk}
-              onChange={(e) => {
-                const v = Math.min(Number(e.target.value), filters.maxRisk);
-                onChange({ ...filters, minRisk: v });
-              }}
-              className="w-full h-1 rounded appearance-none cursor-pointer"
-              style={{ accentColor: '#FF3366', background: 'rgba(255,255,255,0.1)' }}
-            />
-          </div>
-          <div className="flex gap-2 items-center mt-1">
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={filters.maxRisk}
-              onChange={(e) => {
-                const v = Math.max(Number(e.target.value), filters.minRisk);
-                onChange({ ...filters, maxRisk: v });
-              }}
-              className="w-full h-1 rounded appearance-none cursor-pointer"
-              style={{ accentColor: '#FF3366', background: 'rgba(255,255,255,0.1)' }}
-            />
-          </div>
-        </div>
-
         {/* ── Min connections ─────────────────────────────────────────── */}
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#5C6573' }}>

@@ -58,11 +58,13 @@ def test_suspect_lookup(seed_db):
     assert "John" in rows[0]["name"]
 
 
-def test_risk_score(seed_db):
+def test_risk_score_refused(seed_db):
+    """The removed RISK_SCORE intent has no data template — it yields no rows,
+    reflecting the platform-wide removal of individual risk scoring."""
     scope = JurisdictionScope(district_id=None, station_id=None)
-    evidence, rows = execute_intent_query(Intent.RISK_SCORE, {"name": "John Doe"}, scope, seed_db)
-    assert len(rows) == 1
-    assert rows[0]["risk_score"] == 0.85
+    evidence, rows = execute_intent_query(Intent.RISK_SCORE_DENIED, {"name": "John Doe"}, scope, seed_db)
+    assert len(rows) == 0
+    assert len(evidence) == 0
 
 
 def test_station_performance(seed_db):

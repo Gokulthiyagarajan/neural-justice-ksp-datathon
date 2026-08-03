@@ -259,8 +259,7 @@ function generateDemoFIRs(): FIR[] {
     const officer = OFFICERS[Math.floor(Math.random() * OFFICERS.length)];
     const accusedName = ACCUSED_NAMES[Math.floor(Math.random() * ACCUSED_NAMES.length)];
     const victimName = VICTIM_NAMES[Math.floor(Math.random() * VICTIM_NAMES.length)];
-    const isRepeat = Math.random() < 0.15;
-    const linkedCases = isRepeat ? Math.floor(Math.random() * 5) + 1 : Math.floor(Math.random() * 3);
+    const linkedCases = Math.floor(Math.random() * 3);
 
     const date = new Date(baseDate);
     date.setDate(date.getDate() + i);
@@ -283,7 +282,6 @@ function generateDemoFIRs(): FIR[] {
       officer_assigned: officer,
       days_open: daysOpen,
       linked_cases: linkedCases,
-      is_repeat_offender: isRepeat,
       description: `${description} — ${locationForDistrict(district)}`,
       location: locationForDistrict(district),
       rowid,

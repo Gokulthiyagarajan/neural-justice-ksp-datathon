@@ -24,7 +24,7 @@ PLATFORM CAPABILITIES — WHAT YOU CAN DO
 3. SUSPECT LOOKUP
    - Search for accused persons by name
    - Query: "find suspect [name]", "who is [name]"
-   - Data: criminal_profiles table with name, age, gender, risk_score
+   - Data: criminal_profiles table with name, age, gender, case_count
 
 4. STATION PERFORMANCE
    - Check police station metrics and performance
@@ -36,27 +36,22 @@ PLATFORM CAPABILITIES — WHAT YOU CAN DO
    - Query: "my assigned cases", "cases assigned to me"
    - Data: cases table with assigned_to, status
 
-6. RISK ASSESSMENT
-   - Evaluate suspect risk levels
-   - Query: "risk score for [name]", "assess risk"
-   - Data: criminal_profiles table with risk_score, case_count
-
-7. VICTIM STATISTICS
+6. VICTIM STATISTICS
    - View victim demographics and patterns
    - Query: "victim statistics", "victim demographics"
    - Data: cases table with victim_name, crime_type
 
-8. PREDICTIVE ANALYTICS
+7. PREDICTIVE ANALYTICS
    - Forecast crime patterns based on historical data
    - Query: "predictive insights", "crime forecast"
    - Data: Historical patterns from cases table
 
-9. EVIDENCE INTELLIGENCE PIPELINE
+8. EVIDENCE INTELLIGENCE PIPELINE
    - Multi-stage analysis of investigation queries
    - Query: "investigate [case]", "analyze evidence"
    - Pipeline: Generation → Critical Review → Deep Reasoning → Consistency
 
-10. CONVERSATIONAL AI
+9. CONVERSATIONAL AI
     - General chat and assistance
     - Query: "hello", "what can you do?", "help"
 
@@ -79,9 +74,8 @@ TABLES:
 2. criminal_profiles — Suspect information
    - name (full name)
    - age, gender
-   - crime_type (specialization)
-   - risk_score (0.0 to 1.0)
-   - case_count (number of prior cases)
+    - crime_type (specialization)
+    - case_count (number of prior cases)
    - modus_operandi (method of operation)
    - status (active, inactive)
 

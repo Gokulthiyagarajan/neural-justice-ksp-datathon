@@ -19,13 +19,16 @@ AMBIGUITY_MARGIN = 0.15
 # Each pattern: (compiled_regex, intent, base_confidence, entity_extractors)
 
 PATTERNS = [
-    # risk_score — must be specific to avoid matching "about" in general text
+    # risk_score → refused: individual risk scoring was removed from the platform.
+    # Pattern kept so these queries are DETECTED and intercepted as a bounded
+    # refusal (never reaches the LLM — a real model could otherwise fabricate
+    # risk assessments). Mirrors the deployed handler in main.py.
     (re.compile(r"risk\s*score|risk\s*rating|risk\s*level|ಅಪಾಯ.*ಸ್ಕೋರ್", re.I),
-     Intent.RISK_SCORE, 0.85, {}),
+     Intent.RISK_SCORE_DENIED, 0.85, {}),
     (re.compile(r"accused.*risk|risk.*accused|accused.*danger", re.I),
-     Intent.RISK_SCORE, 0.80, {}),
+     Intent.RISK_SCORE_DENIED, 0.80, {}),
     (re.compile(r"(?:what\s+is|show|get|check)\s+(?:the\s+)?risk\s+(?:score|rating|level)\s+(?:for|of|of\s+the)\s+(.+?)(?:\?|$)", re.I),
-     Intent.RISK_SCORE, 0.80, {"name": 1}),
+     Intent.RISK_SCORE_DENIED, 0.80, {"name": 1}),
 
     # crime_trends
     (re.compile(r"crime\s*trend|crime\s*pattern|trend.*crime|ಅಪರಾಧ|ಪ್ರವೃತ್ತಿ|ಘಟನೆ", re.I),

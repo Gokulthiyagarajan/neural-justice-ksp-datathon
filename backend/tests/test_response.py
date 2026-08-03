@@ -22,18 +22,22 @@ def test_hotspot_response():
 
 
 def test_suspect_response():
-    rows = [{"name": "John Doe", "age": 35, "case_count": 3, "risk_score": 0.85}]
+    rows = [{"name": "John Doe", "age": 35, "case_count": 3}]
     evidence = [QueryEvidence(source_table="criminal_profiles", row_count=1)]
     result = generate_response(Intent.SUSPECT_LOOKUP, rows, evidence, "en", [])
     assert "John Doe" in result
 
 
-def test_risk_score_response():
+def test_risk_score_refused():
+    """The RISK_SCORE_DENIED intent must NOT surface any numeric risk value."""
     rows = [{"name": "John Doe", "risk_score": 0.85, "modus_operandi": "Repeat offender", "case_count": 3}]
     evidence = [QueryEvidence(source_table="criminal_profiles", row_count=1)]
-    result = generate_response(Intent.RISK_SCORE, rows, evidence, "en", [])
-    assert "0.85" in result or "85%" in result
-    assert "John Doe" in result
+    result = generate_response(Intent.RISK_SCORE_DENIED, rows, evidence, "en", [])
+    assert "risk_score" not in result.lower().replace(" ", "")
+    assert "individual risk scoring" in result.lower()
+    # No fabricated numbers should leak from the refusal path.
+    assert "85" not in result
+    assert "0.85" not in result
 
 
 def test_general_query_response():

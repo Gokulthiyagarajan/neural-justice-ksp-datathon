@@ -3,7 +3,7 @@ import { api } from '@/api/client';
 
 // ── Types matching backend models ─────────────────────────────────────────
 export type Intent =
-  | 'risk_score'
+  | 'risk_score_denied'
   | 'crime_trends'
   | 'hotspot'
   | 'suspect_lookup'

@@ -368,12 +368,11 @@ export async function fetchStationPerformance(districtCode: string): Promise<{ s
 
 // ─── PI-exclusive metrics ────────────────────────────────────────────────────
 
-export interface PIRiskAccused {
-  id: number
-  name: string
-  fir_count: number
+export interface PIHighPriorityCase {
+  fir_no: string
   crime_type: string
-  risk_score: number
+  station: string
+  days_open: number
 }
 
 export interface PIWarning {
@@ -393,8 +392,8 @@ export interface PIMetrics {
   fir_trend: number
   open_cases: number
   solved_rate: number
-  high_risk_count: number
-  high_risk_accused: PIRiskAccused[]
+  high_priority_count: number
+  high_priority_cases: PIHighPriorityCase[]
   active_warnings: PIWarning[]
   trend_3m: TrendPoint[]
   recent_firs: RecentFIR[]
@@ -428,12 +427,10 @@ export async function fetchPIMetrics(stationName: string): Promise<PIMetrics> {
         fir_trend: 12.5,
         open_cases: 18,
         solved_rate: 38.2,
-        high_risk_count: 4,
-        high_risk_accused: [
-          { id: 1, name: 'Ravi Kumar', fir_count: 5, crime_type: 'Robbery', risk_score: 92 },
-          { id: 2, name: 'Suresh Patel', fir_count: 3, crime_type: 'Assault', risk_score: 88 },
-          { id: 3, name: 'Mohan Reddy', fir_count: 4, crime_type: 'Chain Snatching', risk_score: 85 },
-          { id: 4, name: 'Venkat Rao', fir_count: 2, crime_type: 'Cyber Fraud', risk_score: 78 },
+        high_priority_count: 2,
+        high_priority_cases: [
+          { fir_no: 'FIR-100-2026', crime_type: 'Robbery', station: 'Vijayanagar PS', days_open: 45 },
+          { fir_no: 'FIR-101-2026', crime_type: 'Assault', station: 'Jayanagar PS', days_open: 38 },
         ],
         active_warnings: [
           {

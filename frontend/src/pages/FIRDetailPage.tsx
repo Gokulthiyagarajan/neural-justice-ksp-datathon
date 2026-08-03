@@ -166,15 +166,10 @@ function buildRichDetail(
     accused_name?: string;
     victim_name?: string;
     district?: string;
-    is_repeat_offender?: boolean;
     linked_cases?: number;
     accused_id?: string;
   },
 ): FIRDetailType {
-  const seed = fir.crime_no ? parseInt(fir.crime_no.replace(/\D/g, '').slice(-6), 10) || 42 : 42;
-  const rand = seededRandom(seed);
-  const r = () => rand();
-
   // The deployed API enriches the FirCase shape; fall back to raw DB
   // column names too so the page never renders "Unknown"/"N/A" when the
   // underlying record actually has data.
@@ -251,14 +246,11 @@ function buildRichDetail(
     officer_assigned: registeredBy,
     days_open: fir.occurrence_date ? Math.floor((Date.now() - new Date(fir.occurrence_date).getTime()) / (86400000)) : 0,
     linked_cases: extra?.linked_cases ?? 0,
-    is_repeat_offender: extra?.is_repeat_offender ?? false,
     description: fir.brief_facts || 'No description available.',
     location,
     rowid: 0,
     accused_age: null,
     accused_gender: null,
-    accused_prior_offences: 0,
-    accused_risk_score: Math.floor(r() * 60 + 20),
     victim_age: null,
     victim_gender: null,
     investigation_timeline: timeline,
@@ -389,7 +381,6 @@ function generateDemoFirDetail(crimeNo: string, routeFirOverride?: Partial<FIR>)
     accused_name: routeFirOverride?.accused_name ?? 'Ravi Kumar',
     victim_name: routeFirOverride?.victim_name ?? 'Priya Sharma',
     district,
-    is_repeat_offender: false,
     linked_cases: seed % 3,
     accused_id: `AID-${seed}`,
   });
@@ -444,7 +435,6 @@ export function FIRDetailPage() {
               accused_name: routeFir.accused_name,
               victim_name: routeFir.victim_name,
               district: routeFir.district,
-              is_repeat_offender: routeFir.is_repeat_offender,
               linked_cases: routeFir.linked_cases,
               accused_id: routeFir.accused_id,
             });
@@ -554,8 +544,6 @@ export function FIRDetailPage() {
   }
   if (!fir) return null;
 
-  const riskColorVal = fir.accused_risk_score > 70 ? C.red : fir.accused_risk_score > 40 ? C.amber : C.success;
-
   return (
     <div>
       {/* ── Toolbar ────────────────────────────────────────────── */}
@@ -609,14 +597,6 @@ export function FIRDetailPage() {
               </div>
             </div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{
-                fontSize: 24, fontWeight: 700, color: riskColorVal,
-              }}>
-                {fir.accused_risk_score}
-              </div>
-              <div style={{ fontSize: 10, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Risk Score
-              </div>
               {fir.days_open > 0 && (
                 <div style={{ fontSize: 11, color: fir.days_open > 30 ? C.red : C.muted, marginTop: 6 }}>
                   {fir.days_open}d open
@@ -668,13 +648,6 @@ export function FIRDetailPage() {
             <Field label="Name" value={fir.accused_name} />
             <Field label="Age" value={fir.accused_age ? `${fir.accused_age}y` : 'N/A'} />
             <Field label="Gender" value={fir.accused_gender || 'N/A'} />
-            <Field label="Prior Offences" value={String(fir.accused_prior_offences)} />
-            <Field label="Risk Score" value={
-              <span style={{ color: riskColorVal, fontWeight: 600 }}>
-                {fir.accused_risk_score}/100
-              </span>
-            } />
-            <Field label="Repeat Offender" value={fir.is_repeat_offender ? 'Yes' : 'No'} />
           </div>
         </Section>
 

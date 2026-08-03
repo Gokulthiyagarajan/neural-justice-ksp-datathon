@@ -41,7 +41,7 @@ export function PICaseDetail() {
             station_name: d.station || d.station_name || d.fir?.station_name || '—',
             io_name: d.officer_assigned || d.io_name || d.fir?.io_name || '—',
           },
-          accused: d.accused_name ? [{ name: d.accused_name, age: d.accused_age, risk_score: d.accused_risk_score }] : (d.accused ?? []),
+          accused: d.accused_name ? [{ name: d.accused_name, age: d.accused_age }] : (d.accused ?? []),
           victims: d.victim_name ? [{ name: d.victim_name, age: d.victim_age }] : (d.victims ?? []),
           timeline: d.investigation_timeline ?? d.timeline ?? [],
         }
@@ -57,7 +57,7 @@ export function PICaseDetail() {
         method: 'POST',
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `Summarize case ${crimeNo} — provide key facts, risk indicators, and recommended next steps`,
+          message: `Summarize case ${crimeNo} — provide key facts, current status, and recommended next steps`,
           mode: 'case_analysis',
         }),
       })
@@ -198,18 +198,11 @@ export function PICaseDetail() {
                                   justify-center text-xs font-medium text-text-secondary">
                     {a.name?.[0] ?? '?'}
                   </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-text-primary font-medium">{a.name ?? 'Unknown'}</p>
-                    <p className="text-[10px] text-text-tertiary">{a.age ? `${a.age} yrs` : ''} {a.address ?? ''}</p>
-                  </div>
-                  {a.risk_score && (
-                    <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      a.risk_score >= 75 ? 'bg-red-500/20 text-alert-red' :
-                      a.risk_score >= 50 ? 'bg-amber-500/20 text-signal-amber' :
-                      'bg-green-500/20 text-verified-green'
-                    }`}>{a.risk_score}</div>
-                  )}
-                </div>
+                   <div className="flex-1">
+                     <p className="text-xs text-text-primary font-medium">{a.name ?? 'Unknown'}</p>
+                     <p className="text-[10px] text-text-tertiary">{a.age ? `${a.age} yrs` : ''} {a.address ?? ''}</p>
+                   </div>
+                 </div>
               ))}
             </div>
           </div>

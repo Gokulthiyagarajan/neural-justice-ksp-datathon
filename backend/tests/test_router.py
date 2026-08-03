@@ -85,3 +85,21 @@ def test_session_persistence():
     resp3 = client.get(f"/api/copilot/sessions/{sid}", headers={"X-Demo-Session": "true"})
     assert resp3.status_code == 200
     assert resp3.json()["message_count"] >= 2
+
+
+def test_chat_risk_score_refused():
+    """Individual risk-scoring queries must be intercepted as a bounded refusal
+    — no numeric risk value is returned and the LLM is never consulted."""
+    resp = client.post(
+        "/api/copilot/chat",
+        json={"message": "What is the risk score for accused John?"},
+        headers={"X-Demo-Session": "true"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["intent_detected"] == "risk_score_denied"
+    reply = data["reply_text"]
+    # Bounded refusal: must not surface a numeric risk value or LLM generation.
+    assert "no longer available" in reply.lower()
+    assert "85%" not in reply
+    assert "0.85" not in reply

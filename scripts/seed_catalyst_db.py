@@ -209,7 +209,6 @@ for a in accused:
         "age": si(a.get("AgeYear"), 30),
         "gender": "Male" if a.get("GenderID") == "M" else "Female",
         "case_count": 1,
-        "risk_score": round(random.uniform(0.3, 0.95), 2),
     }
 
 profiles = list(seen_accused.values())
@@ -428,16 +427,16 @@ profile_batch = []
 for p in profiles[:200]:
     profile_batch.append((
         p["name"], p["age"], p["gender"], p["case_count"],
-        "active", p["risk_score"], datetime.now().isoformat(),
+        "active", datetime.now().isoformat(),
         f"Repeat offender with {p['case_count']} case(s)",
         "[]", "", "", "", "", "[]", datetime.now().isoformat(),
     ))
 
 conn.executemany("""
     INSERT INTO criminal_profiles
-        (name, age, gender, case_count, status, risk_score, last_active,
+        (name, age, gender, case_count, status, last_active,
          modus_operandi, aliases, phone, address, photo_url, district, crime_types, created_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
 """, profile_batch)
 print(f"  Inserted profiles: {len(profile_batch)}")
 

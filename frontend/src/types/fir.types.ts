@@ -22,7 +22,6 @@ export interface FIR {
   officer_assigned: string;
   days_open: number;
   linked_cases: number;
-  is_repeat_offender: boolean;
   description: string;
   location: string;
   rowid: number | string;
@@ -96,8 +95,6 @@ export interface CourtInfo {
 export interface FIRDetail extends FIR {
   accused_age: number | null;
   accused_gender: string | null;
-  accused_prior_offences: number;
-  accused_risk_score: number;
   victim_age: number | null;
   victim_gender: string | null;
   investigation_timeline: TimelineEvent[];

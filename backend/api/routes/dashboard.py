@@ -257,10 +257,10 @@ async def get_pi_metrics(station_name: str = Query("Vijayanagar PS")):
         "fir_trend": 12.5,
         "open_cases": 18,
         "solved_rate": 38.2,
-        "high_risk_count": 4,
-        "high_risk_accused": [
-            {"id": 1, "name": "Ravi Kumar", "fir_count": 5, "crime_type": "Robbery", "risk_score": 92},
-            {"id": 2, "name": "Suresh Patel", "fir_count": 3, "crime_type": "Assault", "risk_score": 88},
+        "high_priority_count": 2,
+        "high_priority_cases": [
+            {"fir_no": "FIR-100-2026", "crime_type": "Robbery", "station": "Vijayanagar PS", "days_open": 45},
+            {"fir_no": "FIR-101-2026", "crime_type": "Assault", "station": "Jayanagar PS", "days_open": 38},
         ],
         "active_warnings": [],
         "trend_3m": [{"date": (datetime.now() - __import__('datetime').timedelta(days=i)).strftime("%Y-%m-%d"), "count": random.randint(1, 6)} for i in range(90)],

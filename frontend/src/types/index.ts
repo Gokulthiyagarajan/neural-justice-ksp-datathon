@@ -16,25 +16,6 @@ export interface FirCase {
   updated_at?: string;
 }
 
-export interface RiskScoreResponse {
-  entity_type: string;
-  entity_id: string;
-  entity_name: string;
-  score: number;
-  calibrated_score: number;
-  score_bucket: string;
-  confidence_interval: { lower: number; upper: number };
-  model: string;
-  generated_at: string;
-  cache_hit: boolean;
-  explanation?: {
-    plain_english: string;
-    contributions: Array<{ name: string; shap_value: number; direction: string }>;
-  };
-  review_status: string;
-  disclaimer?: string;
-}
-
 export interface BehaviorProfile {
   accused_id: string;
   accused_name: string;
@@ -223,7 +204,6 @@ export interface InvestigationSummary {
   incident_type: string;
   status: string;
   priority: string;
-  risk_score: number;
   ai_confidence: number;
   crime_category: string;
   district: string;

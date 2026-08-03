@@ -268,30 +268,29 @@ export function demoForecastResponse(): DemoForecastResponse {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// PI RISK demo data (matches PIRisk.tsx & PINetwork.tsx risk structure)
+// PI Profiles demo data (accused dossier list; no predictive risk scores)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export interface DemoRiskAccused {
   id: string;
   name: string;
-  risk_score: number;
   review_status: string;
   fir_count: number;
   crime_type: string;
-  shap_features: { feature: string; impact: number }[];
+  network_size: number;
 }
 
 export function demoRiskData(): { accused: DemoRiskAccused[]; station: any } {
   return {
     accused: [
-      { id: 'ra-1', name: 'Ravi Kumar', risk_score: 92, review_status: 'unreviewed', fir_count: 4, crime_type: 'Robbery', shap_features: [{ feature: 'prior_arrests', impact: 0.32 }, { feature: 'crime_density', impact: 0.25 }, { feature: 'victim_count', impact: 0.18 }, { feature: 'weapon_use', impact: 0.15 }] },
-      { id: 'ra-2', name: 'Suresh Reddy', risk_score: 85, review_status: 'unreviewed', fir_count: 3, crime_type: 'Assault', shap_features: [{ feature: 'prior_arrests', impact: 0.28 }, { feature: 'weapon_use', impact: 0.22 }, { feature: 'recency', impact: 0.2 }, { feature: 'crime_density', impact: 0.18 }] },
-      { id: 'ra-3', name: 'Venkatesh Gowda', risk_score: 78, review_status: 'reviewed', fir_count: 5, crime_type: 'Theft', shap_features: [{ feature: 'recidivism', impact: 0.3 }, { feature: 'crime_density', impact: 0.22 }, { feature: 'victim_count', impact: 0.2 }, { feature: 'prior_arrests', impact: 0.16 }] },
-      { id: 'ra-4', name: 'Mohan Das', risk_score: 65, review_status: 'unreviewed', fir_count: 2, crime_type: 'Burglary', shap_features: [{ feature: 'crime_density', impact: 0.25 }, { feature: 'prior_arrests', impact: 0.2 }, { feature: 'recency', impact: 0.18 }] },
-      { id: 'ra-5', name: 'Prakash Shetty', risk_score: 55, review_status: 'reviewed', fir_count: 3, crime_type: 'Chain Snatching', shap_features: [{ feature: 'recency', impact: 0.28 }, { feature: 'crime_density', impact: 0.2 }, { feature: 'prior_arrests', impact: 0.15 }] },
-      { id: 'ra-6', name: 'Kiran Kumar', risk_score: 42, review_status: 'unreviewed', fir_count: 1, crime_type: 'Cyber Fraud', shap_features: [{ feature: 'victim_count', impact: 0.22 }, { feature: 'recency', impact: 0.18 }, { feature: 'crime_density', impact: 0.14 }] },
-      { id: 'ra-7', name: 'Mahesh Babu', risk_score: 35, review_status: 'cleared', fir_count: 1, crime_type: 'Vehicle Theft', shap_features: [{ feature: 'recency', impact: 0.2 }, { feature: 'crime_density', impact: 0.15 }] },
-      { id: 'ra-8', name: 'Anil Kumar', risk_score: 88, review_status: 'unreviewed', fir_count: 6, crime_type: 'Armed Robbery', shap_features: [{ feature: 'weapon_use', impact: 0.35 }, { feature: 'prior_arrests', impact: 0.28 }, { feature: 'victim_count', impact: 0.22 }, { feature: 'recency', impact: 0.18 }] },
+      { id: 'ra-1', name: 'Ravi Kumar', review_status: 'unreviewed', fir_count: 4, crime_type: 'Robbery', network_size: 5 },
+      { id: 'ra-2', name: 'Suresh Reddy', review_status: 'unreviewed', fir_count: 3, crime_type: 'Assault', network_size: 3 },
+      { id: 'ra-3', name: 'Venkatesh Gowda', review_status: 'reviewed', fir_count: 5, crime_type: 'Theft', network_size: 4 },
+      { id: 'ra-4', name: 'Mohan Das', review_status: 'unreviewed', fir_count: 2, crime_type: 'Burglary', network_size: 2 },
+      { id: 'ra-5', name: 'Prakash Shetty', review_status: 'reviewed', fir_count: 3, crime_type: 'Chain Snatching', network_size: 2 },
+      { id: 'ra-6', name: 'Kiran Kumar', review_status: 'unreviewed', fir_count: 1, crime_type: 'Cyber Fraud', network_size: 1 },
+      { id: 'ra-7', name: 'Mahesh Babu', review_status: 'cleared', fir_count: 1, crime_type: 'Vehicle Theft', network_size: 1 },
+      { id: 'ra-8', name: 'Anil Kumar', review_status: 'unreviewed', fir_count: 6, crime_type: 'Armed Robbery', network_size: 6 },
     ],
     station: { station_id: 1, station_name: 'Koramangala PS', district_name: 'Bengaluru Urban' },
   };
@@ -305,23 +304,22 @@ export interface DemoNetworkNode {
   id: string;
   label: string;
   type: string;
-  risk_score: number;
   fir_count: number;
   degree: number;
 }
 
 export function demoNetworkData(): { nodes: DemoNetworkNode[]; edges: any[] } {
   const nodes: DemoNetworkNode[] = [
-    { id: 'acc-1', label: 'Ravi Kumar', type: 'accused', risk_score: 92, fir_count: 4, degree: 5 },
-    { id: 'acc-2', label: 'Suresh Reddy', type: 'accused', risk_score: 85, fir_count: 3, degree: 3 },
-    { id: 'acc-3', label: 'Venkatesh G', type: 'accused', risk_score: 78, fir_count: 5, degree: 4 },
-    { id: 'acc-4', label: 'Mohan Das', type: 'accused', risk_score: 65, fir_count: 2, degree: 2 },
-    { id: 'acc-5', label: 'Prakash Shetty', type: 'accused', risk_score: 55, fir_count: 3, degree: 2 },
-    { id: 'vic-1', label: 'Priya Singh', type: 'victim', risk_score: 0, fir_count: 1, degree: 1 },
-    { id: 'vic-2', label: 'Rahul Sharma', type: 'victim', risk_score: 0, fir_count: 1, degree: 2 },
-    { id: 'vic-3', label: 'Meena Devi', type: 'victim', risk_score: 0, fir_count: 1, degree: 1 },
-    { id: 'wit-1', label: 'Kiran RF', type: 'witness', risk_score: 0, fir_count: 0, degree: 1 },
-    { id: 'wit-2', label: 'Deepa N', type: 'witness', risk_score: 0, fir_count: 0, degree: 1 },
+    { id: 'acc-1', label: 'Ravi Kumar', type: 'accused', fir_count: 4, degree: 5 },
+    { id: 'acc-2', label: 'Suresh Reddy', type: 'accused', fir_count: 3, degree: 3 },
+    { id: 'acc-3', label: 'Venkatesh G', type: 'accused', fir_count: 5, degree: 4 },
+    { id: 'acc-4', label: 'Mohan Das', type: 'accused', fir_count: 2, degree: 2 },
+    { id: 'acc-5', label: 'Prakash Shetty', type: 'accused', fir_count: 3, degree: 2 },
+    { id: 'vic-1', label: 'Priya Singh', type: 'victim', fir_count: 1, degree: 1 },
+    { id: 'vic-2', label: 'Rahul Sharma', type: 'victim', fir_count: 1, degree: 2 },
+    { id: 'vic-3', label: 'Meena Devi', type: 'victim', fir_count: 1, degree: 1 },
+    { id: 'wit-1', label: 'Kiran RF', type: 'witness', fir_count: 0, degree: 1 },
+    { id: 'wit-2', label: 'Deepa N', type: 'witness', fir_count: 0, degree: 1 },
   ];
   const edges = [
     { source: 'acc-1', target: 'acc-2' }, { source: 'acc-1', target: 'acc-3' },

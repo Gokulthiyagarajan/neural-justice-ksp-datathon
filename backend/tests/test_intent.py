@@ -4,11 +4,16 @@ from backend.api.copilot.intent import classify_intent, _rule_based_classify
 from backend.api.copilot.models import Intent
 
 
-def test_risk_score_keyword():
+def test_risk_score_refused():
+    """Individual risk scoring is removed: queries are classified as a bounded
+    refusal intent (RISK_SCORE_DENIED) so they never reach the LLM."""
     intent, conf, tier, entities = _rule_based_classify("What is the risk score for accused John?")
-    assert intent == Intent.RISK_SCORE
+    assert intent == Intent.RISK_SCORE_DENIED
     assert conf >= 0.7
     assert tier == "rule_based"
+    # The capture group grabs the trailing entity (may include leading words
+    # like "accused"); the key point is that it is detected and refused.
+    assert entities.get("name")
 
 
 def test_crime_trends_keyword():

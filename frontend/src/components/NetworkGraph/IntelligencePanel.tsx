@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Brain, Crown, Users, AlertTriangle, TrendingUp, Lightbulb, Shield } from 'lucide-react';
+import { X, Brain, Crown, Users, AlertTriangle, TrendingUp, Lightbulb } from 'lucide-react';
 import { api } from '@/api/client';
 
 interface IntelligenceInsight {
@@ -23,7 +23,6 @@ interface IntelligenceReport {
   total_nodes: number;
   total_edges: number;
   total_communities: number;
-  highest_risk_entities: { name: string; risk: number; firs: number }[];
 }
 
 interface IntelligencePanelProps {
@@ -148,32 +147,6 @@ export function IntelligencePanel({ onClose }: IntelligencePanelProps) {
               <InsightCard key={i} insight={insight} />
             ))}
           </div>
-
-          {/* Top Risk Entities */}
-          {data.highest_risk_entities.length > 0 && (
-            <div className="px-3 py-2.5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-              <div className="flex items-center gap-1.5 mb-2">
-                <Shield className="w-3.5 h-3.5" style={{ color: '#FF3366' }} />
-                <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#FF3366' }}>Highest Risk</span>
-              </div>
-              <div className="space-y-1">
-                {data.highest_risk_entities.slice(0, 5).map((e, i) => (
-                  <div key={i} className="flex items-center justify-between text-[11px]">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-mono w-4" style={{ color: '#5C6573' }}>#{i + 1}</span>
-                      <span className="truncate max-w-[140px]" style={{ color: '#E8EAED' }}>{e.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px]" style={{ color: '#5C6573' }}>{e.firs} FIRs</span>
-                      <div className="w-12 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                        <div className="h-full rounded-full" style={{ width: `${e.risk * 100}%`, background: '#FF3366' }} />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </>
       )}
     </div>

@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 
 class Intent(str, Enum):
-    RISK_SCORE = "risk_score"
+    RISK_SCORE_DENIED = "risk_score_denied"
     CRIME_TRENDS = "crime_trends"
     HOTSPOT = "hotspot"
     SUSPECT_LOOKUP = "suspect_lookup"

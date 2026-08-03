@@ -186,7 +186,6 @@ export function PINetwork() {
                   nodes: (filteredData?.nodes ?? []).map((n: any) => ({
                     ...n,
                     color: (n.id || n.data?.id) === kingpin ? '#EF4444' :
-                           (n.risk_score ?? 0) >= 75 ? '#F59E0B' :
                            n.type === 'accused' ? '#EF4444' :
                            n.type === 'victim' ? '#3B82F6' : '#8B5CF6',
                     size: (n.id || n.data?.id) === kingpin ? 40 : 20,
@@ -245,32 +244,25 @@ export function PINetwork() {
         <h3 className="text-xs font-medium text-text-primary mb-3">Top Connected Suspects</h3>
         <table className="w-full text-xs">
           <thead className="border-b border-border-primary">
-            <tr className="text-text-tertiary text-[10px]">
-              <th className="text-left py-2">Name</th>
-              <th className="text-right py-2">Connections</th>
-              <th className="text-right py-2">FIRs</th>
-              <th className="text-right py-2">Risk Score</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border-secondary">
-            {(networkData?.nodes ?? [])
-              .sort((a: any, b: any) => (b.degree ?? 0) - (a.degree ?? 0))
-              .slice(0, 10)
-              .map((node: any, i: number) => (
-                <tr key={i} className="hover:bg-hover-bg cursor-pointer"
-                    onClick={() => setSelectedNode(node)}>
-                  <td className="py-2 text-text-primary">{node.label}</td>
-                  <td className="py-2 text-right text-text-secondary tabular-nums">{node.degree ?? '—'}</td>
-                  <td className="py-2 text-right text-text-secondary tabular-nums">{node.fir_count ?? '—'}</td>
-                  <td className="py-2 text-right">
-                    <span className={`font-medium tabular-nums ${
-                      (node.risk_score ?? 0) >= 75 ? 'text-red-400' :
-                      (node.risk_score ?? 0) >= 50 ? 'text-amber-400' : 'text-green-400'
-                    }`}>{node.risk_score ?? '—'}</span>
-                  </td>
-                </tr>
-              ))}
-          </tbody>
+             <tr className="text-text-tertiary text-[10px]">
+               <th className="text-left py-2">Name</th>
+               <th className="text-right py-2">Connections</th>
+               <th className="text-right py-2">FIRs</th>
+             </tr>
+           </thead>
+           <tbody className="divide-y divide-border-secondary">
+             {(networkData?.nodes ?? [])
+               .sort((a: any, b: any) => (b.degree ?? 0) - (a.degree ?? 0))
+               .slice(0, 10)
+               .map((node: any, i: number) => (
+                 <tr key={i} className="hover:bg-hover-bg cursor-pointer"
+                     onClick={() => setSelectedNode(node)}>
+                   <td className="py-2 text-text-primary">{node.label}</td>
+                   <td className="py-2 text-right text-text-secondary tabular-nums">{node.degree ?? '—'}</td>
+                   <td className="py-2 text-right text-text-secondary tabular-nums">{node.fir_count ?? '—'}</td>
+                 </tr>
+               ))}
+           </tbody>
         </table>
       </div>
     </div>

@@ -1,6 +1,5 @@
 import { api } from './client';
 import type {
-  RiskScoreResponse,
   BehaviorProfile,
   CrimePattern,
   PatrolRecommendation,
@@ -9,17 +8,6 @@ import type {
 } from '@/types';
 
 const INTEL_BASE = '/intelligence/v1';
-
-export async function getRiskScore(
-  entityType: string,
-  entityId: string,
-  options?: { includeExplanation?: boolean; forceRefresh?: boolean }
-): Promise<RiskScoreResponse> {
-  return api.get<RiskScoreResponse>(`${INTEL_BASE}/risk/${entityType}/${entityId}`, {
-    include_explanation: options?.includeExplanation !== false,
-    force_refresh: options?.forceRefresh,
-  });
-}
 
 export async function getBehaviorProfile(accusedId: string): Promise<BehaviorProfile> {
   return api.get<BehaviorProfile>(`${INTEL_BASE}/profile/${accusedId}`);
@@ -88,14 +76,4 @@ export async function getForecast(
     horizon_days: horizonDays,
     crime_type: crimeType,
   });
-}
-
-export async function submitFeedback(data: {
-  entity_type: string;
-  entity_id: string;
-  predicted_score: number;
-  officer_assessment: number;
-  officer_notes: string;
-}): Promise<void> {
-  await api.post(`${INTEL_BASE}/feedback`, data);
 }

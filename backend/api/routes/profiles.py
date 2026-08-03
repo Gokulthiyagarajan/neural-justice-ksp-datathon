@@ -48,7 +48,6 @@ for i in range(40):
         "offence_count": offences,
         "active_warrants": random.randint(0, min(3, offences)),
         "is_repeat_offender": offences >= 3,
-        "risk_score": round(random.uniform(10, 95), 1),
         "gang_affiliation": random.choice([None, None, None, "D-Company", "Local Rowdy Gang", "Bike Thieves Ring", "Drug Cartel"]),
         "status": random.choice(["active", "active", "active", "under_surveillance", "incarcerated", "released"]),
         "last_known_location": f"{random.choice(['Bengaluru', 'Mysuru', 'Mandya', 'Hassan', 'Mangaluru', 'Belagavi'])} {random.choice(['Urban', 'Rural', 'Central', 'East', 'West', 'North', 'South'])}",
@@ -75,7 +74,6 @@ for i in range(40):
 async def list_profiles(
     status: str | None = Query(None),
     search: str | None = Query(None),
-    min_risk: float | None = Query(None, ge=0, le=100),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
 ):
@@ -85,8 +83,6 @@ async def list_profiles(
     if search:
         q = search.lower()
         results = [p for p in results if q in p["name"].lower()]
-    if min_risk is not None:
-        results = [p for p in results if p["risk_score"] >= min_risk]
 
     total = len(results)
     start = (page - 1) * per_page
@@ -98,8 +94,8 @@ async def list_profiles(
 async def get_profile(profile_id: int):
     for p in PROFILES:
         if p["id"] == profile_id:
-            return {"success": True, "data": p}
-    raise HTTPException(404, "Profile not found")
+            return {"success": True, "data": {k: v for k, v in p.items() if k != "risk_score"}}
+        raise HTTPException(404, "Profile not found")
 
 
 @router.get("/{profile_id}/timeline", summary="Get offender timeline")

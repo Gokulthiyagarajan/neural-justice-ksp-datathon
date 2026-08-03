@@ -1304,7 +1304,6 @@ def _handle_ai_session_messages(session_id: str, body: dict, request=None, metho
 
 # ── Intent Enum ─────────────────────────────────────────────────────
 _COPILOT_INTENTS = {
-    "risk_score": "risk_score",
     "crime_trends": "crime_trends",
     "hotspot": "hotspot",
     "suspect_lookup": "suspect_lookup",
@@ -1374,10 +1373,12 @@ _COPILOT_PATTERNS = [
     # Bounded, data-only intent: never reaches the LLM / MOCK_AI guard.
     (re.compile(r"financial\s*intelligence|suspicious\s*transaction|money\s*trail|anomalous\s*transaction|ಹಣಕಾಸು\s*ಗುಪ್ತಚರ|ಅನುಮಾನಾಸ್ಪದ\s*ವಹಿವಾಟು|ವಹಿವಾಟು\s*ವರದಿ", re.I), "financial_intelligence", 0.92),
 
-    # risk_score
-    (re.compile(r"risk\s*score|risk\s*rating|risk\s*level|ಅಪಾಯ.*ಸ್ಕೋರ್", re.I), "risk_score", 0.85),
-    (re.compile(r"accused.*risk|risk.*accused", re.I), "risk_score", 0.80),
-    (re.compile(r"(?:what\s+is|show|get|check)\s+(?:the\s+)?risk\s+(?:score|rating|level)\s+(?:for|of)\s+(.+?)(?:\?|$)", re.I), "risk_score", 0.80),
+    # risk_score → refused: individual risk scoring was removed from the platform.
+    # The pattern is kept as a hard gate so these queries NEVER reach the LLM
+    # (a real model could otherwise fabricate risk assessments). Bounded, data-less.
+    (re.compile(r"risk\s*score|risk\s*rating|risk\s*level|ಅಪಾಯ.*ಸ್ಕೋರ್", re.I), "risk_score_denied", 0.85),
+    (re.compile(r"accused.*risk|risk.*accused", re.I), "risk_score_denied", 0.80),
+    (re.compile(r"(?:what\s+is|show|get|check)\s+(?:the\s+)?risk\s+(?:score|rating|level)\s+(?:for|of)\s+(.+?)(?:\?|$)", re.I), "risk_score_denied", 0.80),
 ]
 
 _CONFIDENCE_THRESHOLD = 0.6
@@ -1431,7 +1432,7 @@ _COPILOT_QUERIES = {
         LIMIT 10
     """,
     "suspect_lookup": """
-        SELECT name, age, gender, case_count, risk_score, modus_operandi, crime_types
+        SELECT name, age, gender, case_count, modus_operandi, crime_types
         FROM criminal_profiles
         WHERE name LIKE ?
         ORDER BY case_count DESC
@@ -1453,12 +1454,6 @@ _COPILOT_QUERIES = {
         FROM cases
         ORDER BY created_at DESC
         LIMIT 10
-    """,
-    "risk_score": """
-        SELECT name, age, gender, case_count, risk_score, modus_operandi, crime_types
-        FROM criminal_profiles
-        WHERE name LIKE ?
-        LIMIT 5
     """,
     "predictive": """
         SELECT crime_type, COUNT(*) as count
@@ -1526,18 +1521,16 @@ def _format_suspect(rows):
     lines = [
         f"Suspect Records ({len(rows)} found)",
         "",
-        "Name            Age   Gender   Cases   Risk Score   Modus Operandi",
-        "──────────────────────────────────────────────────────────────────",
+        "Name            Age   Gender   Cases   Modus Operandi",
+        "──────────────────────────────────────────────────────",
     ]
     for r in rows:
         name = r.get("name", "N/A")
         age = r.get("age", "N/A")
         gender = r.get("gender", "N/A")
         cases = r.get("case_count", 0)
-        risk = r.get("risk_score", 0)
-        risk_str = f"{'HIGH' if risk >= 0.7 else 'MEDIUM' if risk >= 0.4 else 'LOW'} ({int(risk*100)}%)"
         mo = (r.get("modus_operandi") or "")[:25]
-        lines.append(f"{name:<15} {str(age):<5} {gender:<7} {cases:<6} {risk_str:<14} {mo}")
+        lines.append(f"{name:<15} {str(age):<5} {gender:<7} {cases:<6} {mo}")
     return "\n".join(lines)
 
 
@@ -1578,27 +1571,6 @@ def _format_officer_assignment(rows):
         status = r.get("status", "N/A")
         accused = (r.get("accused_names") or "")[:20]
         lines.append(f"{cn:<17} {ct:<15} {st:<15} {status:<8} {accused}")
-    return "\n".join(lines)
-
-
-def _format_risk_score(rows):
-    if not rows:
-        return "No risk assessment data found."
-    lines = [
-        "Risk Assessment",
-        "",
-        "Name            Age   Gender   Cases   Risk Score   Level",
-        "──────────────────────────────────────────────────────────",
-    ]
-    for r in rows:
-        name = r.get("name", "N/A")
-        age = r.get("age", "N/A")
-        gender = r.get("gender", "N/A")
-        cases = r.get("case_count", 0)
-        risk = r.get("risk_score", 0)
-        risk_pct = int(risk * 100)
-        level = "HIGH — Monitor closely" if risk >= 0.7 else ("MEDIUM — Regular monitoring" if risk >= 0.4 else "LOW — Standard monitoring")
-        lines.append(f"{name:<15} {str(age):<5} {gender:<7} {cases:<6} {risk_pct}%       {level}")
     return "\n".join(lines)
 
 
@@ -2129,7 +2101,6 @@ _COPILOT_FORMATTERS = {
     "victim_stats": _format_victim_stats,
     "station_performance": _format_station,
     "officer_assignment": _format_officer_assignment,
-    "risk_score": _format_risk_score,
     "predictive": _format_predictive,
     "policy_recommendations": _format_policy_recommendations,
     "case_timeline": _format_case_timeline,
@@ -2149,7 +2120,6 @@ PLATFORM CAPABILITIES — What you can do:
 - Suspect lookup (ask: "find suspect [name]")
 - Hotspot identification (ask: "where are crime hotspots?")
 - Station performance (ask: "how is [station] performing?")
-- Risk assessment (ask: "what is the risk score for [person]?")
 - Case assignments (ask: "who is assigned to cases?")
 - Victim statistics (ask: "victim demographics")
 - Predictive policing (ask: "predictive insights for next 30 days")
@@ -2184,8 +2154,29 @@ def _handle_copilot_chat(body: dict, request=None):
 
     # Step 2: If it's a data intent, run SQL query and format response
     data_intents = {"crime_trends", "hotspot", "suspect_lookup", "victim_stats",
-                    "station_performance", "officer_assignment", "risk_score", "predictive",
+                    "station_performance", "officer_assignment", "predictive",
                     "policy_recommendations", "case_timeline", "financial_intelligence"}
+
+    if intent == "risk_score_denied" and confidence >= _CONFIDENCE_THRESHOLD:
+        # Individual risk scoring was removed from the platform. Bounded refusal —
+        # never fabricates data and never reaches the LLM.
+        return _json_response({
+            "session_id": f"sess-{uuid.uuid4().hex[:12]}",
+            "reply_text": (
+                "Individual risk scoring is no longer available on this platform. "
+                "I can help with case-level and area-level analysis instead: "
+                "case timelines, suspect records (case history & modus operandi), "
+                "crime trends, hotspots, station performance, or predictive "
+                "area-level insights."
+            ),
+            "reply_language": language,
+            "intent_detected": intent,
+            "classification_confidence": round(confidence, 2),
+            "classification_tier": "rule_based",
+            "query_evidence": [],
+            "clarification_needed": False,
+            "clarification_prompt": None,
+        })
 
     if intent in data_intents and confidence >= _CONFIDENCE_THRESHOLD:
         # ── Case timeline: multi-source joined fetch (bounded, never LLM) ──
@@ -2261,7 +2252,7 @@ def _handle_copilot_chat(body: dict, request=None):
                 try:
                     # Build params for LIKE queries
                     params = []
-                    if intent in ("suspect_lookup", "risk_score"):
+                    if intent == "suspect_lookup":
                         name = entities.get("name", "")
                         params.append(f"%{name}%" if name else "%")
                     elif intent == "station_performance":
@@ -2466,7 +2457,11 @@ def handler(request=None, response=None):
             conn = get_db()
             try:
                 rows = conn.execute("SELECT * FROM criminal_profiles WHERE status='active'").fetchall()
-                return _json_response([dict(r) for r in rows])
+                profiles = [dict(r) for r in rows]
+                # Individual risk scoring is not surfaced by this platform.
+                for p in profiles:
+                    p.pop("risk_score", None)
+                return _json_response(profiles)
             finally: conn.close()
         
         if path.startswith("/api/criminal-profiles/") and method == "GET":
@@ -2476,7 +2471,10 @@ def handler(request=None, response=None):
             conn = get_db()
             try:
                 row = conn.execute("SELECT * FROM criminal_profiles WHERE id=?", (pid,)).fetchone()
-                return _json_response(dict(row) if row else {})
+                p = dict(row) if row else {}
+                # Individual risk scoring is not surfaced by this platform.
+                p.pop("risk_score", None)
+                return _json_response(p)
             finally: conn.close()
 
         # ── Cases ─────────────────────────────────────────────────
@@ -2681,10 +2679,10 @@ def handler(request=None, response=None):
             sn = _get_query_param(request, "station_name", "Vijayanagar PS")
             return _json_response({
                 "station_name": sn, "district_name": "Bengaluru Urban", "total_firs": 42,
-                "fir_trend": 12.5, "open_cases": 18, "solved_rate": 38.2, "high_risk_count": 4,
-                "high_risk_accused": [
-                    {"id": 1, "name": "Ravi Kumar", "fir_count": 5, "crime_type": "Robbery", "risk_score": 92},
-                    {"id": 2, "name": "Suresh Patel", "fir_count": 3, "crime_type": "Assault", "risk_score": 88},
+                "fir_trend": 12.5, "open_cases": 18, "solved_rate": 38.2, "high_priority_count": 2,
+                "high_priority_cases": [
+                    {"fir_no": "FIR-100-2026", "crime_type": "Robbery", "station": "Vijayanagar PS", "days_open": 45},
+                    {"fir_no": "FIR-101-2026", "crime_type": "Assault", "station": "Jayanagar PS", "days_open": 38},
                 ],
                 "active_warnings": [],
                 "trend_3m": [{"date": (datetime.now(timezone.utc) - timedelta(days=i)).strftime("%Y-%m-%d"), "count": random.randint(1, 6)} for i in range(90)],
@@ -2890,7 +2888,6 @@ def handler(request=None, response=None):
                         "officer_assigned": "",
                         "days_open": 0,
                         "linked_cases": 0,
-                        "is_repeat_offender": False,
                         "description": brief_facts,
                         "location": dist,
                         "rowid": r["id"],

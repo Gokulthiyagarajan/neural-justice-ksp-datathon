@@ -18,7 +18,6 @@ interface NodeDetailData {
   id: string;
   label: string;
   type: string;
-  risk_score?: number;
   known_associates: { name: string; shared_cases: string }[];
   connected_firs: { crime_no: string; status: string; date: string; crime_head: string; station?: string }[];
   evidence: { type: string; detail: string; case: string }[];
@@ -38,8 +37,6 @@ export function NodeInspector({ node, connectedCount, typeBreakdown }: NodeInspe
   const initial = (node.label || '?').charAt(0).toUpperCase();
   const style = NODE_TYPE_STYLES[node.type];
   const color = style?.color || '#5F6368';
-  const riskScore = node.risk_score ?? 0;
-  const riskLevel = riskScore > 0.7 ? 'Critical' : riskScore > 0.4 ? 'Medium' : 'Low';
 
   const [detail, setDetail] = useState<NodeDetailData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -58,8 +55,6 @@ export function NodeInspector({ node, connectedCount, typeBreakdown }: NodeInspe
   }, [node.id]);
 
   const toggleSection = (s: string) => setExpandedSection((prev) => prev === s ? '' : s);
-
-  const rs = detail?.risk_score ?? riskScore;
 
   return (
     <div className="flex flex-col gap-4 text-[13px]">
@@ -81,32 +76,10 @@ export function NodeInspector({ node, connectedCount, typeBreakdown }: NodeInspe
           >
             {style?.label || node.type.replace('_', ' ')}
           </span>
-        </div>
-        {/* Risk badge */}
-        <span
-          className="text-[10px] font-semibold px-2 py-1 rounded-full shrink-0"
-          style={{
-            background: rs > 0.7 ? 'rgba(255,51,102,0.15)' : rs > 0.4 ? 'rgba(245,158,11,0.15)' : 'rgba(0,230,118,0.15)',
-            color: rs > 0.7 ? '#FF3366' : rs > 0.4 ? '#F59E0B' : '#00E676',
-            border: `1px solid ${rs > 0.7 ? '#FF336640' : rs > 0.4 ? '#F59E0B40' : '#00E67640'}`,
-          }}
-        >
-          {riskLevel} · {(rs * 100).toFixed(0)}
-        </span>
-      </div>
+          </div>
+          </div>
 
-      {/* Risk bar */}
-      <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-        <div
-          className="h-full rounded-full transition-all duration-300"
-          style={{
-            width: `${(rs * 100).toFixed(0)}%`,
-            background: rs > 0.7 ? '#FF3366' : rs > 0.4 ? '#F59E0B' : '#00E676',
-          }}
-        />
-      </div>
-
-      {/* Quick stats grid */}
+          {/* Quick stats grid */}
       <div className="grid grid-cols-3 gap-2">
         <MiniStat icon={<FileText className="w-3.5 h-3.5" />} label="FIRs" value={detail?.connected_firs?.length ?? node.fir_count ?? 0} color="#2B7FFF" />
         <MiniStat icon={<Users className="w-3.5 h-3.5" />} label="Associates" value={detail?.known_associates?.length ?? connectedCount} color="#8B5CF6" />

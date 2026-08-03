@@ -13,7 +13,7 @@ interface IntentIconProps {
 
 function IntentIcon({ intent, className = "w-4 h-4" }: IntentIconProps) {
   const intentConfig = {
-    ['risk_score']: { icon: AlertTriangle, color: "text-red-400" },
+     ['risk_score_denied']: { icon: AlertTriangle, color: "text-red-400" },
     ['crime_trends']: { icon: Archive, color: "text-blue-400" },
     ['hotspot']: { icon: MapPin, color: "text-green-400" },
     ['suspect_lookup']: { icon: UserCheck, color: "text-purple-400" },
@@ -102,7 +102,7 @@ export function CopilotPage() {
     if (!intent) return 'text-text-tertiary';
 
     const colors = {
-      ['risk_score']: 'text-red-400',
+      ['risk_score_denied']: 'text-red-400',
       ['crime_trends']: 'text-blue-400',
       ['hotspot']: 'text-green-400',
       ['suspect_lookup']: 'text-purple-400',
@@ -227,7 +227,7 @@ export function CopilotPage() {
               </div>
               <h2 className="text-2xl font-semibold text-text-primary mb-2">Welcome to Drishti Copilot</h2>
               <p className="text-text-secondary mb-6 max-w-md">
-                I can help you analyze crime trends, identify suspects, assess risk scores, and explore station performance.
+                I can help you analyze crime trends, identify suspects, and explore station performance.
                 Ask me anything about your investigations.
               </p>
 
@@ -302,7 +302,7 @@ export function CopilotPage() {
               <textarea
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Ask about crime trends, suspects, risk scores, station performance, or anything else..."
+                placeholder="Ask about crime trends, suspects, or station performance..."
                 className="w-full px-4 py-3 rounded-xl border border-border-primary bg-bg-primary text-text-primary placeholder-text-tertiary focus:outline-none focus:border-signal-amber/50 focus:bg-bg-secondary resize-none min-h-[48px] max-h-32"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {

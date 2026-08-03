@@ -93,8 +93,8 @@ const LAYOUT_PRESETS: Record<string, Record<string, unknown>> = {
     padding: 50,
     spacingFactor: 1.1,
     concentric: (node: cytoscape.NodeSingular) => {
-      const rs = node.data('risk_score') as number ?? 0;
-      return rs > 0.7 ? 1 : rs > 0.4 ? 2 : 3;
+      const deg = node.degree(false);
+      return deg > 3 ? 1 : deg > 1 ? 2 : 3;
     },
     levelWidth: () => 1,
     avoidOverlap: true,
@@ -218,10 +218,8 @@ const CytoscapeCanvas = forwardRef<CytoscapeCanvasHandle, CytoscapeCanvasProps>(
         if (!cy) return;
         cy.nodes().forEach((n) => {
           const t = n.data('type') as NodeType;
-          const rs = (n.data('risk_score') as number ?? 0) * 100;
           const deg = n.degree(false);
           const visible = filters.nodeTypes.includes(t)
-            && rs >= filters.minRisk && rs <= filters.maxRisk
             && deg >= filters.minConnections;
           n.style('display', visible ? 'element' : 'none');
         });
@@ -246,7 +244,6 @@ const CytoscapeCanvas = forwardRef<CytoscapeCanvasHandle, CytoscapeCanvasProps>(
           label: n.label,
           type: n.type,
           subtype: n.subtype,
-          risk_score: n.risk_score,
           fir_count: n.fir_count,
           evidence_count: n.evidence_count,
           community_id: n.community_id,
@@ -356,9 +353,9 @@ const CytoscapeCanvas = forwardRef<CytoscapeCanvasHandle, CytoscapeCanvasProps>(
           },
           // Type-specific node styles
           ...nodeStyles,
-          // High-risk emphasis
+          // High-degree emphasis (removed per-entity risk scoring)
           {
-            selector: 'node[risk_score > 0.7]',
+            selector: 'node[degree > 2]',
             style: {
               'border-width': 3,
               'border-color': '#FF3366',
@@ -452,7 +449,6 @@ const CytoscapeCanvas = forwardRef<CytoscapeCanvasHandle, CytoscapeCanvasProps>(
           label: el.data('label'),
           type: el.data('type'),
           subtype: el.data('subtype'),
-          risk_score: el.data('risk_score'),
           fir_count: el.data('fir_count'),
           evidence_count: el.data('evidence_count'),
           community_id: el.data('community_id'),
@@ -492,11 +488,9 @@ const CytoscapeCanvas = forwardRef<CytoscapeCanvasHandle, CytoscapeCanvasProps>(
         const n = evt.target;
         const label = n.data('label') || '';
         const type = n.data('type') || '';
-        const rs = n.data('risk_score') as number ?? 0;
         const deg = n.degree(false);
-        tooltip.textContent = `${label} · ${type} · Risk: ${(rs * 100).toFixed(0)} · Deg: ${deg}`;
+        tooltip.textContent = `${label} · ${type} · Connections: ${deg}`;
         tooltip.style.display = 'block';
-        // Hover highlight: emphasize node border
         n.style({ 'border-width': 3, 'border-color': tc.highlightGlow, 'border-opacity': 1 });
       });
 
@@ -511,11 +505,10 @@ const CytoscapeCanvas = forwardRef<CytoscapeCanvasHandle, CytoscapeCanvasProps>(
 
       cy.on('mouseout', 'node', (evt) => {
         tooltip.style.display = 'none';
-        // Reset border unless selected
         const n = evt.target;
         if (!n.selected()) {
-          const rs = n.data('risk_score') as number ?? 0;
-          n.style({ 'border-width': rs > 0.7 ? 3 : 2, 'border-color': rs > 0.7 ? '#FF3366' : (NODE_TYPE_STYLES[n.data('type') as NodeType]?.color || tc.nodeDefault), 'border-opacity': 0.6 });
+          const deg = n.degree(false);
+          n.style({ 'border-width': deg > 2 ? 3 : 2, 'border-color': deg > 2 ? '#FF3366' : (NODE_TYPE_STYLES[n.data('type') as NodeType]?.color || tc.nodeDefault), 'border-opacity': 0.6 });
         }
       });
 
@@ -533,10 +526,9 @@ const CytoscapeCanvas = forwardRef<CytoscapeCanvasHandle, CytoscapeCanvasProps>(
             n.style('label', n.data('label'));
             n.style('font-size', Math.min(13, 9 + zoom * 2).toFixed(0) + 'px');
           } else if (zoom > 0.7) {
-            // Show labels for important nodes (high risk, high degree)
-            const rs = n.data('risk_score') as number ?? 0;
+            // Show labels for well-connected nodes (high degree centrality)
             const deg = n.degree(false);
-            if (rs > 0.5 || deg > 3) {
+            if (deg > 3) {
               n.style('label', n.data('label'));
               n.style('font-size', '10px');
             } else {

@@ -64,7 +64,6 @@ for i in range(60):
             "SI Naveen", "Inspector Deshpande", "ASI Prakash",
         ]),
         "severity": random.choice(["low", "medium", "medium", "high", "critical"]),
-        "is_repeat_offender": random.choice([True, False, False, False]),
         "days_open": random.randint(1, 180),
         "lat": 12.9 + random.uniform(-0.8, 0.8),
         "lng": 77.5 + random.uniform(-0.8, 0.8),

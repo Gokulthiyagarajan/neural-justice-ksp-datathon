@@ -16,7 +16,6 @@ interface FIR {
   assigned_officer?: string;
   days_open?: number;
   status: string;
-  risk_score?: number;
 }
 
 export function PICases() {
@@ -45,7 +44,6 @@ export function PICases() {
         assigned_officer: f.assigned_officer || 'SI Meena',
         days_open: f.days_open ?? 0,
         status: f.status || 'registered',
-        risk_score: f.status === 'under_investigation' ? 75 : f.status === 'chargesheeted' ? 50 : 25,
       })));
       setTotal(demo.length);
       setLoading(false);
@@ -77,7 +75,6 @@ export function PICases() {
           assigned_officer: f.assigned_officer || f.officer_assigned,
           days_open: f.days_open ?? 0,
           status: f.status || 'registered',
-          risk_score: f.risk_score ?? (f.severity === 'critical' ? 85 : f.severity === 'high' ? 65 : 30),
         })))
         setTotal(d?.total ?? raw.length)
         setLoading(false)
@@ -216,7 +213,7 @@ export function PICases() {
           </thead>
           <tbody className="divide-y divide-border-secondary">
             {firs.map(fir => {
-              const isUrgent = (fir.risk_score ?? 0) >= 75 || (fir.days_open ?? 0) > 30
+              const isUrgent = (fir.days_open ?? 0) > 30 || fir.status === 'under_investigation'
               return (
                 <tr key={fir.crime_no}
                     className={`hover:bg-hover-bg transition-colors ${

@@ -149,22 +149,6 @@ export function FIRTableRow({
       <td style={cellBase}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{fir.accused_name}</span>
-          {fir.is_repeat_offender && (
-            <span
-              style={{
-                background: C.amberDim,
-                color: C.amber,
-                border: `1px solid rgba(245,158,11,0.3)`,
-                borderRadius: 4,
-                padding: '1px 6px',
-                fontSize: 10,
-                fontWeight: 500,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              Repeat
-            </span>
-          )}
         </div>
       </td>
 

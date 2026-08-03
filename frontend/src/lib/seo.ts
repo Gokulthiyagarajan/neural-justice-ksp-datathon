@@ -90,17 +90,6 @@ export const routeMetadata: Record<string, SeoMetadata> = {
       { label: 'Analytics', path: '/analytics' },
     ],
   },
-  '/intelligence/risk': {
-    title: 'Risk Scores – Neural Justice | Crime Risk Assessment',
-    description:
-      'AI-driven crime risk scoring and assessment for Karnataka districts, stations, and crime categories.',
-    keywords: ['risk assessment', 'crime risk score', 'predictive policing', 'risk analysis'],
-    canonical: `${BASE_URL}/intelligence/risk`,
-    breadcrumb: [
-      { label: 'Dashboard', path: '/' },
-      { label: 'Risk Scores', path: '/intelligence/risk' },
-    ],
-  },
   '/intelligence/profiles': {
     title: 'Behavior Profiles – Neural Justice | Criminal Behavior Analysis',
     description:

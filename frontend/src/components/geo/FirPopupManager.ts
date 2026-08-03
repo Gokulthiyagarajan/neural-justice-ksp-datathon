@@ -33,7 +33,6 @@ export interface FirProperties {
   occurrence_date?: string;
   investigation_status?: string;
   officer_assigned?: string;
-  risk_score?: number;
   lat?: number;
   lng?: number;
   recency_hours?: number;
@@ -86,10 +85,6 @@ function buildPopupHtml(props: FirProperties): string {
     { label: 'Investigation', value: props.investigation_status || props.status || '—' },
     { label: 'Officer', value: props.officer_assigned || '—' },
   ];
-
-  if (props.risk_score != null) {
-    rows.push({ label: 'Risk Score', value: `${props.risk_score}/100`, mono: true });
-  }
 
   rows.push({ label: 'Coordinates', value: coords, mono: true });
 

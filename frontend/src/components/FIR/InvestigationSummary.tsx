@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle, Clock, FileText, MapPin, Shield, TrendingUp, Users, Scale, Eye, Crosshair, Truck, Swords, Landmark, Lightbulb, Target } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock, FileText, MapPin, Shield, Users, Scale, Eye, Crosshair, Truck, Swords, Landmark, Lightbulb, Target } from 'lucide-react';
 import type { InvestigationSummary as InvestigationSummaryType } from '@/types';
 
 interface Props {
@@ -58,7 +58,6 @@ export function InvestigationSummary({ data }: Props) {
             <Chip label={data.incident_type} icon={FileText} />
             <Chip label={data.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} icon={CheckCircle} />
             <Chip label={data.priority} icon={AlertTriangle} />
-            <Chip label={`Risk: ${data.risk_score}`} icon={TrendingUp} />
             <Chip label={`AI: ${data.ai_confidence}%`} icon={Shield} />
             <Chip label={data.crime_category} icon={Scale} />
             <Chip label={data.district} icon={MapPin} />

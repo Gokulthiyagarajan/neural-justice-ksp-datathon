@@ -9,7 +9,6 @@ SUGGESTED_QUERIES = [
     "Show crime trends in Bengaluru",
     "Where are the crime hotspots?",
     "Find suspect John Doe",
-    "What is the risk score for accused X?",
     "How is Station Y performing?",
     "Victim demographics in Karnataka",
     "Who is assigned to case Z?",
@@ -34,6 +33,17 @@ def generate_response(
             return llm_response
         return _general_chat_fallback(user_message, language)
 
+    if intent == Intent.RISK_SCORE_DENIED:
+        # Individual risk scoring was removed from the platform. Bounded refusal:
+        # no data is read, no score is produced, and the LLM is never consulted.
+        return (
+            "Individual risk scoring is no longer available on this platform. "
+            "I can help with case-level and area-level analysis instead: "
+            "case timelines, suspect records (case history and modus operandi), "
+            "crime trends, hotspots, station performance, or predictive "
+            "area-level insights."
+        )
+
     if intent == Intent.GENERAL_QUERY:
         return _general_query_response(language)
 
@@ -49,7 +59,6 @@ def generate_response(
         Intent.OFFICER_ASSIGNMENT: _officer_assignment_response,
         Intent.CASE_TIMELINE: _case_timeline_response,
         Intent.FINANCIAL_INTELLIGENCE: _financial_intelligence_response,
-        Intent.RISK_SCORE: _risk_score_response,
         Intent.PREDICTIVE: _predictive_response,
         Intent.POLICY_RECOMMENDATIONS: _policy_recommendations_response,
     }
@@ -146,8 +155,8 @@ def _suspect_response(rows, evidence, lang):
     lines = [
         f"Suspect Records ({len(rows)} found)",
         "",
-        "Name            Age   Gender   Cases   Risk Score   Modus Operandi",
-        "──────────────────────────────────────────────────────────────────────",
+        "Name            Age   Gender   Cases   Modus Operandi",
+        "──────────────────────────────────────────────────────────",
     ]
     
     for r in rows[:5]:
@@ -155,10 +164,8 @@ def _suspect_response(rows, evidence, lang):
         age = r.get('age', 'N/A')
         gender = r.get('gender', 'N/A')
         case_count = r.get('case_count', 0)
-        risk_score = r.get('risk_score', 0)
-        mo = r.get('modus_operandi', 'N/A')
-        risk_level = "HIGH" if risk_score >= 0.7 else "MEDIUM" if risk_score >= 0.4 else "LOW"
-        lines.append(f"{name:<15} {str(age):<5} {gender:<8} {case_count:<7} {risk_level} ({risk_score:.0%})   {mo}")
+        mo = (r.get('modus_operandi') or 'N/A')[:25]
+        lines.append(f"{name:<15} {str(age):<5} {gender:<8} {case_count:<7} {mo}")
     
     return "\n".join(lines)
 
@@ -519,37 +526,6 @@ def _financial_intelligence_response(rows, evidence, lang):
     return "\n".join(lines)
 
 
-def _risk_score_response(rows, evidence, lang):
-    """Risk score MUST include factor breakdown, never a bare number."""
-    if not rows:
-        return "No risk score data found. Try providing a suspect name or crime number."
-    
-    lines = [
-        f"Risk Assessment ({len(rows)} profiles)",
-        "",
-        "Name            Age   Gender   Cases   Risk Score   Level",
-        "───────────────────────────────────────────────────────────",
-    ]
-    
-    for r in rows[:3]:
-        name = r.get('name', 'N/A')
-        age = r.get('age', 'N/A')
-        gender = r.get('gender', 'N/A')
-        case_count = r.get('case_count', 0)
-        score = r.get('risk_score', 0)
-        
-        if score >= 0.7:
-            level = "HIGH — Monitor closely"
-        elif score >= 0.4:
-            level = "MEDIUM — Regular monitoring"
-        else:
-            level = "LOW — Standard oversight"
-        
-        lines.append(f"{name:<15} {str(age):<5} {gender:<8} {case_count:<7} {score:.0%}         {level}")
-    
-    return "\n".join(lines)
-
-
 def _general_query_response(lang):
     """Bounded fallback — no free LLM generation."""
     suggestions = "\n".join(f"- {q}" for q in SUGGESTED_QUERIES[:5])
@@ -572,7 +548,6 @@ def _empty_response(intent, lang):
         Intent.OFFICER_ASSIGNMENT: "case assignment",
         Intent.CASE_TIMELINE: "case timeline",
         Intent.FINANCIAL_INTELLIGENCE: "suspicious transaction report",
-        Intent.RISK_SCORE: "risk score",
         Intent.PREDICTIVE: "predictive",
         Intent.POLICY_RECOMMENDATIONS: "policy recommendation",
     }
@@ -588,7 +563,6 @@ def _empty_response(intent, lang):
         Intent.HOTSPOT: "No hotspot data available. Try asking about a specific district or police station.",
         Intent.STATION_PERFORMANCE: "No station performance data found. Try specifying a station name.",
         Intent.VICTIM_STATS: "No victim statistics found. Try asking about a specific crime type.",
-        Intent.RISK_SCORE: "No risk score data found. Try providing a suspect name or crime number.",
         Intent.PREDICTIVE: "No data available for predictive analysis. Try asking about crime trends first.",
         Intent.POLICY_RECOMMENDATIONS: "No crime data available to generate policy recommendations. Try asking about crime trends first.",
     }
@@ -619,8 +593,7 @@ def _general_chat_fallback(user_message: str, lang: str) -> str:
             "- **Crime Trends**: Show patterns and statistics\n"
             "- **Suspect Lookup**: Find accused persons\n"
             "- **Hotspots**: Identify high-crime areas\n"
-            "- **Station Performance**: Check police station metrics\n"
-            "- **Risk Assessment**: Evaluate suspect risk levels\n\n"
+            "- **Station Performance**: Check police station metrics\n\n"
             "Try asking something like 'Show crime trends in Bengaluru' or 'Find suspect John Doe'."
         )
     

@@ -13,7 +13,6 @@ export interface NetworkNode {
   id: string;
   label: string;
   type: NodeType;
-  risk_score?: number;
   /** Subtype for richer iconography (e.g., 'bank_account', 'mobile', 'two_wheeler') */
   subtype?: string;
   /** Optional FIR count */
@@ -56,8 +55,6 @@ export type LayoutName =
 export interface GraphFilters {
   nodeTypes: NodeType[];
   edgeTypes: EdgeType[];
-  minRisk: number;
-  maxRisk: number;
   searchQuery: string;
   minConnections: number;
 }
@@ -68,8 +65,6 @@ export const DEFAULT_FILTERS: GraphFilters = {
   edgeTypes: ['transaction', 'communication', 'co_arrest', 'family', 'association',
     'criminal_group', 'known_associate', 'witnessed', 'involved_in', 'located_at',
     'owned_by', 'investigated_by', 'linked_to', 'reported_by'],
-  minRisk: 0,
-  maxRisk: 100,
   searchQuery: '',
   minConnections: 0,
 };

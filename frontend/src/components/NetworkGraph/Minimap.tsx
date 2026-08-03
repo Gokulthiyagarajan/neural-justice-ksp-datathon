@@ -19,7 +19,7 @@ export function Minimap({ data, mainCy }: MinimapProps) {
     const elements = [
       ...data.nodes.map((n) => ({
         group: 'nodes' as const,
-        data: { id: n.id, type: n.type, risk_score: n.risk_score },
+        data: { id: n.id, type: n.type },
       })),
       ...data.edges.map((e) => ({
         group: 'edges' as const,
