@@ -665,14 +665,14 @@ export function FIRDetailPage() {
         <Section title="Accused Details">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Header row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.6fr 0.8fr', gap: 16, paddingBottom: 6, borderBottom: `1px solid ${C.border}`, fontSize: 11, fontWeight: 600, color: C.grey, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.6fr 0.8fr', gap: 16, paddingBottom: 6, borderBottom: `1px solid ${C.navyMid}`, fontSize: 11, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.6 }}>
               <div>Name</div>
               <div>Age</div>
               <div>Gender</div>
             </div>
             {/* One row per accused person */}
             {(fir.accused_list && fir.accused_list.length > 0 ? fir.accused_list : []).map((a, i) => (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.6fr 0.8fr', gap: 16, paddingBottom: 8, borderBottom: i < (fir.accused_list?.length ?? 1) - 1 ? `1px solid ${C.border}` : 'none' }}>
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.6fr 0.8fr', gap: 16, paddingBottom: 8, borderBottom: i < (fir.accused_list?.length ?? 1) - 1 ? `1px solid ${C.navyMid}` : 'none' }}>
                 <div style={{ fontSize: 13, color: C.white }}>{a.name || 'Not recorded'}</div>
                 <div style={{ fontSize: 13, color: C.white }}>{a.age ? `${a.age}y` : 'N/A'}</div>
                 <div style={{ fontSize: 13, color: C.white }}>{a.gender || 'N/A'}</div>
