@@ -3,6 +3,7 @@ import { useParams, Link, useLocation } from 'react-router-dom';
 import { FileDown, Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getFir, getFirTimeline } from '@/api/firs';
+import { authHeaders } from '@/utils/authHeaders';
 import { LoadingSpinner } from '@/components/Common/LoadingSpinner';
 import type { FirCase, TimelineEvent } from '@/types';
 import type {
@@ -249,10 +250,10 @@ function buildRichDetail(
     description: fir.brief_facts || 'No description available.',
     location,
     rowid: 0,
-    accused_age: null,
-    accused_gender: null,
-    victim_age: null,
-    victim_gender: null,
+    accused_age: (fir as any).accused_age ?? null,
+    accused_gender: (fir as any).accused_gender ?? null,
+    victim_age: (fir as any).victim_age ?? null,
+    victim_gender: (fir as any).victim_gender ?? null,
     investigation_timeline: timeline,
     ai_summary: null,
     description_full: fir.brief_facts || 'No description available.',
@@ -469,11 +470,16 @@ export function FIRDetailPage() {
     try {
       const crimeNo = encodeURIComponent(fir.fir_number);
       const lang = 'en';
-      const token = localStorage.getItem('auth_token');
-      const headers: Record<string, string> = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      
-      const resp = await fetch(`/api/reports/fir/${crimeNo}/pdf?lang=${lang}`, { headers });
+      // Same base-resolution as the API client: VITE_API_URL at build time,
+      // otherwise '/api' (Vite dev proxy). Never a bare relative path in prod.
+      const BASE_URL = import.meta.env.VITE_API_URL
+        ? `${import.meta.env.VITE_API_URL}/api`
+        : '/api';
+      const headers: Record<string, string> = {
+        ...authHeaders(),
+      };
+
+      const resp = await fetch(`${BASE_URL}/reports/fir/${crimeNo}/pdf?lang=${lang}`, { headers });
       
       if (!resp.ok) {
         const errorText = await resp.text().catch(() => '');

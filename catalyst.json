@@ -3,6 +3,7 @@
   "project_name": "Neural-justice",
   "client": {
     "path": "frontend/dist",
+    "source": "frontend/dist",
     "stack": "reactjs",
     "code": "frontend/dist",
     "config": "{\"spa\":{\"enabled\":true}}"

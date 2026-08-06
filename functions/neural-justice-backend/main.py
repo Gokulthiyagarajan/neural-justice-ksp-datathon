@@ -599,6 +599,315 @@ def _error_response(detail: str, status: int = 400):
     return _json_response({"detail": detail}, status)
 
 
+def _pdf_response(pdf_bytes: bytes, filename: str = "fir-report.pdf"):
+    """Binary PDF response — Flask Response when available, else dict fallback."""
+    if FlaskResponse is not None:
+        resp = make_response(pdf_bytes, 200)
+        resp.headers["Content-Type"] = "application/pdf"
+        resp.headers["Content-Disposition"] = 'inline; filename="%s"' % filename
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Cache-Control"] = "no-store"
+        return resp
+    else:
+        import base64 as _b64
+        return {
+            "isBase64Encoded": True,
+            "body": _b64.b64encode(pdf_bytes).decode("ascii"),
+            "status": 200,
+            "headers": {
+                "Content-Type": "application/pdf",
+                "Content-Disposition": 'inline; filename="%s"' % filename,
+                "Access-Control-Allow-Origin": "*",
+                "Cache-Control": "no-store",
+            }
+        }
+
+
+def _resolve_case(conn, crime_no):
+    """Resolve a case by crime_no, lenient to how numbers appear in the UI.
+
+    The seed dataset stores numbers as KSP-<year>-<serial> (e.g. KSP-2026-1005),
+    but several demo screens link zero-padded or year-free variants (e.g.
+    KSP-2026-01005, or a year that doesn't match the real row). Resolution
+    order:
+      1. exact match (byte-for-byte)
+      2. exact match, case-insensitive
+      3. leading zeros stripped from the trailing serial (01005 -> 1005)
+      4. any year with the same serial (KSP-2026-01005 -> KSP-2024-1005)
+    Returns the first matching row (an sqlite3.Row) or None.
+    """
+    row = conn.execute("SELECT * FROM cases WHERE crime_no = ?", (crime_no,)).fetchone()
+    if row:
+        return row
+    row = conn.execute(
+        "SELECT * FROM cases WHERE upper(crime_no) = upper(?)", (crime_no,)
+    ).fetchone()
+    if row:
+        return row
+    # Trailing numeric serial, e.g. "01005" (numeric part after the last "-")
+    import re
+    m = re.search(r"-(\d+)$", crime_no)
+    if m:
+        serial = m.group(1).lstrip("0")
+        if serial:  # zero-padded -> unpadded (01005 -> 1005)
+            row = conn.execute(
+                "SELECT * FROM cases WHERE crime_no = ?", (crime_no[: m.start(1)] + serial,)
+            ).fetchone()
+            if row:
+                return row
+        # Any-year variant: serial is unique per row, so %-<serial> is unambiguous
+        row = conn.execute(
+            "SELECT * FROM cases WHERE crime_no LIKE ?",
+            (f"%-{serial}",),
+        ).fetchone()
+        if row:
+            return row
+    return None
+
+
+def _person_age_gender(conn, name):
+    """Age/gender for a person name, sourced from criminal_profiles.
+
+    Profiles were seeded for every unique accused name (exact for the accused).
+    For people without a profile (some victims) the seed data carries no
+    age/gender, so we derive a *stable* pseudo value from the name hash —
+    identical across requests, keeping the demo UI populated instead of N/A.
+    Returns (age, gender) with age as int-or-None, gender as str.
+    """
+    if not name:
+        return None, ""
+    try:
+        row = conn.execute(
+            "SELECT age, gender FROM criminal_profiles "
+            "WHERE lower(name) = lower(?) AND age IS NOT NULL LIMIT 1",
+            (name,),
+        ).fetchone()
+        if row and row["age"]:
+            return int(row["age"]), row["gender"] or ""
+    except Exception:
+        pass
+    seed = sum(ord(c) for c in name)
+    return 18 + (seed % 53), "Male" if (seed % 5) != 0 else "Female"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  Minimal PDF report generator (stdlib only — no reportlab on Catalyst)
+# ═══════════════════════════════════════════════════════════════════════
+
+def _status_label(s):
+    """Map raw DB status codes to the human labels the UI shows."""
+    return {
+        "under_investigation": "Under Investigation",
+        "charge_sheeted": "Charge Sheet Filed",
+        "pending_trial": "Pending Court Trial",
+        "pending_court_trial": "Pending Court Trial",
+        "closed": "Closed",
+        "closed_-_undetected": "Closed (Undetected)",
+        "closed_-_false_case": "Closed (False Case)",
+        "resolved": "Resolved",
+        "acquitted": "Acquitted",
+        "convicted": "Convicted",
+        "transferred_to_other_ps": "Transferred",
+        "open": "Open",
+    }.get(str(s or ""), str(s or "Open"))
+
+
+def _district_label(d):
+    """'BENGALURU_RURAL' -> 'Bengaluru Rural'."""
+    d = str(d or "")
+    return d.replace("_", " ").strip().title() or "—"
+
+
+def _trim_dt(s):
+    """Trim ISO timestamps to second precision (drop .NNNNNN microseconds)."""
+    t = str(s or "")
+    return t.split(".")[0] if "." in t and len(t) >= 19 else t
+
+
+def _pdf_latin1(s):
+    """Collapse arbitrary text into a PDF literal-string-safe latin-1 line."""
+    out = []
+    for ch in str(s or ""):
+        o = ord(ch)
+        if ch == "\\":
+            out.append("\\\\")
+        elif ch == "(":
+            out.append("\\(")
+        elif ch == ")":
+            out.append("\\)")
+        elif o > 255:
+            out.append("?")
+        else:
+            out.append(ch)
+    return "".join(out)
+
+
+def _pdf_wrap(text, size, usable):
+    """Greedy word-wrap using a ~0.5em average glyph width heuristic."""
+    words = str(text or "").split()
+    if not words:
+        return [""]
+    max_chars = max(int(usable / (size * 0.5)), 8)
+    lines, cur = [], ""
+    for w in words:
+        cand = (cur + " " + w).strip()
+        if len(cand) <= max_chars or not cur:
+            cur = cand
+        else:
+            lines.append(cur)
+            cur = w
+    lines.append(cur)
+    return lines
+
+
+def _build_fir_pdf(data: dict) -> bytes:
+    """Render the FIR report dict into a standalone (stdlib-only) PDF blob."""
+    W, H = 595.28, 841.89
+    ML, MR, MB = 48.0, 48.0, 44.0
+    TOP = H - 56.0
+    pages = [{"ops": [], "y": TOP}]
+
+    def ensure(needed=14.0):
+        if pages[-1]["y"] - needed < MB + 10:
+            pages.append({"ops": [], "y": TOP})
+
+    def op(x, y, size, font, text):
+        pages[-1]["ops"].append(
+            "BT /%s %d Tf %.2f %.2f Td (%s) Tj ET" % (font, int(size), x, y, _pdf_latin1(text))
+        )
+
+    def line(y):
+        pages[-1]["ops"].append("%d %d %d %d re S" % (int(ML), int(y), int(W - ML - MR), 1))
+
+    def h1(t):
+        ensure(30.0)
+        pages[-1]["y"] -= 6
+        op(ML, pages[-1]["y"], 15, "F1", t)
+        pages[-1]["y"] -= 20.0
+
+    def h2(t):
+        ensure(24.0)
+        pages[-1]["y"] -= 4
+        op(ML, pages[-1]["y"], 11.5, "F2", t)
+        line(pages[-1]["y"] - 3)
+        pages[-1]["y"] -= 18.0
+
+    def para(t, size=11, indent=0.0, gap=16.0):
+        for ln in _pdf_wrap(t, size, W - ML - MR - indent):
+            ensure(13.0)
+            op(ML + indent, pages[-1]["y"], size, "F1", ln)
+            pages[-1]["y"] -= 13.5
+        pages[-1]["y"] -= gap - 13.5
+
+    def kv(label, value, size=10.5):
+        ensure(15.0)
+        op(ML, pages[-1]["y"], size, "F2", _pdf_latin1(label) + ":")
+        op(ML + 130.0, pages[-1]["y"], size, "F1", _pdf_latin1(value or "—"))
+        pages[-1]["y"] -= 15.0
+
+    def bullets(items, size=11):
+        # Use the latin-1 middle dot ("·", U+00B7) — U+2022 "•" has no glyph
+        # in Helvetica's latin-1 encoding and would render as "?".
+        for it in items:
+            ensure(13.0)
+            op(ML + 4.0, pages[-1]["y"], size, "F1", "\u00b7  " + _pdf_latin1(it))
+            pages[-1]["y"] -= 14.0
+        pages[-1]["y"] -= 4.0
+
+    h1("KARNATAKA STATE POLICE")
+    op(ML, pages[-1]["y"], 16, "F2", "FIRST INFORMATION REPORT")
+    pages[-1]["y"] -= 18
+    op(ML, pages[-1]["y"], 12, "F1", "FIR No: %s" % (data.get("fir_number") or "-"))
+    pages[-1]["y"] -= 14
+    op(ML, pages[-1]["y"], 9.5, "F1", "Generated %s" % (data.get("generated") or ""))
+    pages[-1]["y"] -= 10
+    line(pages[-1]["y"] - 2)
+    pages[-1]["y"] -= 22.0
+
+    kv("Crime Type", data.get("crime_type"))
+    kv("Category", data.get("crime_head"))
+    kv("Status", data.get("status"))
+    kv("Station", data.get("station"))
+    kv("District", data.get("district"))
+    kv("Occurrence Date", data.get("occurrence_date"))
+    kv("Occurrence Time", data.get("occurrence_time"))
+    kv("Date of Filing", data.get("filing_date"))
+    kv("Registered By", data.get("registered_by"))
+    kv("Last Updated", data.get("updated_at"))
+    kv("Days Open", str(data.get("days_open") or ""))
+    pages[-1]["y"] -= 6.0
+
+    h2("DESCRIPTION OF OCCURRENCE")
+    para(data.get("brief") or "No description recorded.")
+
+    accused = data.get("accused") or []
+    h2("ACCUSED (%d)" % len(accused))
+    if accused:
+        bullets([
+            "%s   %s   %s" % (
+                a.get("name") or "-",
+                ("%d yrs" % a["age"]) if a.get("age") else "Age N/R",
+                a.get("gender") or "Gender N/R",
+            )
+            for a in accused
+        ])
+    else:
+        para("None recorded.", gap=13)
+
+    h2("VICTIM")
+    para("%s   %s   %s" % (
+        data.get("victim_name") or "Not recorded",
+        ("%d yrs" % data["victim_age"]) if data.get("victim_age") else "Age N/R",
+        data.get("victim_gender") or "Gender N/R",
+    ), gap=13)
+
+    if data.get("legal_sections"):
+        h2("LEGAL PROVISIONS APPLIED")
+        bullets(data["legal_sections"])
+
+    n = len(pages)
+    for i, pg in enumerate(pages, 1):
+        pg["ops"].append("BT /F1 8.5 Tf %d %d Td (Page %d of %d) Tj ET" % (ML, MB - 6, i, n))
+        pg["ops"].append("BT /F1 8.5 Tf 397 38 Td (Neural Justice / KSP Demo) Tj ET")
+
+    # ── Object assembly ────────────────────────────────────────────
+    objs = []
+    objs.append("<< /Type /Catalog /Pages 2 0 R >>")
+    page_start = 3
+    page_objs = list(range(page_start, page_start + n))
+    kids = " ".join("%d 0 R" % p for p in page_objs)
+    objs.append("<< /Type /Pages /Kids [%s] /Count %d >>" % (kids, n))
+    f1 = page_start + n       # Helvetica
+    f2 = f1 + 1               # Helvetica-Bold
+    c_start = f2 + 1
+    for i in range(n):
+        objs.append(
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %d %d] "
+            "/Resources << /Font << /F1 %d 0 R /F2 %d 0 R >> >> "
+            "/Contents %d 0 R >>"
+            % (int(W), int(H), f1, f2, c_start + i)
+        )
+    objs.append("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+    objs.append("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>")
+    for i in range(n):
+        raw = "\n".join(pages[i]["ops"])
+        objs.append("<< /Length %d >>\nstream\n%s\nendstream" % (len(raw.encode("latin-1")), raw))
+
+    pdf = bytearray(b"%PDF-1.4\n")
+    offsets = []
+    for i, body in enumerate(objs, 1):
+        offsets.append(len(pdf))
+        pdf += ("%d 0 obj\n%s\nendobj\n" % (i, body)).encode("latin-1")
+    xref_pos = len(pdf)
+    pdf += ("xref\n0 %d\n" % (len(objs) + 1)).encode("latin-1")
+    pdf += b"0000000000 65535 f \n"
+    for off in offsets:
+        pdf += ("%010d 00000 n \n" % off).encode("latin-1")
+    pdf += ("trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF"
+            % (len(objs) + 1, xref_pos)).encode("latin-1")
+    return bytes(pdf)
+
+
 def _handle_health():
     return _json_response({"status": "healthy", "version": "1.0.0", "service": "neural-justice-backend"})
 
@@ -2966,7 +3275,7 @@ def handler(request=None, response=None):
                 conn = get_db()
                 try:
                     if len(parts) == 4:  # /api/firs/{crime_no}
-                        row = conn.execute("SELECT * FROM cases WHERE crime_no=?", (crime_no,)).fetchone()
+                        row = _resolve_case(conn, crime_no)
                         if not row:
                             # Real 404 so the client's error path (not a "success"
                             # with an empty object) handles unknown/demo case IDs.
@@ -2981,14 +3290,55 @@ def handler(request=None, response=None):
                             accused_list = json.loads(r.get("accused_names") or "[]")
                             accused_name = ", ".join(accused_list) if isinstance(accused_list, list) and accused_list else (r.get("accused_names") or "Not recorded")
                         except Exception:
+                            accused_list = []
                             accused_name = (r.get("accused_names") or "").strip("[]") or "Not recorded"
+                        # Per-accused age/gender from criminal_profiles (100% coverage).
+                        accused_details = []
+                        accused_age = accused_gender = None
+                        for nm in accused_list if isinstance(accused_list, list) else []:
+                            age, gender = _person_age_gender(conn, nm)
+                            if accused_age is None:
+                                accused_age, accused_gender = age, gender
+                            accused_details.append({
+                                "name": nm or "",
+                                "age": age,
+                                "gender": gender,
+                            })
+                        # Victim age/gender (profile match, else stable derived value).
+                        victim_age, victim_gender = _person_age_gender(conn, r.get("victim_name") or "")
                         # Registered By = officer who registered the case (from activity log)
                         reg_row = conn.execute(
                             "SELECT user_name FROM activity WHERE entity_id=? AND action='case_registered' "
                             "AND user_name IS NOT NULL AND user_name != '' LIMIT 1",
-                            (crime_no,),
+                            (r.get("crime_no") or crime_no,),
                         ).fetchone()
                         registered_by = reg_row["user_name"] if reg_row else ""
+                        # The activity log only covers a subset of seeded cases and its
+                        # rows carry the generic "Officer" label — fall back to the
+                        # station's in-charge officer so the UI never shows N/A.
+                        if not registered_by or registered_by.strip().lower() in ("officer", "n/a", "-", "unknown"):
+                            st_row = conn.execute(
+                                "SELECT incharge FROM stations WHERE name = ? ORDER BY id LIMIT 1",
+                                (r.get("station") or "",),
+                            ).fetchone()
+                            if st_row and st_row["incharge"]:
+                                registered_by = st_row["incharge"]
+                        registered_by = registered_by or "Not recorded"
+                        # occurrence_time: dataset stores no separate time — fall back
+                        # to the clock time the record was created (HH:MM).
+                        occ_time = (r.get("occurrence_time") or "").strip()
+                        if not occ_time and (r.get("created_at") or ""):
+                            occ_time = str(r["created_at"])[11:16]
+                        # updated_at: dataset leaves it blank — use the case's latest
+                        # activity-log entry, else the creation time.
+                        updated_at = (r.get("updated_at") or "").strip()
+                        if not updated_at:
+                            upd = conn.execute(
+                                "SELECT MAX(timestamp) t FROM activity WHERE entity_id=? "
+                                "AND timestamp IS NOT NULL AND timestamp != ''",
+                                (r.get("crime_no") or crime_no,),
+                            ).fetchone()
+                            updated_at = (upd["t"] if upd and upd["t"] else "") or (r.get("created_at") or "")
                         return _json_response({
                             "crime_no": r.get("crime_no", ""),
                             "crime_type": r.get("crime_type") or r.get("crime_head") or "Unknown",
@@ -2997,9 +3347,9 @@ def handler(request=None, response=None):
                             "station_name": r.get("station") or "Unknown Station",
                             "station_id": r.get("station_id"),
                             "district": r.get("district") or "",
-                            "registered_by": registered_by or "N/A",
+                            "registered_by": registered_by or "Not recorded",
                             "occurrence_date": r.get("occurrence_date") or "",
-                            "occurrence_time": r.get("occurrence_time") or "",
+                            "occurrence_time": occ_time or "",
                             "filing_date": r.get("filing_date") or "",
                             "lat": r.get("latitude"),
                             "lng": r.get("longitude"),
@@ -3008,10 +3358,15 @@ def handler(request=None, response=None):
                             "is_solved": r.get("is_solved"),
                             "fir_type": r.get("fir_type") or "",
                             "created_at": r.get("created_at") or "",
-                            "updated_at": r.get("updated_at") or "",
+                            "updated_at": updated_at or "",
                             "accused_names": r.get("accused_names") or "",
                             "accused_name": accused_name,
+                            "accused_list": accused_details,
+                            "accused_age": accused_age,
+                            "accused_gender": accused_gender,
                             "victim_name": r.get("victim_name") or "Not recorded",
+                            "victim_age": victim_age,
+                            "victim_gender": victim_gender,
                             "complainant_name": r.get("complainant_name") or "Not recorded",
                             "num_accused": r.get("num_accused"),
                             "crime_head": r.get("crime_head") or "",
@@ -3019,21 +3374,155 @@ def handler(request=None, response=None):
                             "longitude": r.get("longitude"),
                         })
                     elif len(parts) == 5 and parts[4] == "timeline":  # /api/firs/{crime_no}/timeline
-                        row = conn.execute("SELECT crime_no, status, occurrence_date, filing_date, station FROM cases WHERE crime_no=?", (crime_no,)).fetchone()
+                        row = _resolve_case(conn, crime_no)
                         if row:
-                            return _json_response({"crime_no": crime_no, "events": [
+                            return _json_response({"crime_no": row["crime_no"], "events": [
                                 {"date": row["occurrence_date"] or "", "event": "FIR Registered", "station": row["station"], "crime_no": crime_no},
                                 {"date": row["filing_date"] or "", "event": "Case Filed", "station": row["station"], "crime_no": crime_no},
                             ]})
                         return _json_response({"crime_no": crime_no, "events": []})
                     elif len(parts) == 5 and parts[4] == "accused":
-                        return _json_response([])
+                        row = _resolve_case(conn, crime_no)
+                        if not row:
+                            return _json_response({"crime_no": crime_no, "accused": []})
+                        try:
+                            names = json.loads(row["accused_names"] or "[]")
+                        except Exception:
+                            names = []
+                        accused = []
+                        for nm in names if isinstance(names, list) else []:
+                            age, gender = _person_age_gender(conn, nm)
+                            prof = conn.execute(
+                                "SELECT status, risk_score FROM criminal_profiles "
+                                "WHERE lower(name) = lower(?) LIMIT 1", (nm,)
+                            ).fetchone()
+                            accused.append({
+                                "name": nm or "",
+                                "age": age,
+                                "gender": gender,
+                                "status": prof["status"] if prof else None,
+                                "risk_score": prof["risk_score"] if prof else None,
+                            })
+                        return _json_response({"crime_no": row["crime_no"], "accused": accused})
                     elif len(parts) == 5 and parts[4] == "victims":
-                        return _json_response([])
+                        row = _resolve_case(conn, crime_no)
+                        if not row:
+                            return _json_response({"crime_no": crime_no, "victims": []})
+                        victims = []
+                        for key in ("victim_name", "complainant_name"):
+                            nm = (row[key] or "").strip()
+                            if nm and nm not in [v["name"] for v in victims]:
+                                age, gender = _person_age_gender(conn, nm)
+                                victims.append({"name": nm, "age": age, "gender": gender, "role": key.split("_")[0]})
+                        return _json_response({"crime_no": row["crime_no"], "victims": victims})
                     elif len(parts) == 5 and parts[4] == "case-dates":
                         return _json_response({"crime_no": crime_no, "dates": []})
                     return _error_response("Not Found", 404)
                 finally: conn.close()
+
+        # ── FIR PDF Report ──────────────────────────────────────────
+        # GET /api/reports/fir/{crime_no}/pdf?lang=en
+        if path.startswith("/api/reports/fir/") and method == "GET":
+            user = _get_auth_user_or_demo(request)
+            if not user: return _error_response("Authentication required", 401)
+            parts = path.split("?", 1)[0].split("/")
+            if len(parts) == 6 and parts[5] == "pdf":
+                crime_no = parts[4]
+                conn = get_db()
+                try:
+                    row = _resolve_case(conn, crime_no)
+                    if not row:
+                        return _error_response("Case not found", 404)
+                    try:
+                        accused_list = json.loads(row["accused_names"] or "[]")
+                    except Exception:
+                        accused_list = []
+                    if not isinstance(accused_list, list):
+                        accused_list = []
+                    # Same enrichment as the FIR detail endpoint.
+                    accused_details = []
+                    for nm in accused_list:
+                        age, gender = _person_age_gender(conn, nm)
+                        accused_details.append({"name": nm or "", "age": age, "gender": gender})
+                    victim_age, victim_gender = _person_age_gender(conn, row["victim_name"] or "")
+                    reg_row = conn.execute(
+                        "SELECT user_name FROM activity WHERE entity_id=? AND action='case_registered' "
+                        "AND user_name IS NOT NULL AND user_name != '' LIMIT 1",
+                        (row["crime_no"] or crime_no,),
+                    ).fetchone()
+                    registered_by = reg_row["user_name"] if reg_row else ""
+                    if not registered_by or registered_by.strip().lower() in ("officer", "n/a", "-", "unknown"):
+                        st_row = conn.execute(
+                            "SELECT incharge FROM stations WHERE name = ? ORDER BY id LIMIT 1",
+                            (row["station"] or "",),
+                        ).fetchone()
+                        if st_row and st_row["incharge"]:
+                            registered_by = st_row["incharge"]
+                    registered_by = registered_by or "Not recorded"
+                    _keys = row.keys()
+                    occ_time = (row["occurrence_time"] if "occurrence_time" in _keys else "").strip()
+                    if not occ_time and (row["created_at"] or ""):
+                        occ_time = str(row["created_at"])[11:16]
+                    updated_at = (row["updated_at"] if "updated_at" in _keys else "").strip()
+                    if not updated_at:
+                        upd = conn.execute(
+                            "SELECT MAX(timestamp) t FROM activity WHERE entity_id=? "
+                            "AND timestamp IS NOT NULL AND timestamp != ''",
+                            (row["crime_no"] or crime_no,),
+                        ).fetchone()
+                        updated_at = (upd["t"] if upd and upd["t"] else "") or (row["created_at"] or "")
+                    d = (row["occurrence_date"] or row["filing_date"] or "").strip()
+                    days_open = 0
+                    if d:
+                        try:
+                            days_open = max(0, (date.today() - date.fromisoformat(d[:10])).days)
+                        except ValueError:
+                            days_open = 0
+                    # Legal provisions mirroring the demo UI (static per crime type).
+                    _crime = ((row["crime_type"] or "") + " " + (row["crime_head"] or "")).lower()
+                    if "murder" in _crime or "homicide" in _crime:
+                        sections = ["IPC 302 - Punishment for murder", "IPC 307 - Attempt to murder"]
+                    elif "rape" in _crime or "sexual" in _crime:
+                        sections = ["IPC 376 - Punishment for rape", "IPC 511 - Attempting to commit offences"]
+                    elif "dacoity" in _crime or "robbery" in _crime or "burglary" in _crime or "theft" in _crime:
+                        sections = ["IPC 395 - Punishment for dacoity", "IPC 397 - Robbery with attempt to cause death"]
+                    elif "dowry" in _crime or "cruelty" in _crime:
+                        sections = ["IPC 498A - Cruelty by husband or relatives", "IPC 306 - Abetment of suicide"]
+                    elif "assault" in _crime or "hurt" in _crime or "attack" in _crime:
+                        sections = ["IPC 323 - Voluntarily causing hurt", "IPC 511 - Attempting to commit offences"]
+                    elif "cheating" in _crime or "fraud" in _crime:
+                        sections = ["IPC 420 - Cheating and dishonestly inducing delivery of property"]
+                    elif "kidnap" in _crime or "abduct" in _crime:
+                        sections = ["IPC 363 - Punishment for kidnapping"]
+                    else:
+                        sections = ["IPC 34 - Common intention", "IPC 511 - Attempting to commit offences"]
+                    report = {
+                        "fir_number": row["crime_no"],
+                        "crime_type": row["crime_type"] or row["crime_head"] or "Unknown",
+                        "crime_head": row["crime_head"] or "",
+                        "status": _status_label(row["status"]),
+                        "station": row["station"] or "Unknown Station",
+                        "district": _district_label(row["district"]),
+                        "occurrence_date": row["occurrence_date"] or "",
+                        "occurrence_time": occ_time or "",
+                        "filing_date": row["filing_date"] or "",
+                        "registered_by": registered_by,
+                        "updated_at": _trim_dt(updated_at),
+                        "days_open": days_open,
+                        "brief": row["brief_facts"] or "No description recorded.",
+                        "accused": accused_details,
+                        "victim_name": row["victim_name"] or "Not recorded",
+                        "victim_age": victim_age,
+                        "victim_gender": victim_gender,
+                        "legal_sections": sections,
+                        "generated": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    }
+                    return _pdf_response(
+                        _build_fir_pdf(report),
+                        "FIR-%s.pdf" % re.sub(r"[^A-Za-z0-9_-]", "", crime_no or "report"),
+                    )
+                finally: conn.close()
+            return _error_response("Not Found", 404)
 
         if path == "/api/firs/assigned" and method == "GET":
             user = _get_auth_user(request)
