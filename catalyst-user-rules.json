@@ -1,5 +1,16 @@
 [
   {
+    "name": "Root Redirect",
+    "source_endpoint": "/",
+    "target_endpoint": "/app/index.html",
+    "target": "client",
+    "method": "GET",
+    "throttling": {
+      "overall": {},
+      "ip": {}
+    }
+  },
+  {
     "name": "Web Client",
     "source_endpoint": "/app/{path1:(.*)}",
     "target_endpoint": "/app/{path1}",

@@ -43,9 +43,13 @@ logger = logging.getLogger(__name__)
 JWT_SECRET = os.environ.get("JWT_SECRET") or os.environ.get("JWT_SECRET_KEY") or "dev-secret"
 JWT_EXPIRY_MINUTES = int(os.environ.get("JWT_EXPIRY_MINUTES", "60"))
 ENCRYPTION_KEY = os.environ.get("ENCRYPTION_KEY", "")
-DB_PATH = os.environ.get("DATABASE_URL", "sqlite:///./neural_justice.db")
+DB_PATH = os.environ.get("DATABASE_URL", "sqlite:///dev-test.db")
 if DB_PATH.startswith("sqlite:///"):
     DB_PATH = DB_PATH[len("sqlite:///"):]
+if not os.path.isabs(DB_PATH):
+    p1 = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), os.path.basename(DB_PATH))
+    p2 = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dev-test.db")
+    DB_PATH = p1 if os.path.exists(p1) else (p2 if os.path.exists(p2) else DB_PATH)
 
 DEFAULT_PASSWORD = os.environ.get("DEFAULT_LOGIN_PASSWORD", "test123")
 DEFAULT_ROLES = json.loads(os.environ.get("DEFAULT_LOGIN_ROLES", '["SUPER_ADMIN"]'))
@@ -343,6 +347,7 @@ QUICKML_ENDPOINT_KEY = os.environ.get("QUICKML_ENDPOINT_KEY", "")
 QUICKML_ORG_ID = os.environ.get("QUICKML_ORG_ID", "")
 ZOHO_CLIENT_ID = os.environ.get("ZOHO_CLIENT_ID", "")
 ZOHO_CLIENT_SECRET = os.environ.get("ZOHO_CLIENT_SECRET", "")
+NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "")
 
 # Cache for Zoho OAuth token
 _zoho_token: dict = {"access_token": "", "expires_at": 0}
@@ -393,6 +398,31 @@ def _call_quickml_sdk(messages: list) -> Optional[str]:
     except Exception as e:
         logger.warning("Catalyst SDK QuickML error: %s", e)
         return None
+
+
+def _call_nvidia_nim(messages: list, max_tokens: int = 2048, temperature: float = 0.1) -> Optional[str]:
+    """Call NVIDIA NIM API as LLM fallback when QuickML is unconfigured or fails."""
+    if not NVIDIA_API_KEY:
+        return None
+    url = "https://integrate.api.nvidia.com/v1/chat/completions"
+    body = json.dumps({
+        "model": "meta/llama-3.1-70b-instruct",
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+    }).encode()
+    try:
+        req = Request(url, data=body, method="POST")
+        req.add_header("Content-Type", "application/json")
+        req.add_header("Authorization", f"Bearer {NVIDIA_API_KEY}")
+        with urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode())
+            choices = data.get("choices")
+            if choices:
+                return choices[0].get("message", {}).get("content", "")
+    except Exception as e:
+        logger.error("NVIDIA NIM API fallback error: %s", e)
+    return None
 
 
 def _call_quickml_rest(messages: list, max_tokens: int = 2048, temperature: float = 0.1) -> Optional[str]:
@@ -460,7 +490,11 @@ def _call_quickml(messages: list, max_tokens: int = 2048, temperature: float = 0
     if result is not None:
         return result
     # Fallback to REST API
-    return _call_quickml_rest(messages, max_tokens, temperature)
+    result = _call_quickml_rest(messages, max_tokens, temperature)
+    if result is not None:
+        return result
+    # Fallback to NVIDIA NIM API
+    return _call_nvidia_nim(messages, max_tokens, temperature)
 
 
 # ═══════════════════════════════════════════════════════════════════════
