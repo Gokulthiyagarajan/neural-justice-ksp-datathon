@@ -252,6 +252,19 @@ function buildRichDetail(
     rowid: 0,
     accused_age: (fir as any).accused_age ?? null,
     accused_gender: (fir as any).accused_gender ?? null,
+    // Per-accused rows straight from the enriched API payload; if absent,
+    // fall back to a single row built from the combined name + first age.
+    accused_list: Array.isArray((fir as any).accused_list) && (fir as any).accused_list.length > 0
+      ? (fir as any).accused_list.map((a: any) => ({
+          name: a.name || '',
+          age: a.age ?? null,
+          gender: a.gender || null,
+        }))
+      : [{
+          name: accusedName || 'Under Investigation',
+          age: (fir as any).accused_age ?? null,
+          gender: (fir as any).accused_gender ?? null,
+        }],
     victim_age: (fir as any).victim_age ?? null,
     victim_gender: (fir as any).victim_gender ?? null,
     investigation_timeline: timeline,
@@ -650,10 +663,21 @@ export function FIRDetailPage() {
 
         {/* ── 4. Accused ────────────────────────────────────────── */}
         <Section title="Accused Details">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-            <Field label="Name" value={fir.accused_name} />
-            <Field label="Age" value={fir.accused_age ? `${fir.accused_age}y` : 'N/A'} />
-            <Field label="Gender" value={fir.accused_gender || 'N/A'} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* Header row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.6fr 0.8fr', gap: 16, paddingBottom: 6, borderBottom: `1px solid ${C.border}`, fontSize: 11, fontWeight: 600, color: C.grey, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+              <div>Name</div>
+              <div>Age</div>
+              <div>Gender</div>
+            </div>
+            {/* One row per accused person */}
+            {(fir.accused_list && fir.accused_list.length > 0 ? fir.accused_list : []).map((a, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.6fr 0.8fr', gap: 16, paddingBottom: 8, borderBottom: i < (fir.accused_list?.length ?? 1) - 1 ? `1px solid ${C.border}` : 'none' }}>
+                <div style={{ fontSize: 13, color: C.white }}>{a.name || 'Not recorded'}</div>
+                <div style={{ fontSize: 13, color: C.white }}>{a.age ? `${a.age}y` : 'N/A'}</div>
+                <div style={{ fontSize: 13, color: C.white }}>{a.gender || 'N/A'}</div>
+              </div>
+            ))}
           </div>
         </Section>
 

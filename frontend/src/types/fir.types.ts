@@ -95,6 +95,8 @@ export interface CourtInfo {
 export interface FIRDetail extends FIR {
   accused_age: number | null;
   accused_gender: string | null;
+  /** Per-accused rows (name/age/gender) — one entry per accused person. */
+  accused_list: { name: string; age: number | null; gender: string | null }[];
   victim_age: number | null;
   victim_gender: string | null;
   investigation_timeline: TimelineEvent[];
