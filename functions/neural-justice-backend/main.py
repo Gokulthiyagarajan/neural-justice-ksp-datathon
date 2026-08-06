@@ -15,7 +15,7 @@ import struct
 import sys
 import time
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 from urllib.parse import urlparse, parse_qs
 from urllib.request import Request, urlopen
@@ -2900,6 +2900,18 @@ def handler(request=None, response=None):
                     if s in ("transferred_to_other_ps",): return "open"
                     return "under_investigation"
 
+                def _days_open(occurrence, filing):
+                    # Days since the case was registered. Prefer occurrence_date
+                    # (realistic spread in the seed data); fall back to
+                    # filing_date. Never return a negative for future dates.
+                    d = (occurrence or filing or "").strip()
+                    if not d:
+                        return 0
+                    try:
+                        return max(0, (date.today() - date.fromisoformat(d[:10])).days)
+                    except ValueError:
+                        return 0
+
                 firs = []
                 for r in rows:
                     accused_list = json.loads(r["accused_names"]) if isinstance(r["accused_names"], str) and r["accused_names"].startswith("[") else []
@@ -2920,7 +2932,7 @@ def handler(request=None, response=None):
                         "status": _status_for_db(r["status"]),
                         "severity": _severity_for_crime(r["crime_type"]),
                         "officer_assigned": "",
-                        "days_open": 0,
+                        "days_open": _days_open(r["occurrence_date"], r["filing_date"]),
                         "linked_cases": 0,
                         "description": brief_facts,
                         "location": dist,
@@ -2956,7 +2968,12 @@ def handler(request=None, response=None):
                     if len(parts) == 4:  # /api/firs/{crime_no}
                         row = conn.execute("SELECT * FROM cases WHERE crime_no=?", (crime_no,)).fetchone()
                         if not row:
-                            return _json_response({})
+                            # Real 404 so the client's error path (not a "success"
+                            # with an empty object) handles unknown/demo case IDs.
+                            # Returning {} used to crash PCCaseDetail: empty {} is
+                            # truthy, so it rendered StatusBadge with status=undefined
+                            # and threw on status.replace().
+                            return _error_response("Case not found", 404)
                         r = dict(row)
                         # Frontend expects the enriched FirCase shape —
                         # map DB columns to the fields FIRDetailPage reads.

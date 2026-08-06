@@ -16,6 +16,7 @@ export function PCCaseDetail() {
   useEffect(() => {
     if (!crimeNo) return;
     setLoading(true);
+    setError(''); // reset stale error when switching cases in-app (hash navigation)
     getPcFirDetail(crimeNo)
       .then(setFir)
       .catch((err) => setError((err as Error).message))
@@ -41,7 +42,9 @@ export function PCCaseDetail() {
     );
   }
 
-  if (!fir) {
+  if (!fir || !fir.status) {
+    // Guard against an empty/malformed response (e.g. {} with 200): StatusBadge
+    // calls status.replace() and would crash the whole page via the error boundary.
     return (
       <div className="flex flex-col gap-4 p-6 max-w-3xl mx-auto">
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-10 text-center">
