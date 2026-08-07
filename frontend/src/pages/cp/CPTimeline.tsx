@@ -57,6 +57,138 @@ interface TimelineData {
   last_updated: string
 }
 
+// ─── Normalization ───────────────────────────────────────────────────────────
+
+function emptyTimeline(periodHours: number): TimelineData {
+  const now = new Date()
+  return {
+    total_events: 0,
+    summary: { fir_registrations: 0, emergency_responses: 0, patrol_deployments: 0, ai_alerts: 0, warning_escalations: 0, resource_movements: 0, inter_agency: 0, arrests: 0 },
+    events: [],
+    timeline_markers: [],
+    period_hours: periodHours,
+    last_updated: now.toISOString(),
+  }
+}
+
+/**
+ * normalizeTimeline — never trust the wire.
+ *
+ * The backend /api/cp/timeline may return EITHER the rich contract the page
+ * was designed around ({ events, summary, timeline_markers }) OR the hourly
+ * bucket contract ({ timeline: [{ time, firs_filed, cases_solved,
+ * patrols_active, alerts_generated }] }). This coerces ANY payload into the
+ * TimelineData shape so the page can never white-screen on a shape mismatch
+ * (previously: `s.events is not iterable` → ErrorBoundary).
+ */
+function normalizeTimeline(json: unknown, periodHours: number): TimelineData {
+  if (!json || typeof json !== 'object') return emptyTimeline(periodHours)
+  const j = json as Record<string, unknown>
+  const now = new Date()
+  const lastUpdated = typeof j.last_updated === 'string' ? j.last_updated : now.toISOString()
+
+  // Rich contract — the page's native shape. Fill gaps with safe defaults.
+  if (Array.isArray(j.events)) {
+    const summaryRaw = (j.summary && typeof j.summary === 'object' ? j.summary : {}) as Record<string, unknown>
+    return {
+      total_events: typeof j.total_events === 'number' ? j.total_events : j.events.length,
+      summary: {
+        fir_registrations: Number(summaryRaw.fir_registrations) || 0,
+        emergency_responses: Number(summaryRaw.emergency_responses) || 0,
+        patrol_deployments: Number(summaryRaw.patrol_deployments) || 0,
+        ai_alerts: Number(summaryRaw.ai_alerts) || 0,
+        warning_escalations: Number(summaryRaw.warning_escalations) || 0,
+        resource_movements: Number(summaryRaw.resource_movements) || 0,
+        inter_agency: Number(summaryRaw.inter_agency) || 0,
+        arrests: Number(summaryRaw.arrests) || 0,
+      },
+      events: j.events,
+      timeline_markers: Array.isArray(j.timeline_markers) ? j.timeline_markers : [],
+      period_hours: typeof j.period_hours === 'number' ? j.period_hours : periodHours,
+      last_updated: lastUpdated,
+    }
+  }
+
+  // Hourly bucket contract — derive rich events from the aggregates.
+  if (Array.isArray(j.timeline)) {
+    const buckets = j.timeline as {
+      time?: string | number
+      firs_filed?: number
+      cases_solved?: number
+      patrols_active?: number
+      alerts_generated?: number
+    }[]
+
+    const hourOf = (b: { time?: string | number }): number | null => {
+      const m = String(b.time ?? '').match(/(\d{1,2}):/)
+      return m ? Number(m[1]) : null
+    }
+
+    const events: TimelineEvent[] = buckets.map((b, i) => {
+      const firs = Number(b.firs_filed) || 0
+      const solved = Number(b.cases_solved) || 0
+      const patrols = Number(b.patrols_active) || 0
+      const alerts = Number(b.alerts_generated) || 0
+      const eventTime = new Date(now)
+      eventTime.setHours(hourOf(b) ?? now.getHours() - i, 0, 0, 0)
+      const type: TimelineEvent['type'] = alerts > 0 ? 'ai_alert' : firs > 0 ? 'fir_registration' : 'patrol'
+      const severity: TimelineEvent['severity'] = alerts > 1 || firs >= 10 ? 'high' : firs >= 5 ? 'medium' : 'info'
+      return {
+        id: `tl-bucket-${i}-${String(b.time ?? i)}`,
+        type,
+        title: type === 'ai_alert'
+          ? `AI Alert — ${alerts} active alert${alerts === 1 ? '' : 's'} at ${b.time}`
+          : `Hourly Update — ${b.time}`,
+        district: 'Statewide',
+        station: 'Command Center',
+        timestamp: eventTime.toISOString(),
+        severity,
+        officer: 'System',
+        details: `${firs} FIR${firs === 1 ? '' : 's'} filed · ${solved} case${solved === 1 ? '' : 's'} solved · ${patrols} patrols active${alerts ? ` · ${alerts} AI alert${alerts === 1 ? '' : 's'}` : ''}`,
+      }
+    })
+
+    const sum = (key: 'firs_filed' | 'cases_solved' | 'patrols_active' | 'alerts_generated') =>
+      buckets.reduce((acc, b) => acc + (Number(b[key]) || 0), 0)
+
+    const windows = ['00:00 – 04:00', '04:00 – 08:00', '08:00 – 12:00', '12:00 – 16:00', '16:00 – 20:00', '20:00 – 00:00']
+    const timeline_markers = windows.map((time) => {
+      const startHour = Number(time.split(' – ')[0].split(':')[0])
+      const inWindow = buckets.filter((b) => {
+        const h = hourOf(b)
+        return h !== null && h >= startHour && h < startHour + 4
+      })
+      const count = inWindow.reduce((acc, b) => acc + (Number(b.firs_filed) || 0) + (Number(b.alerts_generated) || 0), 0)
+      const peak_type = inWindow.reduce((acc, b) => {
+        const alerts = Number(b.alerts_generated) || 0
+        const firs = Number(b.firs_filed) || 0
+        return alerts > firs ? 'ai_alert' : firs > 0 ? 'fir_registration' : acc
+      }, 'patrol')
+      return { time, events: count, peak_type }
+    })
+
+    return {
+      total_events: events.length,
+      summary: {
+        fir_registrations: sum('firs_filed'),
+        emergency_responses: 0,
+        patrol_deployments: sum('patrols_active'),
+        ai_alerts: sum('alerts_generated'),
+        warning_escalations: 0,
+        resource_movements: 0,
+        inter_agency: 0,
+        arrests: sum('cases_solved'),
+      },
+      events,
+      timeline_markers,
+      period_hours: periodHours,
+      last_updated: lastUpdated,
+    }
+  }
+
+  return emptyTimeline(periodHours)
+}
+
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const TYPE_COLORS: Record<string, string> = {
@@ -159,32 +291,19 @@ export function CPTimeline() {
       const res = await fetch(`/api/cp/timeline?hours=${timeRange}`, { headers: authHeaders() })
       if (res.ok) {
         const json = await res.json()
-        setData(json)
-        setLastUpdated(new Date(json.last_updated).toLocaleTimeString())
+        const normalized = normalizeTimeline(json, timeRange)
+        setData(normalized)
+        const lu = new Date(normalized.last_updated)
+        setLastUpdated(!Number.isNaN(lu.getTime()) ? lu.toLocaleTimeString() : '')
       } else {
-        const now = new Date()
-        setData({
-          total_events: 0,
-          summary: { fir_registrations: 0, emergency_responses: 0, patrol_deployments: 0, ai_alerts: 0, warning_escalations: 0, resource_movements: 0, inter_agency: 0, arrests: 0 },
-          events: [],
-          timeline_markers: [],
-          period_hours: timeRange,
-          last_updated: now.toISOString(),
-        })
-        setLastUpdated(now.toLocaleTimeString())
+        console.warn(`[CPTimeline] Timeline fetch failed (${res.status}), showing empty state`)
+        setData(emptyTimeline(timeRange))
+        setLastUpdated('')
       }
     } catch {
       console.error('[CPTimeline] Failed to fetch timeline data')
-      const now = new Date()
-      setData({
-        total_events: 0,
-        summary: { fir_registrations: 0, emergency_responses: 0, patrol_deployments: 0, ai_alerts: 0, warning_escalations: 0, resource_movements: 0, inter_agency: 0, arrests: 0 },
-        events: [],
-        timeline_markers: [],
-        period_hours: timeRange,
-        last_updated: now.toISOString(),
-      })
-      setLastUpdated(now.toLocaleTimeString())
+      setData(emptyTimeline(timeRange))
+      setLastUpdated('')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -201,18 +320,17 @@ export function CPTimeline() {
   // ── Memoized data ───────────────────────────────────────────────────────
 
   const filteredEvents = useMemo(() => {
-    if (!data) return []
-    if (filterType === 'all') return [...data.events].sort((a, b) => 
+    if (!data || !Array.isArray(data.events)) return []
+    const sorted = [...data.events].sort((a, b) =>
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-    return [...data.events]
-      .filter(e => e.type === filterType)
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    if (filterType === 'all') return sorted
+    return sorted.filter(e => e.type === filterType)
   }, [data, filterType])
 
   // ── Build hour distribution for chart ───────────────────────────────────
 
   const hourDistribution = useMemo(() => {
-    if (!data) return Array(24).fill(0)
+    if (!data || !Array.isArray(data.events)) return Array(24).fill(0)
     const hours = Array(24).fill(0)
     data.events.forEach(event => {
       const hour = new Date(event.timestamp).getHours()
@@ -319,9 +437,14 @@ export function CPTimeline() {
               onClick={() => setFilterType(type)}
               className={`px-2 py-1 rounded-full text-[10px] font-medium transition-all border ${
                 filterType === type
-                  ? `bg-${TYPE_COLORS[type]}20 border-${TYPE_COLORS[type]}40 text-${TYPE_COLORS[type]}300`
+                  ? ''
                   : 'bg-slate-900/95 border-white/10 text-white/50 hover:bg-white/5'
               }`}
+              style={
+                filterType === type
+                  ? { backgroundColor: `${TYPE_COLORS[type]}20`, borderColor: `${TYPE_COLORS[type]}40`, color: `${TYPE_COLORS[type]}cc` }
+                  : undefined
+              }
             >
               {type.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
             </button>
@@ -392,9 +515,10 @@ export function CPTimeline() {
                       </div>
                       {/* Severity badge */}
                       <div className="flex-shrink-0">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-medium ${
-                          SEVERITY_COLORS[event.severity]
-                        }20 text-${SEVERITY_COLORS[event.severity]}300`}>
+                        <span
+                          className="px-2 py-0.5 rounded-full text-[9px] font-medium"
+                          style={{ backgroundColor: `${SEVERITY_COLORS[event.severity]}20`, color: SEVERITY_COLORS[event.severity] }}
+                        >
                           {event.severity.toUpperCase()}
                         </span>
                       </div>

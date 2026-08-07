@@ -357,19 +357,54 @@ async def get_cp_networks():
 
 @router.get("/timeline")
 async def get_cp_timeline(hours: int = Query(24)):
-    """Get state-wide timeline for CP."""
+    """Get state-wide timeline for CP.
+
+    Returns the rich operational-feed contract (events / summary /
+    timeline_markers) that the CPTimeline page renders, plus the legacy
+    hourly-aggregate ``timeline`` buckets for backward compatibility.
+    """
     now = datetime.now()
-    events = []
+    # Legacy hourly aggregates (kept for backward compatibility)
+    timeline = []
     for i in range(min(hours, 24)):
         dt = now - timedelta(hours=i)
-        events.append({
+        timeline.append({
             "time": dt.strftime("%H:00"),
             "firs_filed": random.randint(2, 15),
             "cases_solved": random.randint(0, 5),
             "patrols_active": random.randint(50, 120),
             "alerts_generated": random.randint(0, 3),
         })
-    return {"timeline": events, "hours": hours, "last_updated": now.isoformat()}
+    # Rich operational feed — the native contract the page renders
+    events = [
+        {"id": "tl-001", "type": "fir_registration", "title": "FIR Registered — Chain Snatching", "district": "Bengaluru Urban", "station": "Koramangala PS", "timestamp": (now - timedelta(minutes=10)).isoformat(), "severity": "high", "officer": "SI Meena K.", "details": "Victim reported chain snatching near Market Area at 19:30. CCTV footage being reviewed. Accused description obtained."},
+        {"id": "tl-002", "type": "emergency", "title": "Emergency Response — Road Accident", "district": "Mysuru", "station": "MG Road PS", "timestamp": (now - timedelta(minutes=30)).isoformat(), "severity": "critical", "officer": "PI Ramesh", "details": "Multi-vehicle collision on Ring Road. 3 injured, traffic diverted. Ambulance dispatched. Investigation underway."},
+        {"id": "tl-003", "type": "patrol", "title": "Patrol Deployment — Market Sector", "district": "Bengaluru Urban", "station": "BTM Layout PS", "timestamp": (now - timedelta(hours=1)).isoformat(), "severity": "info", "officer": "ASI Gopal", "details": "Routine patrol deployed to Market Sector. Focus on theft prevention during evening peak hours."},
+        {"id": "tl-004", "type": "ai_alert", "title": "AI Alert — Crime Pattern Detected", "district": "Belagavi", "station": "Belagavi City PS", "timestamp": (now - timedelta(hours=2)).isoformat(), "severity": "medium", "officer": "System", "details": "ML model detected uptick in vehicle thefts along NH-4 corridor. 40% increase over baseline. Recommend increased patrol on highway stretch."},
+        {"id": "tl-005", "type": "warning", "title": "Escalation Warning — Overdue Investigation", "district": "Kalaburagi", "station": "Kalaburagi PS", "timestamp": (now - timedelta(hours=4)).isoformat(), "severity": "high", "officer": "PI Shetty", "details": "FIR KSP-2026-035 (Burglary) overdue by 12 days. No case diary filed in 8 days. Escalated to ACP for review."},
+        {"id": "tl-006", "type": "arrest", "title": "Arrest Made — Repeat Offender", "district": "Bengaluru Urban", "station": "Indiranagar PS", "timestamp": (now - timedelta(hours=6)).isoformat(), "severity": "high", "officer": "SI Venkatesh", "details": "Repeat offender Ravi Kumar apprehended in connection with 3 chain snatching cases. Weapon recovered. Remanded to judicial custody."},
+        {"id": "tl-007", "type": "inter_agency", "title": "Inter-Agency Coordination — Narcotics Raid", "district": "Bengaluru Urban", "station": "Whitefield PS", "timestamp": (now - timedelta(hours=8)).isoformat(), "severity": "medium", "officer": "DCP Sharma", "details": "Joint operation with NCB and local task force. Raided 2 locations in Whitefield. 5 kg contraband seized. 4 suspects in custody."},
+        {"id": "tl-008", "type": "resource_movement", "title": "Resource Movement — Forensic Van Deployed", "district": "Mysuru", "station": "Kuvempunagar PS", "timestamp": (now - timedelta(hours=12)).isoformat(), "severity": "info", "officer": "SI Priya", "details": "Mobile forensic van dispatched to Kuvempunagar crime scene. Expected to arrive within 30 mins. Evidence collection pending."},
+        {"id": "tl-009", "type": "fir_registration", "title": "FIR Registered — Cyber Fraud", "district": "Bengaluru Urban", "station": "Electronic City PS", "timestamp": (now - timedelta(hours=15)).isoformat(), "severity": "medium", "officer": "SI Nagesh", "details": "Victim lost ₹2.3L to phishing scam. Bank account frozen. Cybercrime team notified for digital forensics."},
+        {"id": "tl-010", "type": "patrol", "title": "Patrol Deployment — Night Beat", "district": "Belagavi", "station": "Belagavi City PS", "timestamp": (now - timedelta(hours=18)).isoformat(), "severity": "info", "officer": "ASI Kumar", "details": "Night beat patrol deployed to high-risk zones. 2 constables on foot patrol in Market Area. 1 PCR van on standby."},
+    ]
+    return {
+        "total_events": len(events),
+        "summary": {"fir_registrations": 2, "emergency_responses": 1, "patrol_deployments": 2, "ai_alerts": 1, "warning_escalations": 1, "resource_movements": 1, "inter_agency": 1, "arrests": 1},
+        "events": events,
+        "timeline_markers": [
+            {"time": "00:00 – 04:00", "events": 2, "peak_type": "patrol"},
+            {"time": "04:00 – 08:00", "events": 1, "peak_type": "fir_registration"},
+            {"time": "08:00 – 12:00", "events": 1, "peak_type": "inter_agency"},
+            {"time": "12:00 – 16:00", "events": 2, "peak_type": "arrest"},
+            {"time": "16:00 – 20:00", "events": 2, "peak_type": "emergency"},
+            {"time": "20:00 – 00:00", "events": 2, "peak_type": "ai_alert"},
+        ],
+        "period_hours": hours,
+        "timeline": timeline,
+        "hours": hours,
+        "last_updated": now.isoformat(),
+    }
 
 
 # ── CP Media ─────────────────────────────────────────────────────────────────

@@ -64,6 +64,83 @@ export default {
         'ksp-danger': '#EF4444',
         'ksp-success': '#10B981',
         'ksp-glass': '#0F2040',
+
+        // ── Qwen Studio design system (copilot suite) ──
+        brand: {
+          50: 'var(--brand-50)',
+          100: 'var(--brand-100)',
+          200: 'var(--brand-200)',
+          300: 'var(--brand-300)',
+          400: 'var(--brand-400)',
+          500: 'var(--brand-500)',
+          600: 'var(--brand-600)',
+          700: 'var(--brand-700)',
+          800: 'var(--brand-800)',
+          900: 'var(--brand-900)',
+          950: 'var(--brand-950)',
+        },
+        neutral: {
+          50: 'var(--neutral-50)',
+          100: 'var(--neutral-100)',
+          200: 'var(--neutral-200)',
+          300: 'var(--neutral-300)',
+          400: 'var(--neutral-400)',
+          500: 'var(--neutral-500)',
+          600: 'var(--neutral-600)',
+          700: 'var(--neutral-700)',
+          800: 'var(--neutral-800)',
+          900: 'var(--neutral-900)',
+          950: 'var(--neutral-950)',
+        },
+        // shadcn semantic aliases
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
+        card: 'var(--card)',
+        'card-foreground': 'var(--card-foreground)',
+        popover: 'var(--popover)',
+        'popover-foreground': 'var(--popover-foreground)',
+        primary: 'var(--primary)',
+        'primary-foreground': 'var(--primary-foreground)',
+        secondary: 'var(--secondary)',
+        'secondary-foreground': 'var(--secondary-foreground)',
+        muted: 'var(--muted)',
+        'muted-foreground': 'var(--muted-foreground)',
+        accent: 'var(--accent)',
+        'accent-foreground': 'var(--accent-foreground)',
+        destructive: 'var(--destructive)',
+        'destructive-foreground': 'var(--destructive-foreground)',
+        success: 'var(--success)',
+        warning: 'var(--warning)',
+        danger: 'var(--danger)',
+        border: 'var(--border)',
+        input: 'var(--input)',
+        ring: 'var(--ring)',
+
+        // ── Derived alpha variants (opacity modifiers don't compile on var colors in TW3) ──
+        // color-mix keeps the tint tied to the semantic token — no raw hex.
+        ...(() => {
+          const alpha = (name, pct) => `color-mix(in srgb, var(--${name}) ${pct}%, transparent)`;
+          const variants = {};
+          const needs = {
+            'primary-10': 'primary', 'primary-12': 'primary', 'primary-15': 'primary',
+            'primary-20': 'primary', 'primary-30': 'primary', 'primary-50': 'primary',
+            'primary-80': 'primary',
+            'primary-foreground-30': 'primary-foreground',
+            'destructive-8': 'destructive', 'destructive-10': 'destructive',
+            'destructive-12': 'destructive', 'destructive-15': 'destructive',
+            'destructive-20': 'destructive', 'destructive-25': 'destructive',
+            'card-95': 'card', 'card-97': 'card',
+            'muted-80': 'muted',
+            'foreground-40': 'foreground',
+            'border-40': 'border',
+            'ring-60': 'ring',
+          };
+          for (const [key, base] of Object.entries(needs)) {
+            const pct = key.split('-').pop();
+            variants[key] = alpha(base, pct);
+          }
+          return variants;
+        })(),
       },
       fontFamily: {
         display: ['Archivo', 'Noto Sans Kannada', 'system-ui', 'sans-serif'],
@@ -83,6 +160,16 @@ export default {
         body: ['0.875rem', { lineHeight: '1.6' }],
         caption: ['0.75rem', { lineHeight: '1.5' }],
         micro: ['0.625rem', { lineHeight: '1.4' }],
+        // Qwen Studio whitelisted type scale (10px–32px)
+        '10px': '10px',
+        '12px': '12px',
+        '13.3333px': '13.3333px',
+        '14px': '14px',
+        '16px': '16px',
+        '18px': '18px',
+        '20px': '20px',
+        '24px': '24px',
+        '32px': '32px',
       },
       spacing: {
         1: '4px',
@@ -91,6 +178,7 @@ export default {
         4: '16px',
         6: '24px',
         8: '32px',
+        10: '40px',
         12: '48px',
         16: '64px',
       },
@@ -99,6 +187,7 @@ export default {
         md: '10px',
         lg: '16px',
         xl: '16px',
+        '2xl': '32px',
         full: '9999px',
       },
       boxShadow: {

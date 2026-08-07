@@ -238,6 +238,95 @@
     --chart-5: #6B7380;
   }
 
+  /* ═══════════════════════════════════════════════════════════════════════
+     QWEN STUDIO DESIGN TOKENS — COPILOT SUITE
+     Brand scale (oklch hue 245–266) + neutral scale (oklch hue 282–286),
+     exact values derived from the design-system oklch primitives.
+     Semantic vars follow the shadcn convention (--background, --primary, …).
+     Dark palette derived from brand-950 / neutral-950 (design rule 6).
+     Light palette: page #F7F8FC, --primary #447CFF (brand-500).
+     Scope: copilot components only — the rest of the app keeps its tokens.
+     ═══════════════════════════════════════════════════════════════════════ */
+  :root {
+    /* Brand blue scale */
+    --brand-50: #F5FBFF;
+    --brand-100: #E9F5FF;
+    --brand-200: #D3E8FF;
+    --brand-300: #ADCEFF;
+    --brand-400: #7AA7FF;
+    --brand-500: #447CFF;
+    --brand-600: #1B4DFB;
+    --brand-700: #0B28F0;
+    --brand-800: #04069D;
+    --brand-900: #030069;
+    --brand-950: #010033;
+
+    /* Neutral gray scale */
+    --neutral-50: #FAFAFB;
+    --neutral-100: #F4F4F7;
+    --neutral-200: #E6E6EC;
+    --neutral-300: #D1D2DB;
+    --neutral-400: #B9B9C6;
+    --neutral-500: #9F9FB0;
+    --neutral-600: #747489;
+    --neutral-700: #4C4C64;
+    --neutral-800: #2F2F43;
+    --neutral-900: #1C1B2A;
+    --neutral-950: #0A0913;
+
+    /* Semantic tokens — DARK (derived from brand-950 / neutral-950) */
+    --background: var(--brand-950);
+    --foreground: var(--brand-100);
+    --card: var(--neutral-950);
+    --card-foreground: var(--neutral-50);
+    --popover: var(--neutral-900);
+    --popover-foreground: var(--neutral-50);
+    --primary: var(--brand-500);
+    --primary-foreground: #FFFFFF;
+    --secondary: var(--neutral-800);
+    --secondary-foreground: var(--neutral-100);
+    --muted: var(--neutral-800);
+    --muted-foreground: var(--neutral-400);
+    --accent: var(--brand-400);
+    --accent-foreground: var(--brand-950);
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: var(--neutral-800);
+    --input: var(--neutral-800);
+    --ring: var(--brand-400);
+    --success: var(--color-verified-green);
+    --warning: var(--color-signal-amber);
+    --danger: var(--color-alert-red);
+
+    --radius-2xl: 32px;
+  }
+
+  /* Semantic tokens — LIGHT (Qwen Studio light: page #F7F8FC, primary #447CFF) */
+  :root:not(.dark) {
+    --background: #F7F8FC;
+    --foreground: var(--neutral-900);
+    --card: #FFFFFF;
+    --card-foreground: var(--neutral-900);
+    --popover: #FFFFFF;
+    --popover-foreground: var(--neutral-900);
+    --primary: var(--brand-500);
+    --primary-foreground: #FFFFFF;
+    --secondary: var(--neutral-100);
+    --secondary-foreground: var(--neutral-900);
+    --muted: var(--neutral-100);
+    --muted-foreground: var(--neutral-500);
+    --accent: var(--brand-100);
+    --accent-foreground: var(--brand-700);
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: var(--neutral-200);
+    --input: var(--neutral-200);
+    --ring: var(--brand-500);
+    --success: var(--color-verified-green);
+    --warning: var(--color-signal-amber);
+    --danger: var(--color-alert-red);
+  }
+
   .dark {
     /* Dark tactical is the default (always-dark). */
   }

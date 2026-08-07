@@ -190,7 +190,7 @@ export default function AiPanel({ visible }: AiPanelProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+              className="fixed inset-0 bg-foreground-40 backdrop-blur-sm z-40"
               onClick={() => setMode('closed')}
               aria-hidden
             />
@@ -203,7 +203,7 @@ export default function AiPanel({ visible }: AiPanelProps) {
               className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-4"
             >
               <div
-                className="flex flex-col overflow-hidden rounded-2xl shadow-2xl pointer-events-auto bg-bg-secondary/97 backdrop-blur-md border border-border-primary"
+                className="flex flex-col overflow-hidden rounded-2xl shadow-2xl pointer-events-auto bg-card-97 backdrop-blur-md border border-border"
                 style={{
                   width: modalWidth,
                   maxWidth: modalWidth,
@@ -233,7 +233,7 @@ export default function AiPanel({ visible }: AiPanelProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 z-40"
+              className="fixed inset-0 bg-foreground-40 z-40"
               onClick={() => setMode('closed')}
               aria-hidden
             />
@@ -243,7 +243,7 @@ export default function AiPanel({ visible }: AiPanelProps) {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed right-0 top-0 bottom-0 z-50 flex flex-col border-l border-border-primary bg-bg-secondary shadow-2xl"
+              className="fixed right-0 top-0 bottom-0 z-50 flex flex-col border-l border-border bg-card shadow-2xl"
               style={{ width: Math.min(400, window.innerWidth * 0.8) }}
               role="dialog"
               aria-modal="true"
@@ -266,7 +266,7 @@ export default function AiPanel({ visible }: AiPanelProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 z-40"
+            className="fixed inset-0 bg-foreground-40 z-40"
             onClick={() => setMode('closed')}
             aria-hidden
           />
@@ -276,7 +276,7 @@ export default function AiPanel({ visible }: AiPanelProps) {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.7 }}
-            className="fixed bottom-0 left-0 right-0 z-50 flex flex-col bg-bg-secondary border-t border-border-primary rounded-t-2xl shadow-2xl"
+            className="fixed bottom-0 left-0 right-0 z-50 flex flex-col bg-card border-t border-border rounded-t-2xl shadow-2xl"
             style={{
               height: `calc(min(100vh * ${MOBILE_HEIGHT_RATIO}, 100vh - 40px))`,
               maxHeight: '85vh',
@@ -286,7 +286,7 @@ export default function AiPanel({ visible }: AiPanelProps) {
             aria-label="AI Assistant"
           >
             <div className="flex justify-center pt-2 pb-1 shrink-0">
-              <div className="w-8 h-1 rounded-full bg-border-primary/40" />
+              <div className="w-8 h-1 rounded-full bg-border-40" />
             </div>
             {sharedBody}
           </motion.div>
@@ -313,19 +313,19 @@ function HeaderBar({
   return (
     <div
       className="flex items-center gap-1.5 px-3 shrink-0"
-      style={{ height: 52, borderBottom: '1px solid var(--border-primary)' }}
+      style={{ height: 52, borderBottom: '1px solid var(--border)' }}
     >
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-signal-amber/12"
+          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-primary-10"
         >
-          <Bot className="w-4 h-4 text-signal-amber" />
+          <Bot className="w-4 h-4 text-primary" />
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-[14px] font-semibold text-text-primary truncate">AI Assistant</span>
+            <span className="text-14px font-semibold text-foreground truncate">AI Assistant</span>
             <span
-              className="text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 hidden sm:inline text-signal-amber bg-signal-amber/12 border border-signal-amber/20"
+              className="text-10px font-medium px-1.5 py-0.5 rounded-full shrink-0 hidden sm:inline text-primary bg-primary-10 border border-primary-20"
             >
               {roleLabel}
             </span>
@@ -336,13 +336,13 @@ function HeaderBar({
       <div className="flex items-center gap-0.5">
         <button
           onClick={() => onLangChange(lang === 'en' ? 'kn' : 'en')}
-          className="text-[10px] font-semibold font-mono px-1.5 py-1 rounded transition-colors text-text-tertiary hover:text-text-primary"
+          className="text-10px font-semibold font-mono px-1.5 py-1 rounded transition-colors text-muted-foreground hover:text-foreground"
           aria-label={`Switch language to ${lang === 'en' ? 'Kannada' : 'English'}`}
         >
           {lang === 'en' ? 'EN' : 'ಕನ್ನಡ'}
         </button>
 
-        <div className="w-px h-4 mx-0.5 bg-border-primary" />
+        <div className="w-px h-4 mx-0.5 bg-border" />
 
         <HeaderButton icon={MessageSquarePlus} label="New chat" onClick={onNewChat} />
         <HeaderButton icon={Trash2} label="Clear conversation" onClick={onClear} />
@@ -354,7 +354,7 @@ function HeaderBar({
         />
         <button
           onClick={onClose}
-          className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors text-text-tertiary hover:bg-hover-bg hover:text-alert-red"
+          className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-destructive"
           aria-label="Close AI Assistant"
         >
           <X className="w-3.5 h-3.5" />
@@ -371,7 +371,7 @@ function HeaderButton({ icon: Icon, label, onClick }: {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors text-text-tertiary hover:bg-hover-bg hover:text-text-primary"
+      className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
       aria-label={label}
       title={label}
     >
@@ -384,7 +384,7 @@ function HeaderButton({ icon: Icon, label, onClick }: {
 // CHAT CONTEXT BAR
 // ═══════════════════════════════════════════════════════════════════════════
 function ChatContextBar({ lang }: { lang: Language }) {
-  return (    <div className="text-[11px] px-4 py-1.5 shrink-0 font-mono truncate text-text-tertiary border-b border-border-primary">
+  return (    <div className="text-12px px-4 py-1.5 shrink-0 font-mono truncate text-muted-foreground border-b border-border">
       {COPILOT_TEXT[lang].analysing}
     </div>
   );
@@ -408,19 +408,19 @@ function MessageArea({ messages, isLoading, error, suggestions, lang, roleWelcom
   return (
     <div
       className="flex-1 overflow-y-auto px-3 py-3 space-y-3"
-      style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--border-primary) transparent' }}
+      style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--border) transparent' }}
     >
       {messages.length === 0 && !isLoading && (
         <div className="flex flex-col items-center justify-center h-full text-center px-4">
           <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 bg-signal-amber/10"
+            className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 bg-primary-10"
           >
-            <Sparkles className="w-6 h-6 text-signal-amber" />
+            <Sparkles className="w-6 h-6 text-primary" />
           </div>
-          <p className="text-[15px] font-semibold text-text-primary mb-1">
+          <p className="text-16px font-semibold text-foreground mb-1">
             {roleWelcome?.title}
           </p>
-          <p className="text-[13px] text-text-secondary">
+          <p className="text-13.3333px text-muted-foreground">
             {roleWelcome?.subtext}
           </p>
           <div className="mt-5 w-full max-w-sm">
@@ -469,21 +469,21 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="px-3.5 py-3 rounded-xl text-[13px] bg-alert-red/8 border border-alert-red/20"
+      className="px-3.5 py-3 rounded-xl text-13.3333px bg-destructive-8 border border-destructive-20"
     >
       <div className="flex items-start gap-2.5">
-        <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-alert-red/15">
-          <X className="w-3 h-3 text-alert-red" />
+        <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-destructive-15">
+          <X className="w-3 h-3 text-destructive" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-[14px] text-red-300">Unable to reach AI service</p>
-          <p className="mt-0.5 text-[12px] text-alert-red">{friendlyMsg}</p>
+          <p className="font-medium text-14px text-destructive">Unable to reach AI service</p>
+          <p className="mt-0.5 text-12px text-destructive">{friendlyMsg}</p>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onRetry();
             }}
-            className="mt-2 text-[12px] font-medium inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors bg-alert-red/12 text-alert-red border border-alert-red/20 hover:bg-alert-red/20"
+            className="mt-2 text-12px font-medium inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors bg-destructive-12 text-destructive border border-destructive-20 hover:bg-destructive-20"
           >
             <Send className="w-3 h-3" />
             Try again
@@ -527,13 +527,13 @@ function InputArea({ value, onChange, onSend, disabled, lang }: {
 
   return (
     <div
-      className="shrink-0 px-3 py-2.5 border-t border-border-primary"
+      className="shrink-0 px-3 py-2.5 border-t border-border"
     >
       <div
         className="flex items-end gap-2 rounded-xl transition-all duration-200"
         style={{
-          background: isFocused ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
-          border: `1px solid ${isFocused ? 'var(--color-signal-amber)' : 'var(--border-primary)'}`,
+          background: isFocused ? 'var(--card)' : 'var(--background)',
+          border: `1px solid ${isFocused ? 'var(--ring)' : 'var(--input)'}`,
           padding: '4px 4px 4px 12px',
         }}
       >
@@ -546,7 +546,7 @@ function InputArea({ value, onChange, onSend, disabled, lang }: {
           onBlur={() => setIsFocused(false)}
           placeholder={t.placeholder}
           rows={1}
-          className="flex-1 bg-transparent text-[14px] text-text-primary placeholder-text-tertiary resize-none outline-none py-2 leading-relaxed"
+          className="flex-1 bg-transparent text-14px text-foreground placeholder:text-muted-foreground resize-none outline-none py-2 leading-relaxed"
           style={{ scrollbarWidth: 'thin', maxHeight: 120 }}
           disabled={disabled}
           aria-label="AI chat input"
@@ -556,7 +556,7 @@ function InputArea({ value, onChange, onSend, disabled, lang }: {
             onClick={() => { if (value.trim() && !disabled) onSend(value.trim()); }}
             disabled={!value.trim() || disabled}
             className={`flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed ${
-              value.trim() ? 'bg-signal-amber text-white hover:bg-signal-amber/80' : 'text-text-tertiary bg-transparent'
+              value.trim() ? 'bg-primary text-primary-foreground hover:bg-primary-80' : 'text-muted-foreground bg-transparent'
             }`}
             aria-label="Send message"
           >
@@ -564,7 +564,7 @@ function InputArea({ value, onChange, onSend, disabled, lang }: {
           </button>
         </div>
       </div>
-      <p className="text-[10px] text-center mt-1.5 font-mono text-text-tertiary">
+      <p className="text-10px text-center mt-1.5 font-mono text-muted-foreground">
         Shift+Enter for new line · Esc to close
       </p>
     </div>

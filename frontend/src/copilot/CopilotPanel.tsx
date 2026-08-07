@@ -72,9 +72,9 @@ export default function CopilotPanel({
       <div
         className="flex flex-col h-full overflow-hidden"
         style={{
-          background: 'rgba(15, 32, 64, 0.96)',
-          border: '1px solid #2B4C7E',
-          borderRadius: '0 0 12px 12px',
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: '0 0 var(--radius-lg) var(--radius-lg)',
         }}
       >
         <ChatContextBar lang={lang} />        <MessageArea
@@ -114,9 +114,9 @@ export default function CopilotPanel({
             width: 420,
             height: '75vh',
             maxHeight: 700,
-            borderRadius: '16px 16px 0 0',
-            background: 'rgba(15, 32, 64, 0.96)',
-            border: '1px solid #2B4C7E',
+            borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
             display: 'flex',
@@ -157,25 +157,25 @@ function ChatHeader({ roleLabel, lang, onLangChange, onClose }: {
   roleLabel: string; lang: 'en' | 'kn'; onLangChange: (l: 'en' | 'kn') => void; onClose: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 shrink-0 h-14 border-b border-border-primary">
+    <div className="flex items-center gap-3 px-4 shrink-0 h-14 border-b border-border">
       <div className="flex items-center gap-2 flex-1">
         <span className="relative flex h-2.5 w-2.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-verified-green opacity-60" />
-          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-verified-green" />
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
         </span>
-        <span className="text-[15px] font-medium text-text-primary">AI Copilot</span>
+        <span className="text-16px font-medium text-foreground">AI Copilot</span>
       </div>
-      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full text-signal-amber bg-signal-amber/12 border border-signal-amber/25">
+      <span className="text-12px font-medium px-2 py-0.5 rounded-full text-primary bg-primary-10 border border-primary-20">
         {roleLabel}
       </span>
       <button onClick={() => onLangChange(lang === 'en' ? 'kn' : 'en')}
-        className="text-[11px] font-semibold font-mono px-1.5 py-0.5 rounded transition-colors text-text-tertiary hover:text-text-primary">
+        className="text-12px font-semibold font-mono px-1.5 py-0.5 rounded transition-colors text-muted-foreground hover:text-foreground">
         {lang === 'en' ? 'EN' : 'ಕನ್ನಡ'}
       </button>
-      <button onClick={onClose} className="flex items-center justify-center w-7 h-7 rounded transition-colors text-text-tertiary hover:bg-hover-bg">
+      <button onClick={onClose} className="flex items-center justify-center w-7 h-7 rounded transition-colors text-muted-foreground hover:bg-muted">
         <Minimize2 className="w-3.5 h-3.5" />
       </button>
-      <button onClick={onClose} className="flex items-center justify-center w-7 h-7 rounded transition-colors text-text-tertiary hover:bg-hover-bg hover:text-alert-red">
+      <button onClick={onClose} className="flex items-center justify-center w-7 h-7 rounded transition-colors text-muted-foreground hover:bg-muted hover:text-destructive">
         <X className="w-3.5 h-3.5" />
       </button>
     </div>
@@ -184,7 +184,7 @@ function ChatHeader({ roleLabel, lang, onLangChange, onClose }: {
 
 function ChatContextBar({ lang }: { lang: 'en' | 'kn' }) {
   return (
-    <div className="text-[12px] px-4 py-2 shrink-0 font-mono text-text-tertiary border-b border-border-primary">
+    <div className="text-12px px-4 py-2 shrink-0 font-mono text-muted-foreground border-b border-border">
       {COPILOT_TEXT[lang].analysing}
     </div>
   );
@@ -204,11 +204,11 @@ function MessageArea({ messages, isLoading, error, suggestions, lang, messagesEn
     <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3" style={{ scrollbarWidth: 'thin' }}>
       {messages.length === 0 && !isLoading && (
         <div className="flex flex-col items-center justify-center h-full text-center px-6">
-          <Sparkles className="w-8 h-8 mb-3 text-text-tertiary" />
-          <p className="text-[14px] font-medium text-text-primary mb-1">
+          <Sparkles className="w-8 h-8 mb-3 text-muted-foreground" />
+          <p className="text-14px font-medium text-foreground mb-1">
             {roleWelcome?.title ?? t.askAnything}
           </p>
-          <p className="text-[13px] text-text-tertiary">
+          <p className="text-13.3333px text-muted-foreground">
             {roleWelcome?.subtext ?? t.askSubtext}
           </p>
           <div className="mt-4 w-full">
@@ -228,9 +228,9 @@ function MessageArea({ messages, isLoading, error, suggestions, lang, messagesEn
       )}
 
       {error && (
-        <div className="px-3.5 py-2.5 rounded-lg text-[13px] bg-alert-red/10 border border-alert-red/25 text-alert-red">
+        <div className="px-3.5 py-2.5 rounded-lg text-13.3333px bg-destructive-10 border border-destructive-25 text-destructive">
           <p>Unable to reach AI service. Check your connection.</p>
-          <button onClick={() => { if (input) onSendMessage(input); }} className="mt-1.5 text-[12px] underline underline-offset-2 hover:no-underline text-alert-red">Try again</button>
+          <button onClick={() => { if (input) onSendMessage(input); }} className="mt-1.5 text-12px underline underline-offset-2 hover:no-underline text-destructive">Try again</button>
         </div>
       )}
 

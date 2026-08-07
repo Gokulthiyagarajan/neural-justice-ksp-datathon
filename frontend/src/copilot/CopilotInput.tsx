@@ -51,13 +51,13 @@ export default function CopilotInput({ value, onChange, onSend, disabled, lang }
   };
 
   return (
-    <div className="flex items-end gap-2 p-3 border-t border-border-primary">
+    <div className="flex items-end gap-2 p-3 border-t border-border">
       {/* Microphone button */}
       {voiceSupported && (
         <button
           onClick={isListening ? stopListening : startListening}
           className={`shrink-0 flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 ${
-            isListening ? 'bg-signal-amber/15 text-signal-amber' : 'text-text-tertiary hover:bg-hover-bg'
+            isListening ? 'bg-primary-15 text-primary' : 'text-muted-foreground hover:bg-muted'
           }`}
           title={isListening ? 'Stop listening' : 'Voice input'}
         >
@@ -68,11 +68,11 @@ export default function CopilotInput({ value, onChange, onSend, disabled, lang }
       {/* Text input */}
       <div
         className={`flex-1 relative rounded-lg transition-all duration-200 ${
-          isFocused ? 'border-signal-amber/50' : 'border-border-primary'
+          isFocused ? 'ring-2 ring-ring-60' : ''
         }`}
         style={{
-          background: isFocused ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
-          border: `1px solid ${isFocused ? 'var(--color-signal-amber)' : 'var(--border-primary)'}`,
+          background: isFocused ? 'var(--card)' : 'var(--background)',
+          border: `1px solid ${isFocused ? 'var(--ring)' : 'var(--input)'}`,
         }}
       >
         <textarea
@@ -84,7 +84,7 @@ export default function CopilotInput({ value, onChange, onSend, disabled, lang }
           onBlur={() => setIsFocused(false)}
           placeholder={lang === 'kn' ? 'ಎಫ್ಐಆರ್, ಜಿಲ್ಲೆಗಳ ಬಗ್ಗೆ ಕೇಳಿ...' : 'Ask about FIRs, districts, patterns...'}
           rows={1}
-          className="w-full bg-transparent text-[14px] text-text-primary placeholder-text-tertiary resize-none outline-none px-3 py-2.5 font-sans"
+          className="w-full bg-transparent text-14px text-foreground placeholder:text-muted-foreground resize-none outline-none px-3 py-2.5 font-sans"
           style={{ scrollbarWidth: 'thin' }}
           disabled={disabled}
         />
@@ -97,7 +97,7 @@ export default function CopilotInput({ value, onChange, onSend, disabled, lang }
         }}
         disabled={!value.trim() || disabled}
         className={`shrink-0 flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 ${
-          value.trim() && !disabled ? 'bg-signal-amber/15 text-signal-amber hover:bg-signal-amber/25' : 'text-text-tertiary'
+          value.trim() && !disabled ? 'bg-primary text-primary-foreground hover:bg-primary-80' : 'text-muted-foreground'
         } disabled:opacity-30 disabled:cursor-not-allowed`}
       >
         <Send className="w-4 h-4" />

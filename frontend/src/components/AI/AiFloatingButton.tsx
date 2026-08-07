@@ -39,11 +39,11 @@ export default function AiFloatingButton({ onClick, isOpen }: AiFloatingButtonPr
       className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-2xl cursor-pointer overflow-hidden select-none"
       style={{
         background: isOpen
-          ? 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)'
-          : 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+          ? 'linear-gradient(135deg, var(--destructive) 0%, color-mix(in srgb, var(--destructive) 72%, #000) 100%)'
+          : 'linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 72%, #000) 100%)',
         boxShadow: isOpen
-          ? '0 8px 32px rgba(220, 38, 38, 0.35), 0 0 0 1px rgba(220, 38, 38, 0.3)'
-          : '0 8px 32px rgba(245, 158, 11, 0.35), 0 0 0 1px rgba(245, 158, 11, 0.3)',
+          ? '0 8px 32px color-mix(in srgb, var(--destructive) 35%, transparent), 0 0 0 1px color-mix(in srgb, var(--destructive) 30%, transparent)'
+          : '0 8px 32px color-mix(in srgb, var(--primary) 35%, transparent), 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent)',
         transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
       }}
       aria-label={isOpen ? 'Close AI Assistant' : 'Open AI Assistant'}
@@ -59,7 +59,7 @@ export default function AiFloatingButton({ onClick, isOpen }: AiFloatingButtonPr
             animate={{ opacity: 0, scale: 3 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
-            className="absolute w-8 h-8 rounded-full bg-white/30 pointer-events-none"
+            className="absolute w-8 h-8 rounded-full bg-primary-foreground-30 pointer-events-none"
             style={{ left: r.x - 16, top: r.y - 16 }}
           />
         ))}
@@ -68,17 +68,17 @@ export default function AiFloatingButton({ onClick, isOpen }: AiFloatingButtonPr
       {/* Icon */}
       <div className="relative z-10 flex items-center justify-center">
         {isOpen ? (
-          <X className="w-5 h-5 text-white" />
+          <X className="w-5 h-5 text-primary-foreground" />
         ) : (
-          <Bot className="w-5 h-5 text-white" />
+          <Bot className="w-5 h-5 text-primary-foreground" />
         )}
         {!isOpen && unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
+          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-primary-foreground animate-pulse" />
         )}
       </div>
 
       {/* Label */}
-      <span className="relative z-10 text-[13px] font-semibold text-white tracking-wide whitespace-nowrap">
+      <span className="relative z-10 text-13.3333px font-semibold text-primary-foreground tracking-wide whitespace-nowrap">
         {isOpen ? 'Close AI' : 'Ask AI'}
       </span>
     </motion.button>
