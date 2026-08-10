@@ -1,0 +1,32 @@
+{
+  "components": [
+    {"id": "c1", "name": "REST API routes", "categories": ["external-integration", "deserialization"]},
+    {"id": "c2", "name": "Copilot chat backend", "categories": ["prompt-injection", "external-integration", "deserialization"]},
+    {"id": "c3", "name": "AI/LLM provider layer", "categories": ["prompt-injection", "external-integration"]},
+    {"id": "c4", "name": "Investigation pipeline", "categories": ["prompt-injection", "external-integration", "deserialization"]},
+    {"id": "c5", "name": "QuickML standalone service", "categories": ["prompt-injection", "external-integration"]},
+    {"id": "c6", "name": "PDF engine", "categories": ["external-integration"]},
+    {"id": "c7", "name": "ORM data models", "categories": []},
+    {"id": "c8", "name": "Catalyst serverless backend", "categories": ["external-integration", "deserialization"]},
+    {"id": "c9", "name": "Seed/import scripts", "categories": ["external-integration", "deserialization"]},
+    {"id": "c10", "name": "Frontend API client", "categories": ["external-integration"]},
+    {"id": "c11", "name": "Frontend state & external services", "categories": ["external-integration"]},
+    {"id": "c12", "name": "Frontend UI layer", "categories": ["external-integration"]}
+  ],
+  "exclusions": [
+    {"component": "c7", "category": "all", "reason": "Pure SQLAlchemy schema/model definitions and row serializers; no business logic, no untrusted input handling. SQL and auth paths are reviewed under c1."},
+    {"component": "c1", "category": "prompt-injection", "reason": "No LLM prompt construction in route handlers; LLM surface lives in c2/c3/c4/c5."},
+    {"component": "c6", "category": "prompt-injection", "reason": "PDF engine embeds already-generated content; no prompt construction."},
+    {"component": "c6", "category": "deserialization", "reason": "fpdf2 text-only PDF generation; no deserialization of untrusted bytes."},
+    {"component": "c9", "category": "prompt-injection", "reason": "Offline seed/import tooling; no LLM interaction."},
+    {"component": "c10", "category": "prompt-injection", "reason": "Client-side transport only; prompt assembly is server-side."},
+    {"component": "c11", "category": "prompt-injection", "reason": "State/credential stores; no prompt construction."},
+    {"component": "c12", "category": "prompt-injection", "reason": "UI layer renders LLM output (XSS handled under external-integration); no prompt construction client-side."},
+    {"component": "all", "category": "memory-and-unsafe", "reason": "No Rust/C/C++/Go in codebase; Python + TypeScript only."}
+  ],
+  "notes": [
+    "deserialization cells are JSON-only: verified no pickle/eval/yaml.load/subprocess in Python. Focus on LLM-output JSON parsing and untrusted body handling.",
+    "prompt-injection is the dominant surface: multi-stage LLM chains (c4), copilot chat (c2), role-based system prompts + grounding context (c3), QuickML (c5), plus frontend rendering of LLM output (c12, XSS).",
+    "external-integration hotspots: JWT/secret handling (c1, c8), urlopen in Catalyst handler (c8), Google OAuth client creds (c11), SQL via ORM + raw sqlite (c1, c8, c9), demo/seed data flows (c9), hardcoded creds in env (c8 DEFAULT_LOGIN_*)."
+  ]
+}
