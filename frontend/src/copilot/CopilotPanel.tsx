@@ -9,6 +9,8 @@ import CopilotMessage from './CopilotMessage';
 import CopilotInput from './CopilotInput';
 import CopilotSuggestions from './CopilotSuggestions';
 import { ROLE_WELCOME } from './constants/suggestedQueries';
+import ThinkingState from './ThinkingState';
+import StreamingText from './StreamingText';
 
 interface CopilotPanelProps {
   state: CopilotState;
@@ -77,7 +79,10 @@ export default function CopilotPanel({
           borderRadius: '0 0 var(--radius-lg) var(--radius-lg)',
         }}
       >
-        <ChatContextBar lang={lang} />        <MessageArea
+      <ChatContextBar lang={lang} />
+      {state === 'thinking' && <ThinkingState variant="Steps" />}
+
+      <MessageArea
             messages={messages}
             isLoading={isLoading}
             error={error}
@@ -130,6 +135,8 @@ export default function CopilotPanel({
             onClose={close}
           />
           <ChatContextBar lang={lang} />
+          {state === 'thinking' && <ThinkingState variant="Steps" />}
+
           <MessageArea
             messages={messages}
             isLoading={isLoading}
@@ -222,9 +229,7 @@ function MessageArea({ messages, isLoading, error, suggestions, lang, messagesEn
       ))}
 
       {isLoading && (
-        <CopilotMessage
-          message={{ id: 'typing', role: 'assistant', content: '', timestamp: new Date(), streaming: true }}
-        />
+        <StreamingText />
       )}
 
       {error && (
