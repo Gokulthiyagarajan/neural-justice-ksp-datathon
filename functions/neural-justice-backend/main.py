@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import random
+import secrets
 import re
 import sqlite3
 import struct
@@ -51,8 +52,23 @@ if not os.path.isabs(DB_PATH):
     p2 = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dev-test.db")
     DB_PATH = p1 if os.path.exists(p1) else (p2 if os.path.exists(p2) else DB_PATH)
 
-DEFAULT_PASSWORD = os.environ.get("DEFAULT_LOGIN_PASSWORD", "test123")
+# SECURITY (F-024): the seeded SUPER_ADMIN previously used the guessable default
+# password "test123". Now, if no password is supplied, a strong random one is
+# generated (and logged only in non-production) instead of a known constant.
+_default_pw = os.environ.get("DEFAULT_LOGIN_PASSWORD", "")
+DEFAULT_PASSWORD = _default_pw if _default_pw else secrets.token_urlsafe(18)
+if not _default_pw and not IS_PRODUCTION:
+    logger.info("Generated random DEFAULT_LOGIN_PASSWORD for dev: %s", DEFAULT_PASSWORD)
 DEFAULT_ROLES = json.loads(os.environ.get("DEFAULT_LOGIN_ROLES", '["SUPER_ADMIN"]'))
+
+# SECURITY (F-002/F-004): demo / deployment auth bypasses grant an unauthenticated
+# SUPER_ADMIN session. They are only honored in non-production AND when demo login
+# is explicitly enabled. An attacker cannot flip these server-side flags remotely.
+IS_PRODUCTION = os.environ.get("ENVIRONMENT", "development").lower() in ("production", "prod")
+DEMO_LOGIN_ENABLED = os.environ.get("COPILOT_DEMO_ENABLED", "0") == "1"
+
+def _demo_bypass_allowed() -> bool:
+    return (not IS_PRODUCTION) and DEMO_LOGIN_ENABLED
 DEFAULT_DISTRICT_ID = int(os.environ.get("DEFAULT_LOGIN_DISTRICT_ID", "1"))
 DEFAULT_STATION_ID = int(os.environ.get("DEFAULT_LOGIN_STATION_ID", "1"))
 DEFAULT_EMAIL = os.environ.get("DEFAULT_LOGIN_EMAIL", "admin@neural-justice.gov.in")
@@ -173,31 +189,56 @@ def _get_totp_uri(secret: str, email: str) -> str:
 
 
 # ═══════════════════════════════════════════════════════════════════════
-#  ENCRYPTION (XOR with derived key)
+#  ENCRYPTION (AES-GCM via derived key)
 # ═══════════════════════════════════════════════════════════════════════
 
-def _derive_key(salt: str = "") -> bytes:
-    raw = ENCRYPTION_KEY + salt or "insecure-dev-key"
-    return hashlib.sha256(raw.encode()).digest()
+def _derive_key(salt: str = "totp") -> bytes:
+    """SECURITY (F-015): derive an AES key from ENCRYPTION_KEY with no hardcoded
+    fallback secret. In production ENCRYPTION_KEY must be set (fail closed). In
+    development a random per-process key is used so nothing leaks a known constant."""
+    if not ENCRYPTION_KEY:
+        if IS_PRODUCTION:
+            raise RuntimeError("ENCRYPTION_KEY must be set in production")
+        # Dev-only: ephemeral random key — never a hardcoded constant.
+        material = base64.urlsafe_b64encode(os.urandom(32)).decode()
+        logger.warning("ENCRYPTION_KEY not set — using ephemeral dev key (NOT for production)")
+    else:
+        material = ENCRYPTION_KEY
+    return hashlib.pbkdf2_hmac("sha256", material.encode(), salt.encode() or b"nj", 100_000, dklen=32)
 
 
+# AES-GCM uses a random 96-bit IV prepended to the ciphertext.
 def _encrypt_totp_secret(secret: str) -> str:
     if not secret:
         return secret
-    key = _derive_key("totp")[:len(secret)]
-    xored = bytes(a ^ b for a, b in zip(secret.encode(), key))
-    return base64.urlsafe_b64encode(xored).decode()
+    try:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    except ImportError:
+        # Fallback: PBKDF2-derived XOR keystream (still far stronger than before).
+        key = _derive_key("totp")
+        raw = secret.encode()
+        return "x:" + base64.urlsafe_b64encode(bytes(a ^ b for a, b in zip(raw, key))).decode()
+    iv = os.urandom(12)
+    ct = AESGCM(_derive_key("totp")).encrypt(iv, secret.encode(), None)
+    return "a:" + base64.urlsafe_b64encode(iv + ct).decode()
 
 
 def _decrypt_totp_secret(stored: str) -> str:
     if not stored:
         return stored
-    try:
-        raw = base64.urlsafe_b64decode(stored.encode())
-        key = _derive_key("totp")[:len(raw)]
+    if stored.startswith("a:"):
+        try:
+            from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+            blob = base64.urlsafe_b64decode(stored[2:])
+            iv, ct = blob[:12], blob[12:]
+            return AESGCM(_derive_key("totp")).decrypt(iv, ct, None).decode()
+        except Exception:
+            return stored
+    if stored.startswith("x:"):
+        key = _derive_key("totp")
+        raw = base64.urlsafe_b64decode(stored[2:])
         return bytes(a ^ b for a, b in zip(raw, key)).decode()
-    except Exception:
-        return stored
+    return stored
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -271,12 +312,11 @@ def _get_auth_user(request) -> Optional[dict]:
         if not auth and hasattr(request, 'get_header'):
             auth = request.get_header("Authorization", "")
         # Demo-mode / deployment bypasses (Catalyst strips Authorization header)
-        if zc_token:
-            return {"username": "admin", "roles": ["SUPER_ADMIN"], "id": "admin"}
-        if x_demo:
-            return {"username": "admin", "roles": ["SUPER_ADMIN"], "id": "admin"}
-        if auth and "demo-session" in auth:
-            return {"username": "admin", "roles": ["SUPER_ADMIN"], "id": "admin"}
+        # SECURITY (F-004): previously these granted an unauthenticated SUPER_ADMIN
+        # session. Now they only fire when demo login is explicitly enabled and the
+        # deployment is NOT production (see _demo_bypass_allowed).
+        if _demo_bypass_allowed() and (zc_token or x_demo or (auth and "demo-session" in auth)):
+            return {"username": "demo", "roles": ["SUPER_ADMIN"], "id": "demo"}
         # Normal JWT auth
         if not auth:
             return None
@@ -311,15 +351,10 @@ def _get_auth_user_or_demo(request) -> Optional[dict]:
             if hasattr(hdrs, 'get'):
                 x_demo = x_demo or hdrs.get("X-Demo-Session", "") or hdrs.get("x-demo-session", "")
                 auth = auth or hdrs.get("Authorization", "") or hdrs.get("authorization", "")
-        # Catalyst gateway auth = user is authenticated
-        if zc_token:
-            return {"username": "admin", "roles": ["SUPER_ADMIN"], "id": "admin"}
-        # Custom demo header from frontend
-        if x_demo:
-            return {"username": "admin", "roles": ["SUPER_ADMIN"], "id": "admin"}
-        # Fallback: check auth header for demo-session sentinel (local dev only)
-        if auth and "demo-session" in auth:
-            return {"username": "admin", "roles": ["SUPER_ADMIN"], "id": "admin"}
+        # Catalyst gateway auth / demo header / demo-session sentinel.
+        # SECURITY (F-004): only honored in non-production with demo login enabled.
+        if _demo_bypass_allowed() and (zc_token or x_demo or (auth and "demo-session" in auth)):
+            return {"username": "demo", "roles": ["SUPER_ADMIN"], "id": "demo"}
     except Exception:
         pass
     return None
@@ -909,11 +944,19 @@ def _build_fir_pdf(data: dict) -> bytes:
 
 
 def _handle_health():
-    return _json_response({"status": "healthy", "version": "1.0.0", "service": "neural-justice-backend"})
+    # SECURITY (F-013): don't disclose version/stack in production.
+    data = {"status": "healthy", "service": "neural-justice-backend"}
+    if not IS_PRODUCTION:
+        data["version"] = "1.0.0"
+    return _json_response(data)
 
 
 def _handle_root():
-    return _json_response({"status": "ok", "message": "Neural Justice API is running", "version": "1.0.1-demo-fix"})
+    # SECURITY (F-013): don't disclose version/stack in production.
+    data = {"status": "ok", "message": "Neural Justice API is running"}
+    if not IS_PRODUCTION:
+        data["version"] = "1.0.1-demo-fix"
+    return _json_response(data)
 
 
 def _handle_login(body: dict):
@@ -926,9 +969,13 @@ def _handle_login(body: dict):
     if not username or not password:
         return _error_response("username and password are required", 400)
     
-    # Demo credentials for all roles - accept common demo creds
-    is_demo = (username == "demo" and password == "demo") or \
-              (username == "admin" and password in ("admin123", "admin"))
+    # Demo credentials for all roles.
+    # SECURITY (F-005): hardcoded admin/admin123/admin and demo/demo are backdoors
+    # that bypass the DB password check and grant SUPER_ADMIN. They are now only
+    # accepted in non-production when demo login is explicitly enabled.
+    hardcoded_demo = (username == "demo" and password == "demo") or \
+                     (username == "admin" and password in ("admin123", "admin"))
+    is_demo = _demo_bypass_allowed() and hardcoded_demo
     
     if not is_demo:
         conn = get_db()
@@ -1007,7 +1054,7 @@ def _handle_login(body: dict):
         "totp_setup": False,  # TOTP is mandatory, no setup needed
         "totp_secret": None,  # Don't expose secret
         "totp_uri": None,  # Don't expose URI
-        "demo_totp_hint": "Use any authenticator app with secret: JBSWY3DPEHPK3PXP (generates codes for 'demo')" if is_demo else None,
+        "demo_totp_hint": "Use any authenticator app (demo secret is configured server-side)" if is_demo else None,
         "user": {
             "id": row["username"],
             "username": row["username"],
@@ -1039,7 +1086,10 @@ def _handle_verify_mfa(body: dict):
     DEMO_TOTP_SECRET = "JBSWY3DPEHPK3PXP"
     DEMO_USERNAME = "admin"
     
-    if mfa_token == DEMO_MFA_TOKEN:
+    # SECURITY (F-006): the hardcoded DEMO_MFA_TOKEN ("demo-mfa-token"), the
+    # committed 2FA seed (JBSWY3DPEHPK3PXP) and the fixed code "123456" are MFA
+    # backdoors. They are only reachable when demo login is enabled in non-prod.
+    if mfa_token == DEMO_MFA_TOKEN and _demo_bypass_allowed():
         # For demo users, verify against the shared secret
         # Also accept the fixed fallback code "123456" for demo convenience
         if totp_code != "123456" and not _verify_totp(DEMO_TOTP_SECRET, totp_code, window=1):

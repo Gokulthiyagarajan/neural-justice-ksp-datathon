@@ -1,0 +1,16 @@
+{
+  "threats": [
+    { "component_id": "copilot-backend", "applicable_categories": ["prompt-injection", "external-integration"], "exclusions": [] },
+    { "component_id": "copilot-frontend", "applicable_categories": ["prompt-injection"], "exclusions": [{ "category": "memory-and-unsafe", "reason": "TypeScript/React managed runtime; no native memory-unsafe code" }] },
+    { "component_id": "api-routes", "applicable_categories": ["external-integration"], "exclusions": [] },
+    { "component_id": "ai-providers", "applicable_categories": ["external-integration"], "exclusions": [{ "category": "memory-and-unsafe", "reason": "Python managed runtime" }] },
+    { "component_id": "pipeline-ml", "applicable_categories": ["deserialization", "external-integration"], "exclusions": [] },
+    { "component_id": "pdf-file", "applicable_categories": ["external-integration"], "exclusions": [] },
+    { "component_id": "auth-session", "applicable_categories": ["external-integration"], "exclusions": [] },
+    { "component_id": "config-secrets", "applicable_categories": ["external-integration"], "exclusions": [] },
+    { "component_id": "db-models", "applicable_categories": ["external-integration"], "exclusions": [] }
+  ],
+  "global_exclusions": [
+    { "category": "memory-and-unsafe", "reason": "Codebase is Python + TypeScript/React; no Rust/C/C++/Go native code to review." }
+  ]
+}

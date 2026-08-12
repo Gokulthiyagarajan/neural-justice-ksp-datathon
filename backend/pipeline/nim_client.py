@@ -29,12 +29,31 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import httpx
+from urllib.parse import urlparse
 
 logger = logging.getLogger("nj.pipeline.nim")
 
 # ── Constants ──────────────────────────────────────────────────────────────
 
 NIM_BASE_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
+
+# SECURITY (F-018): the NIM client posts the API key in the Authorization
+# header, so the destination must be pinned. Only https and the official NVIDIA
+# host are permitted (SSRF defense).
+ALLOWED_NIM_HOSTS = {"integrate.api.nvidia.com"}
+
+
+def _validate_nim_url(url: str) -> None:
+    parsed = urlparse(url)
+    if parsed.scheme != "https":
+        raise NimError("nim", url, message="only https NIM endpoints allowed")
+    if parsed.hostname not in ALLOWED_NIM_HOSTS:
+        raise NimError(
+            "nim", url,
+            message=f"NIM host not allowed: {parsed.hostname!r}. Allowed: {sorted(ALLOWED_NIM_HOSTS)}",
+        )
+
+
 DEFAULT_TIMEOUT = 45.0  # seconds
 MAX_RETRIES = 3
 INITIAL_BACKOFF = 1.0  # seconds
@@ -114,6 +133,7 @@ class NimClient:
     ):
         self.api_key = api_key or os.environ.get("NIM_API_KEY", "")
         self.base_url = base_url or NIM_BASE_URL
+        _validate_nim_url(self.base_url)
         self.timeout = timeout
         self.max_retries = max_retries
 

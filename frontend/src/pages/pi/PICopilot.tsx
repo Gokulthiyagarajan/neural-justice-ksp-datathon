@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { Bot, Search } from 'lucide-react';
 import { authHeaders } from '@/utils/authHeaders';
+import { Markdown } from '@/components/AI/Markdown';
 
 interface CopilotMessage {
   role: 'user' | 'assistant';
@@ -23,21 +24,6 @@ export function PICopilot() {
   const [mode, setMode] = useState<string>('fir_search')
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  const renderMarkdown = (text: string) => {
-    const escaped = text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-    const html = escaped
-      .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-      .replace(/^- (.+)$/gm, '<li>$1</li>')
-      .replace(/\n/g, '<br>')
-    return html
-  }
 
   const QUERY_MODES = [
     { id: 'fir_search', label: 'FIR Search' },
@@ -182,7 +168,7 @@ export function PICopilot() {
                     ? 'bg-cyan-500/20 text-cyan-100 rounded-tr-sm'
                     : 'bg-bg-card text-text-primary rounded-tl-sm'
                 }`}>
-                  <span dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }} />
+                  <Markdown content={msg.content} />
                 </div>
 
                 {/* Evidence trail (AI responses only) */}

@@ -1,0 +1,33 @@
+{
+  "tier": "max",
+  "categories": "all applicable",
+  "votes": {
+    "backend/api/copilot/auth.py:50:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "backend/api/copilot/auth.py:76:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    ".env:189:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"},{"vote":"REFUTED"}],
+    "functions/neural-justice-backend/main.py:274:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "functions/neural-justice-backend/main.py:930:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "functions/neural-justice-backend/main.py:1038:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    ".env:29:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "functions/neural-justice-backend/catalyst-config.json:9:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "backend/api/main.py:74:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "backend/api/copilot/chat_pipeline.py:161:prompt-injection": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "backend/ai/copilot/service.py:162:prompt-injection": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "backend/api/copilot/chat_pipeline.py:157:prompt-injection": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "backend/api/copilot/chat_pipeline.py:155:prompt-injection": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "frontend/src/copilot/CopilotMessage.tsx:63:prompt-injection": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "frontend/src/pages/pi/PICopilot.tsx:185:prompt-injection": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "frontend/src/components/AI/Markdown.tsx:40:prompt-injection": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "backend/pipeline/router.py:92:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "backend/ai/config.py:59:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "backend/quickml/service.py:127:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "backend/api/copilot/auth.py:19:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "functions/neural-justice-backend/main.py:179:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "functions/neural-justice-backend/main.py:1010:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "functions/neural-justice-backend/catalyst-config.json:15:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "functions/neural-justice-backend/main.py:54:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "backend/api/routes/reports.py:84:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}],
+    "backend/pipeline/nim_client.py:116:external-integration": [{"vote":"CONFIRMED"},{"vote":"CONFIRMED"}]
+  },
+  "unreviewed": []
+}

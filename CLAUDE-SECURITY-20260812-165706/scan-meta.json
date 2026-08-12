@@ -1,0 +1,18 @@
+{
+  "revision": "4289bc07b788",
+  "dirty": false,
+  "top_level_dirs": [
+    ".pytest_cache",
+    ".vscode",
+    "__pycache__",
+    "assets",
+    "backend",
+    "docs",
+    "frontend",
+    "functions",
+    "node_modules",
+    "plans",
+    "sample dataset's",
+    "scripts"
+  ]
+}

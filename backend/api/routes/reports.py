@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 
@@ -77,11 +78,15 @@ async def download_fir_pdf(crime_no: str):
 
         pdf_bytes = generate_fir_pdf(fir_data)
 
+        # SECURITY (F-025): crime_no comes from the URL path and was interpolated
+        # verbatim into the Content-Disposition header, allowing header/attachment
+        # spoofing. Restrict it to a safe charset.
+        safe_crime_no = re.sub(r"[^A-Za-z0-9._-]", "", crime_no) or "report"
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
             headers={
-                "Content-Disposition": f'attachment; filename="FIR_{crime_no}.pdf"',
+                "Content-Disposition": f'attachment; filename="FIR_{safe_crime_no}.pdf"',
                 "Content-Length": str(len(pdf_bytes)),
             },
         )

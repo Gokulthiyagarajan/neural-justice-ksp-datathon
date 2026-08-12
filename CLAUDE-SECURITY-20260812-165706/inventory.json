@@ -1,0 +1,13 @@
+{
+  "components": [
+    { "id": "copilot-backend", "name": "Copilot backend (LLM pipeline)", "path": "backend/api/copilot" },
+    { "id": "copilot-frontend", "name": "Copilot frontend (LLM output render)", "path": "frontend/src/copilot" },
+    { "id": "api-routes", "name": "API route handlers & authz", "path": "backend/api/routes" },
+    { "id": "ai-providers", "name": "AI providers & orchestrator", "path": "backend/ai" },
+    { "id": "pipeline-ml", "name": "ML pipeline & quickml", "path": "backend/pipeline, backend/quickml" },
+    { "id": "pdf-file", "name": "PDF & file handling", "path": "backend/pdf" },
+    { "id": "auth-session", "name": "Auth/session (copilot auth)", "path": "backend/api/copilot/auth.py" },
+    { "id": "config-secrets", "name": "Config & secrets", "path": ".env, catalyst.json, backend config" },
+    { "id": "db-models", "name": "DB models & queries", "path": "models.py, backend/db" }
+  ]
+}

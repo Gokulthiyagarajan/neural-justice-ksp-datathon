@@ -25,12 +25,34 @@ from __future__ import annotations
 import logging
 import time
 import typing as t
+from urllib.parse import urlparse
 
 import requests
 
 logger = logging.getLogger("nj.quickml.service")
 
 TOKEN_REFRESH_MARGIN_S: int = 300
+
+# SECURITY (F-018/F-019): outbound calls carry Authorization headers, so an
+# attacker-controlled endpoint URL would leak secrets (SSRF). Only allow https
+# and a small set of trusted Zoho/Catalyst hosts.
+ALLOWED_OUTBOUND_HOSTS = {
+    "api.catalyst.zoho.in",
+    "api.catalyst.zoho.com",
+    "accounts.zoho.in",
+    "accounts.zoho.com",
+}
+
+
+def _validate_outbound_url(url: str, what: str = "endpoint") -> None:
+    parsed = urlparse(url)
+    if parsed.scheme != "https":
+        raise QuickMLServiceError(f"{what} must use https, got {parsed.scheme!r}")
+    if parsed.hostname not in ALLOWED_OUTBOUND_HOSTS:
+        raise QuickMLServiceError(
+            f"{what} host not allowed: {parsed.hostname!r}. "
+            f"Allowed: {sorted(ALLOWED_OUTBOUND_HOSTS)}"
+        )
 
 
 class QuickMLServiceError(Exception):
@@ -67,9 +89,11 @@ class QuickMLService:
     ) -> None:
         self._client_id = client_id
         self._client_secret = client_secret
+        _validate_outbound_url(endpoint_url, "endpoint_url")
         self._endpoint_url = endpoint_url
         self._org_id = org_id
         self._endpoint_key = endpoint_key
+        _validate_outbound_url(oauth_url, "oauth_url")
         self._oauth_url = oauth_url
         self._oauth_scope = oauth_scope
         self._environment = environment

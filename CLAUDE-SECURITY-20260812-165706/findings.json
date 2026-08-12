@@ -1,0 +1,213 @@
+{
+  "findings": [
+    {
+      "id": "F-001", "file": "backend/api/copilot/auth.py", "line": 50, "category": "external-integration",
+      "type": "jwt-signature-not-verified", "severity": "critical",
+      "reasoning": "_verify_jwt_simple() base64-decodes the JWT payload and only checks exp; it NEVER verifies the HS256 HMAC signature. Any attacker can forge a token with arbitrary roles/sub/district_id/station_id, defeating all copilot authorization including jurisdiction scoping.",
+      "details": "auth.py:50-62 — payload = json.loads(base64.urlsafe_b64decode(parts[1])); if payload.get('exp',0) < time.time(): return None. No hmac.compare_digest on signature. JWT_SECRET defaults to 'neural-justice-dev-secret' if env unset.",
+      "impact": "Full unauthenticated admin on the copilot API; jurisdiction filters become empty -> read all FIR/case/profiles data across every district.",
+      "fix_direction": "Verify HS256 signature with the real JWT secret via a vetted library (python-jose/jwt); never accept unverified payloads; remove the dev fallback secret."
+    },
+    {
+      "id": "F-002", "file": "backend/api/copilot/auth.py", "line": 76, "category": "external-integration",
+      "type": "demo-header-privilege-escalation", "severity": "critical",
+      "reasoning": "get_current_user() returns SUPER_ADMIN for ANY non-empty X-Demo-Session header, no validation. Unauthenticated full-admin bypass.",
+      "details": "auth.py:76-83 — if x_demo_session: return CurrentUser(username='admin', roles=['SUPER_ADMIN'], jurisdiction_type='state').",
+      "impact": "Send 'X-Demo-Session: x' to become state-wide admin on every copilot route (real DB).",
+      "fix_direction": "Remove the demo header path from any non-dev build; gate behind an explicit, non-header dev flag."
+    },
+    {
+      "id": "F-003", "file": ".env", "line": 189, "category": "external-integration",
+      "type": "leaked-third-party-api-credential", "severity": "critical",
+      "reasoning": "A live NVIDIA NIM API key (nvapi- prefix) is committed in plaintext in .env and duplicated in functions/neural-justice-backend/catalyst-config.json (a production deploy artifact). Real key confirmed by masked check.",
+      "details": "NVIDIA_API_KEY=nvapi-... (value withheld) at .env:189 and catalyst-config.json:17. Used by backend/api/copilot/llm_client.py and functions backend.",
+      "impact": "Third-party billing fraud / quota abuse / identity misuse by anyone with repo/artifact access.",
+      "fix_direction": "Rotate the key immediately; move to Catalyst secret injection; scrub from git history."
+    },
+    {
+      "id": "F-004", "file": "functions/neural-justice-backend/main.py", "line": 274, "category": "external-integration",
+      "type": "unauthenticated-superadmin-bypass-spoofable-headers", "severity": "critical",
+      "reasoning": "The DEPLOYED production handler gates every endpoint via _get_auth_user()/_get_auth_user_or_demo(), which return SUPER_ADMIN whenever ANY of X-Zc-User-Cred-Token (any value), X-Demo-Session (any value), or Authorization containing 'demo-session' is present — before any JWT verification.",
+      "details": "main.py:274-279 — if zc_token/ x_demo/ 'demo-session' in auth: return {'roles':['SUPER_ADMIN']...}. Covers ALL routes (cases, criminal-profiles, fir-ops, dashboard, copilot, ai/*).",
+      "impact": "Unauthenticated attacker sends 'X-Demo-Session: x' and gains SUPER_ADMIN on the LIVE API; mass PII/police-intelligence disclosure.",
+      "fix_direction": "Delete the demo/sentinel header shortcuts in the deployed function; require real JWT/catalyst auth on every route."
+    },
+    {
+      "id": "F-005", "file": "functions/neural-justice-backend/main.py", "line": 930, "category": "external-integration",
+      "type": "hardcoded-admin-backdoor-credentials", "severity": "critical",
+      "reasoning": "Login accepts hardcoded admin/admin and admin/admin123; for 'admin' it sets totp_enrolled=0 and issues a SUPER_ADMIN JWT with no DB password check and no MFA.",
+      "details": "main.py:930-932 is_demo = (admin/admin123|admin) or (demo/demo); admin branch sets DEFAULT_ROLES SUPER_ADMIN, totp_enrolled=0, token issued at ~L987.",
+      "impact": "Anyone knowing the static strings (in source) obtains a signed state-wide admin token.",
+      "fix_direction": "Remove hardcoded credentials; always verify password against stored hash + enforce MFA."
+    },
+    {
+      "id": "F-006", "file": "functions/neural-justice-backend/main.py", "line": 1038, "category": "external-integration",
+      "type": "hardcoded-mfa-bypass-and-2fa-seed-leak", "severity": "critical",
+      "reasoning": "_handle_verify_mfa trusts DEMO_MFA_TOKEN='demo-mfa-token', accepts fixed code '123456', and uses a hardcoded 2FA seed JBSWY3DPEHPK3PXP to issue a SUPER_ADMIN session. The seed is committed in source.",
+      "details": "main.py:1038-1046 — DEMO_MFA_TOKEN + '123456' or _verify_totp('JBSWY3DPEHPK3PXP',...) grants access; seed also at L955/L959.",
+      "impact": "Complete MFA bypass; committed seed enables offline TOTP forgery.",
+      "fix_direction": "Remove demo MFA tokens; generate per-user TOTP secrets at enrollment, never hardcode."
+    },
+    {
+      "id": "F-007", "file": ".env", "line": 29, "category": "external-integration",
+      "type": "leaked-jwt-signing-key-enables-token-forgery", "severity": "critical",
+      "reasoning": ".env holds a REAL HS256 signing key (JWT_SECRET_KEY/JWT_SECRET=504c17c2...). The deployed function reads this exact key and verifies signatures properly, so knowing it lets an attacker forge valid, signature-verified SUPER_ADMIN JWTs.",
+      "details": ".env:29-30 JWT_SECRET_KEY/JWT_SECRET=504c17c20c7723b75d2b766862efb120d2612cbe2d403926b3ce2b21dda452ec; catalyst-config.json:9 also 2779c6dc....",
+      "impact": "Independent of the header bypass, attacker forges valid admin tokens for the live, signature-verifying API.",
+      "fix_direction": "Rotate the JWT secret; inject via Catalyst secrets; scrub from history."
+    },
+    {
+      "id": "F-008", "file": "functions/neural-justice-backend/catalyst-config.json", "line": 9, "category": "external-integration",
+      "type": "hardcoded-production-secrets", "severity": "high",
+      "reasoning": "Production deploy config embeds real JWT secret, Fernet ENCRYPTION_KEY, Zoho client secret, and NVIDIA key in plaintext.",
+      "details": "catalyst-config.json:9-24 — JWT_SECRET_KEY=2779c6dc..., ENCRYPTION_KEY=1CMq90..., ZOHO_CLIENT_SECRET=2047fe....",
+      "impact": "Anyone with artifact access can forge JWTs, decrypt TOTP secrets, and impersonate the app against Zoho.",
+      "fix_direction": "Move all to Catalyst secret injection; rotate; do not commit deploy artifacts with secrets."
+    },
+    {
+      "id": "F-009", "file": "backend/api/main.py", "line": 74, "category": "external-integration",
+      "type": "missing-per-route-authz", "severity": "high",
+      "reasoning": "All 13 routers mounted with no global auth middleware and no Depends(auth) in route modules. Currently synthetic data, but the police-API surface has zero auth if wired to live data.",
+      "details": "main.py:74-88 include_router calls, only CORSMiddleware; routes/*.py have no auth import.",
+      "impact": "Unauthenticated enumeration/disclosure of law-enforcement data if these routes hit real stores.",
+      "fix_direction": "Apply a global auth dependency (or per-router) and jurisdiction checks before any production data wiring."
+    },
+    {
+      "id": "F-010", "file": "backend/api/copilot/chat_pipeline.py", "line": 161, "category": "prompt-injection",
+      "type": "indirect-prompt-injection-retrieved-data", "severity": "high",
+      "reasoning": "Attacker-influenceable DB fields (brief_facts, descriptions, victim/accused names) concatenated verbatim into model context as 'Retrieved Data:' with no delimiting, enabling indirect prompt injection.",
+      "details": "chat_pipeline.py:160-161 context += f\"\\n\\nRetrieved Data:\\n{data_context}\"; data_context from router.py:156 raw rows.",
+      "impact": "A planted FIR/complaint record can override system guardrails or exfiltrate other PII into chat output.",
+      "fix_direction": "Delimit/escape retrieved data; mark it as untrusted; strip instructions; consider structured (non-prompt) retrieval."
+    },
+    {
+      "id": "F-011", "file": "backend/ai/copilot/service.py", "line": 162, "category": "prompt-injection",
+      "type": "unauthenticated-role-injection", "severity": "high",
+      "reasoning": "/api/ai/copilot has no auth and forwards caller-supplied messages (including role:'system') verbatim into the LLM call; req.user_role is client-supplied.",
+      "details": "copilot.py -> service.py:162 enriched_messages.extend(history); caller can send {role:'system',content:'...'} to override the real system prompt.",
+      "impact": "Unauthenticated attacker steers the AI's instructions; disclosure/fabrication of authoritative police responses.",
+      "fix_direction": "Require auth; drop/replace any caller-supplied system roles; constrain user_role server-side."
+    },
+    {
+      "id": "F-012", "file": "backend/api/copilot/chat_pipeline.py", "line": 157, "category": "prompt-injection",
+      "type": "no-data-instruction-separation", "severity": "high",
+      "reasoning": "User message + full conversation history concatenated as plain text with no delimiters and no 'treat user content as untrusted' instruction.",
+      "details": "chat_pipeline.py:157 context = f\"{platform_context}\\n\\nConversation history:\\n{history_text}\\nUser's current message: {user_message}\".",
+      "impact": "Authenticated officer can embed 'ignore previous instructions' jailbreaks the model follows.",
+      "fix_direction": "Separate system/data channels; instruct the model that user/history content is untrusted data."
+    },
+    {
+      "id": "F-013", "file": "backend/api/copilot/chat_pipeline.py", "line": 155, "category": "prompt-injection",
+      "type": "stored-indirect-injection-via-refed-history", "severity": "medium",
+      "reasoning": "Deterministic case replies embed raw DB field values and are stored as 'assistant' messages; re-read as history and fed back to the model, so a planted DB value executes in a later officer session.",
+      "details": "router.py stores assistant reply; re-read as llm_history; response.py interpolates r['brief_facts'] etc. unescaped before LLM re-ingestion.",
+      "impact": "Complainant/data-entry actor can silently influence the AI an officer sees (crosses trust boundary).",
+      "fix_direction": "Sanitize/escape DB-derived text before re-ingestion; mark history provenance."
+    },
+    {
+      "id": "F-014", "file": "frontend/src/copilot/CopilotMessage.tsx", "line": 63, "category": "prompt-injection",
+      "type": "css-injection-llm-chart-colors", "severity": "medium",
+      "reasoning": "LLM-controlled chart colors flow unescaped into a React inline style background; crafted chart JSON achieves CSS injection / UI redress / external beacon.",
+      "details": "CopilotMessage.tsx:63 background: chartColors[i % len]; source via parseCopilotResponse -> JSON.parse(chartData.json).",
+      "impact": "Defacement / beacon to attacker host within the copilot panel.",
+      "fix_direction": "Allow-list chart color values; validate against a safe pattern."
+    },
+    {
+      "id": "F-015", "file": "frontend/src/pages/pi/PICopilot.tsx", "line": 185, "category": "prompt-injection",
+      "type": "xss-via-dangerouslySetInnerHTML-latent", "severity": "medium",
+      "reasoning": "Model output rendered via dangerouslySetInnerHTML through hand-rolled renderMarkdown that escapes &,<,> but uses no vetted sanitizer and does not escape quotes; currently blocks script XSS but is a fragile, high-regression sink.",
+      "details": "PICopilot.tsx:27-40 escape-first then inject tags; sink at :185. Live exploitability latent, not confirmed.",
+      "impact": "If sanitizer regresses or gains attribute/uri support, stored XSS in officer session.",
+      "fix_direction": "Replace with DOMPurify or a vetted markdown lib; never hand-roll HTML from model output."
+    },
+    {
+      "id": "F-016", "file": "frontend/src/components/AI/Markdown.tsx", "line": 40, "category": "prompt-injection",
+      "type": "xss-via-javascript-href-in-markdown-link", "severity": "medium",
+      "reasoning": "Shared 'safe' Markdown renderer sets <a href={lm[2]}> from model URLs with no scheme allow-list; [click](javascript:alert(1)) yields XSS. Currently unused (no importer) but is the designated copilot renderer.",
+      "details": "Markdown.tsx:33-46 href=lm[2] with only 'http' prefix check for target/rel; raw URL always set.",
+      "impact": "If adopted to render copilot output, reflected/stored XSS via javascript: href.",
+      "fix_direction": "Allow-list http/https only; reject javascript:/data:/vbscript:."
+    },
+    {
+      "id": "F-017", "file": "backend/pipeline/router.py", "line": 92, "category": "external-integration",
+      "type": "unauthenticated-pipeline-trigger", "severity": "medium",
+      "reasoning": "POST /api/v1/investigate requires only get_datastore (no user auth); spawns an LLM pipeline (real cost) and reads the DataStore.",
+      "details": "router.py:92 start_investigation(request, ds=Depends(get_datastore)); asyncio.create_task(_run_and_collect()).",
+      "impact": "Unauthenticated users drive backend LLM spend and data reads.",
+      "fix_direction": "Require authentication; rate-limit."
+    },
+    {
+      "id": "F-018", "file": "backend/ai/config.py", "line": 59, "category": "external-integration",
+      "type": "ssrf-unvalidated-endpoint-url", "severity": "medium",
+      "reasoning": "quickml_endpoint_url / oauth_url read verbatim from env with no scheme/host allow-list; with Zoho token attached, becomes SSRF with credential exfiltration if env is tampered.",
+      "details": "config.py:59/105 -> quickml.py posts to unvalidated url with Authorization header.",
+      "impact": "Operator/attacker influencing env can pivot model traffic / exfiltrate OAuth secret.",
+      "fix_direction": "Allow-list outbound LLM/QuickML hosts; validate scheme=https."
+    },
+    {
+      "id": "F-019", "file": "backend/quickml/service.py", "line": 127, "category": "external-integration",
+      "type": "ssrf-no-allowlist", "severity": "medium",
+      "reasoning": "QuickMLService posts to caller/config-influenced endpoint_url/oauth_url with no allow-list.",
+      "details": "service.py:70/126-131 self._http.post(self._endpoint_url, ...).",
+      "impact": "Latent SSRF if instantiated with untrusted URL.",
+      "fix_direction": "Allow-list hosts; validate scheme."
+    },
+    {
+      "id": "F-020", "file": "backend/api/copilot/auth.py", "line": 19, "category": "external-integration",
+      "type": "hardcoded-default-secret", "severity": "medium",
+      "reasoning": "JWT_SECRET falls back to hardcoded 'neural-justice-dev-secret' if env unset -> trivially forgeable.",
+      "details": "auth.py:19 JWT_SECRET = os.environ.get('JWT_SECRET_KEY', os.environ.get('JWT_SECRET','neural-justice-dev-secret')).",
+      "impact": "Misconfigured deploy signs/accepts tokens with a public key.",
+      "fix_direction": "Fail closed if secret unset; never ship a default."
+    },
+    {
+      "id": "F-021", "file": "functions/neural-justice-backend/main.py", "line": 179, "category": "external-integration",
+      "type": "weak-encryption-of-secrets", "severity": "medium",
+      "reasoning": "TOTP secrets 'encrypted' with XOR against SHA256 of ENCRYPTION_KEY (defaults to 'insecure-dev-key'); not authenticated encryption, trivially reversible.",
+      "details": "main.py:179-201 _derive_key(raw=ENCRYPTION_KEY+salt or 'insecure-dev-key'); XOR keystream.",
+      "impact": "Stored MFA secrets recoverable at rest.",
+      "fix_direction": "Use Fernet (or AES-GCM) with a proper key; fail closed on missing key."
+    },
+    {
+      "id": "F-022", "file": "functions/neural-justice-backend/main.py", "line": 1010, "category": "external-integration",
+      "type": "secret-exposure-in-response", "severity": "medium",
+      "reasoning": "Demo login response leaks the literal TOTP secret JBSWY3DPEHPK3PXP in demo_totp_hint.",
+      "details": "main.py:1010 'demo_totp_hint': 'Use any authenticator app with secret: JBSWY3DPEHPK3PXP'.",
+      "impact": "Anyone can compute valid MFA codes for the demo account; reveals static scheme.",
+      "fix_direction": "Never return secrets in responses."
+    },
+    {
+      "id": "F-023", "file": "functions/neural-justice-backend/catalyst-config.json", "line": 15, "category": "external-integration",
+      "type": "insecure-cors", "severity": "medium",
+      "reasoning": "CORS_ORIGINS set to '*' in the production deploy config, allowing any origin to call the API with bearer tokens.",
+      "details": "catalyst-config.json:15 CORS_ORIGINS '*', ENVIRONMENT production.",
+      "impact": "Cross-site credentialed access / data exfiltration.",
+      "fix_direction": "Restrict CORS to known origins."
+    },
+    {
+      "id": "F-024", "file": "functions/neural-justice-backend/main.py", "line": 54, "category": "external-integration",
+      "type": "insecure-default-credentials", "severity": "medium",
+      "reasoning": "DEFAULT_LOGIN_PASSWORD defaults to 'test123' seeding a SUPER_ADMIN; if env unset the app is compromisable with default creds.",
+      "details": "main.py:54 DEFAULT_LOGIN_PASSWORD='test123'; init seeds admin with it.",
+      "impact": "Default-cred admin takeover.",
+      "fix_direction": "Require explicit admin password at init; no default."
+    },
+    {
+      "id": "F-025", "file": "backend/api/routes/reports.py", "line": 84, "category": "external-integration",
+      "type": "header-injection-and-error-leak", "severity": "low",
+      "reasoning": "Unvalidated crime_no path param reflected into Content-Disposition header (CRLF/quote injection) and raw exception string returned to client on failure.",
+      "details": "reports.py:84 f'attachment; filename=\"FIR_{crime_no}.pdf\"'; except -> detail=f'PDF generation failed: {exc}'.",
+      "impact": "Response header injection / internal detail leakage.",
+      "fix_direction": "Allow-list crime_no (^[A-Za-z0-9-]+$); return generic error."
+    },
+    {
+      "id": "F-026", "file": "backend/pipeline/nim_client.py", "line": 116, "category": "external-integration",
+      "type": "ssrf-base-url-override-no-allowlist", "severity": "low",
+      "reasoning": "NimClient accepts arbitrary base_url override with no validation; latent SSRF if a future caller passes request/config data.",
+      "details": "nim_client.py:116 self.base_url = base_url or NIM_BASE_URL; used at :172. Not currently reachable from untrusted input.",
+      "impact": "Latent SSRF surface.",
+      "fix_direction": "Validate/allow-list base_url; reject caller-supplied overrides."
+    }
+  ],
+  "duplicates": []
+}

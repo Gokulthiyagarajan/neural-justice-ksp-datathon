@@ -12,7 +12,7 @@ import os
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Load .env before anything else
@@ -21,6 +21,7 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", "..", ".en
 from backend.api.copilot.router import router as copilot_v2_router
 from backend.pipeline.router import router as pipeline_router
 from backend.api.routes.copilot import router as copilot_router
+from backend.api.copilot.auth import get_current_user
 from backend.api.routes.reports import router as reports_router
 from backend.api.routes.stations import router as stations_router
 from backend.api.routes.profiles import router as profiles_router
@@ -71,9 +72,12 @@ app.add_middleware(
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 
-app.include_router(copilot_router)
+# SECURITY (F-009/F-017): copilot + pipeline routes are privileged. Enforce
+# authentication on every route. The v2 copilot router also applies per-route
+# authorization; the v1 copilot router and pipeline router get it here.
+app.include_router(copilot_router, dependencies=[Depends(get_current_user)])
 app.include_router(copilot_v2_router, prefix="/api/copilot")
-app.include_router(pipeline_router, prefix="/api/v1")
+app.include_router(pipeline_router, prefix="/api/v1", dependencies=[Depends(get_current_user)])
 app.include_router(reports_router)
 app.include_router(stations_router)
 app.include_router(profiles_router)

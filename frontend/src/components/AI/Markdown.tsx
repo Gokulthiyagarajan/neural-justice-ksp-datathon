@@ -33,17 +33,31 @@ function renderInline(text: string): React.ReactNode[] {
     } else if (tok.startsWith('[')) {
       const lm = /\[([^\]]+)\]\(([^)]+)\)/.exec(tok);
       if (lm) {
-        const external = lm[2].startsWith('http');
-        nodes.push(
-          <a
-            key={k()}
-            href={lm[2]}
-            className="text-[var(--accent-cyan)] hover:underline"
-            {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-          >
-            {lm[1]}
-          </a>
-        );
+        // SECURITY (F-016): only allow safe URL schemes. LLM output is untrusted,
+        // so block javascript:/data:/vbscript: and any other scheme that could
+        // execute script. Default to https when no scheme is present.
+        const raw = lm[2].trim();
+        const safe = /^(https?:|mailto:|\/|#)/i.test(raw);
+        if (!safe) {
+          // Render as inert text instead of a clickable, potentially dangerous link.
+          nodes.push(
+            <span key={k()} className="text-[var(--accent-cyan)]">
+              {lm[1]} ({raw})
+            </span>
+          );
+        } else {
+          const external = /^https?:/i.test(raw);
+          nodes.push(
+            <a
+              key={k()}
+              href={raw}
+              className="text-[var(--accent-cyan)] hover:underline"
+              {...(external ? { target: '_blank', rel: 'noreferrer noopener' } : {})}
+            >
+              {lm[1]}
+            </a>
+          );
+        }
       }
     }
     last = m.index + tok.length;

@@ -26,6 +26,7 @@ from backend.pipeline.orchestrator import (
     run_pipeline,
 )
 from backend.api.copilot.datastore import DataStore, get_datastore
+from backend.api.copilot.auth import CurrentUser, get_current_user
 
 logger = logging.getLogger("nj.pipeline.router")
 
@@ -92,6 +93,7 @@ def _get_verifier(ds: DataStore) -> EvidenceVerifier:
 @router.post("/investigate", response_model=InvestigateResponse)
 async def start_investigation(
     request: InvestigateRequest,
+    user: CurrentUser = Depends(get_current_user),
     ds: DataStore = Depends(get_datastore),
 ) -> InvestigateResponse:
     """Start an investigation pipeline run.
