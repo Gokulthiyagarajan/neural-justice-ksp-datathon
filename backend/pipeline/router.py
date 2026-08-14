@@ -27,6 +27,7 @@ from backend.pipeline.orchestrator import (
 )
 from backend.api.copilot.datastore import DataStore, get_datastore
 from backend.api.copilot.auth import CurrentUser, get_current_user
+from backend.api.copilot.auth import CurrentUser, get_current_user
 
 logger = logging.getLogger("nj.pipeline.router")
 

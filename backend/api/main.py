@@ -20,6 +20,7 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", "..", ".en
 
 from backend.api.copilot.router import router as copilot_v2_router
 from backend.pipeline.router import router as pipeline_router
+from backend.api.copilot.auth import get_current_user
 from backend.api.routes.copilot import router as copilot_router
 from backend.api.copilot.auth import get_current_user
 from backend.api.routes.reports import router as reports_router
