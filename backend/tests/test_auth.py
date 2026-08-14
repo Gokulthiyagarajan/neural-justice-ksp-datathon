@@ -21,7 +21,7 @@ client = TestClient(app)
 
 
 def test_auth_demo_session():
-    resp = client.get("/test-auth", headers={"X-Demo-Session": "true"})
+    resp = client.get("/test-auth", headers={"X-Demo-Session": "test-demo-token"})
     assert resp.status_code == 200
     assert resp.json()["username"] == "admin"
     assert "SUPER_ADMIN" in resp.json()["roles"]
@@ -33,7 +33,7 @@ def test_auth_no_header_returns_401():
 
 
 def test_jurisdiction_demo_session():
-    resp = client.get("/test-jurisdiction", headers={"X-Demo-Session": "true"})
+    resp = client.get("/test-jurisdiction", headers={"X-Demo-Session": "test-demo-token"})
     assert resp.status_code == 200
     assert "district_id" in resp.json()
 

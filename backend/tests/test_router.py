@@ -49,7 +49,7 @@ client = TestClient(app)
 
 
 def test_chat_crime_trends():
-    resp = client.post("/api/copilot/chat", json={"message": "Show crime trends"}, headers={"X-Demo-Session": "true"})
+    resp = client.post("/api/copilot/chat", json={"message": "Show crime trends"}, headers={"X-Demo-Session": "test-demo-token"})
     assert resp.status_code == 200
     data = resp.json()
     assert data["intent_detected"] == "crime_trends"
@@ -58,13 +58,13 @@ def test_chat_crime_trends():
 
 
 def test_chat_hotspot():
-    resp = client.post("/api/copilot/chat", json={"message": "Where are the crime hotspots?"}, headers={"X-Demo-Session": "true"})
+    resp = client.post("/api/copilot/chat", json={"message": "Where are the crime hotspots?"}, headers={"X-Demo-Session": "test-demo-token"})
     assert resp.status_code == 200
     assert resp.json()["intent_detected"] == "hotspot"
 
 
 def test_chat_general_query():
-    resp = client.post("/api/copilot/chat", json={"message": "Tell me about quantum physics"}, headers={"X-Demo-Session": "true"})
+    resp = client.post("/api/copilot/chat", json={"message": "Tell me about quantum physics"}, headers={"X-Demo-Session": "test-demo-token"})
     assert resp.status_code == 200
     data = resp.json()
     # Should fall through to general_chat (not matched by domain patterns)
@@ -78,11 +78,11 @@ def test_chat_requires_auth():
 
 
 def test_session_persistence():
-    resp1 = client.post("/api/copilot/chat", json={"message": "Show crime trends"}, headers={"X-Demo-Session": "true"})
+    resp1 = client.post("/api/copilot/chat", json={"message": "Show crime trends"}, headers={"X-Demo-Session": "test-demo-token"})
     sid = resp1.json()["session_id"]
-    resp2 = client.post("/api/copilot/chat", json={"message": "Tell me more", "session_id": sid}, headers={"X-Demo-Session": "true"})
+    resp2 = client.post("/api/copilot/chat", json={"message": "Tell me more", "session_id": sid}, headers={"X-Demo-Session": "test-demo-token"})
     assert resp2.json()["session_id"] == sid
-    resp3 = client.get(f"/api/copilot/sessions/{sid}", headers={"X-Demo-Session": "true"})
+    resp3 = client.get(f"/api/copilot/sessions/{sid}", headers={"X-Demo-Session": "test-demo-token"})
     assert resp3.status_code == 200
     assert resp3.json()["message_count"] >= 2
 
@@ -93,7 +93,7 @@ def test_chat_risk_score_refused():
     resp = client.post(
         "/api/copilot/chat",
         json={"message": "What is the risk score for accused John?"},
-        headers={"X-Demo-Session": "true"},
+        headers={"X-Demo-Session": "test-demo-token"},
     )
     assert resp.status_code == 200
     data = resp.json()
