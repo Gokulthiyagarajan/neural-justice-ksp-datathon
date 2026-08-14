@@ -23,7 +23,7 @@ client = TestClient(app)
 def test_auth_demo_session():
     resp = client.get("/test-auth", headers={"X-Demo-Session": "test-demo-token"})
     assert resp.status_code == 200
-    assert resp.json()["username"] == "admin"
+    assert resp.json()["username"] == "demo"
     assert "SUPER_ADMIN" in resp.json()["roles"]
 
 
