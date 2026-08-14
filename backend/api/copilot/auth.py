@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 JWT_SECRET = os.environ.get("JWT_SECRET_KEY", os.environ.get("JWT_SECRET", "neural-justice-dev-secret"))
 
+
+IS_PRODUCTION = os.environ.get("ENVIRONMENT", "development").lower() in ("production", "prod")
+
 # SECURITY (F-020): never run production with the hardcoded dev JWT secret. Fail
 # closed so a misconfiguration cannot silently accept forged tokens.
 if IS_PRODUCTION and JWT_SECRET in ("neural-justice-dev-secret", "dev-secret", ""):
@@ -30,7 +33,6 @@ if IS_PRODUCTION and JWT_SECRET in ("neural-justice-dev-secret", "dev-secret", "
 
 # Demo login is an unauthenticated SUPER_ADMIN grant and must NEVER be available
 # in production. It is gated behind an explicit opt-in flag AND a shared secret.
-IS_PRODUCTION = os.environ.get("ENVIRONMENT", "development").lower() in ("production", "prod")
 DEMO_LOGIN_ENABLED = os.environ.get("COPILOT_DEMO_ENABLED", "0") == "1"
 DEMO_SESSION_SECRET = os.environ.get("DEMO_SESSION_TOKEN", "")
 
