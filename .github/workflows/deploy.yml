@@ -3,6 +3,7 @@ name: Neural Justice Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
