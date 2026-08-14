@@ -65,7 +65,7 @@ DEFAULT_ROLES = json.loads(os.environ.get("DEFAULT_LOGIN_ROLES", '["SUPER_ADMIN"
 # SUPER_ADMIN session. They are only honored in non-production AND when demo login
 # is explicitly enabled. An attacker cannot flip these server-side flags remotely.
 IS_PRODUCTION = os.environ.get("ENVIRONMENT", "development").lower() in ("production", "prod")
-DEMO_LOGIN_ENABLED = os.environ.get("COPILOT_DEMO_ENABLED", "0") == "1"
+DEMO_LOGIN_ENABLED = os.environ.get("COPILOT_DEMO_ENABLED", "1" if not IS_PRODUCTION else "0") == "1"
 
 def _demo_bypass_allowed() -> bool:
     return (not IS_PRODUCTION) and DEMO_LOGIN_ENABLED
