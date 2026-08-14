@@ -1,0 +1,39 @@
+{
+    "deployment":  {
+                       "name":  "neural-justice-backend",
+                       "stack":  "python_3_11",
+                       "type":  "advancedio",
+                       "memory":  2048,
+                       "env_variables":  {
+                           "PYTHONUNBUFFERED":  "1",
+                           "JWT_SECRET_KEY":  "${CATALYST_SECRET:JWT_SECRET_KEY}",
+                           "JWT_SECRET":  "${CATALYST_SECRET:JWT_SECRET_KEY}",
+                           "JWT_ALGORITHM":  "HS256",
+                           "ENCRYPTION_KEY":  "${CATALYST_SECRET:ENCRYPTION_KEY}",
+                           "ENVIRONMENT":  "development",
+                           "DATABASE_URL":  "sqlite:///neural_justice.db",
+                           "CORS_ORIGINS":  "https://your-frontend-domain.example",
+                           "MOCK_AI":  "false",
+                           "NVIDIA_API_KEY":  "${CATALYST_SECRET:NVIDIA_API_KEY}",
+                           "QUICKML_AUTH_MODE":  "bearer",
+                           "QUICKML_ENDPOINT":  "https://api.catalyst.zoho.in/quickml/v1/project/52367000000021001/glm/chat",
+                           "QUICKML_MODEL":  "qwen-2.5-14b-instruct",
+                           "QUICKML_ENDPOINT_KEY":  "${CATALYST_SECRET:QUICKML_ENDPOINT_KEY}",
+                           "QUICKML_ORG_ID":  "${CATALYST_SECRET:QUICKML_ORG_ID}",
+                           "ZOHO_CLIENT_ID":  "${CATALYST_SECRET:ZOHO_CLIENT_ID}",
+                           "ZOHO_CLIENT_SECRET":  "${CATALYST_SECRET:ZOHO_CLIENT_SECRET}",
+                           "DEFAULT_LOGIN_EMAIL":  "admin@neural-justice.gov.in",
+                           "DEFAULT_LOGIN_PASSWORD":  "${CATALYST_SECRET:DEFAULT_LOGIN_PASSWORD}",
+                           "DEFAULT_LOGIN_ROLES":  "[\"SUPER_ADMIN\"]",
+                           "DEFAULT_LOGIN_DISTRICT_ID":  "1",
+                           "DEFAULT_LOGIN_STATION_ID":  "1",
+                           "COPILOT_DEMO_ENABLED":  "1"
+                       }
+                   },
+    "execution":  {
+                       "main":  "main.py",
+                       "test_inputs":  {
+
+                                   }
+                   }
+}

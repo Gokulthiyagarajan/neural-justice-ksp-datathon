@@ -22,4 +22,3 @@ temp/
 .gstack/
 scripts/inject_catalyst_env.filled.sh
 scripts/inject_catalyst_env.filled.ps1
-functions/neural-justice-backend/catalyst-config.json
