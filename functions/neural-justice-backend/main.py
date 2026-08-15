@@ -48,9 +48,13 @@ DB_PATH = os.environ.get("DATABASE_URL", "sqlite:///dev-test.db")
 if DB_PATH.startswith("sqlite:///"):
     DB_PATH = DB_PATH[len("sqlite:///"):]
 if not os.path.isabs(DB_PATH):
+    p0 = os.path.join(_current_dir, "neural_justice.db")
     p1 = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), os.path.basename(DB_PATH))
     p2 = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dev-test.db")
-    DB_PATH = p1 if os.path.exists(p1) else (p2 if os.path.exists(p2) else DB_PATH)
+    DB_PATH = p0 if os.path.exists(p0) else (p1 if os.path.exists(p1) else (p2 if os.path.exists(p2) else DB_PATH))
+
+IS_PRODUCTION = os.environ.get("ENVIRONMENT", "development").lower() in ("production", "prod")
+DEMO_LOGIN_ENABLED = os.environ.get("COPILOT_DEMO_ENABLED", "1" if not IS_PRODUCTION else "0") == "1"
 
 # SECURITY (F-024): the seeded SUPER_ADMIN previously used the guessable default
 # password "test123". Now, if no password is supplied, a strong random one is
@@ -64,8 +68,6 @@ DEFAULT_ROLES = json.loads(os.environ.get("DEFAULT_LOGIN_ROLES", '["SUPER_ADMIN"
 # SECURITY (F-002/F-004): demo / deployment auth bypasses grant an unauthenticated
 # SUPER_ADMIN session. They are only honored in non-production AND when demo login
 # is explicitly enabled. An attacker cannot flip these server-side flags remotely.
-IS_PRODUCTION = os.environ.get("ENVIRONMENT", "development").lower() in ("production", "prod")
-DEMO_LOGIN_ENABLED = os.environ.get("COPILOT_DEMO_ENABLED", "1" if not IS_PRODUCTION else "0") == "1"
 
 def _demo_bypass_allowed() -> bool:
     return (not IS_PRODUCTION) and DEMO_LOGIN_ENABLED
@@ -2847,6 +2849,13 @@ def handler(request=None, response=None):
                 method = request.method.upper()
                
             body = _get_json_body(request)
+
+        # Strip query string from path for exact route matching
+        if '?' in path:
+            path_query_qs = path.split('?', 1)
+            path = path_query_qs[0]
+            if not hasattr(request, 'query_string') or not request.query_string:
+                setattr(request, 'query_string', path_query_qs[1])
         
         # Strip prefix
         prefix = "/server/neural-justice-backend"
