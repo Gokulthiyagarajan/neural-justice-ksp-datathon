@@ -27,6 +27,15 @@ jobs:
         run: npm install -g zcatalyst-cli
 
       - name: Deploy to Catalyst (dev)
-        run: catalyst deploy --token "$CATALYST_TOKEN" -p 52367000000021001 --dc in
+        run: catalyst deploy --token "$CATALYST_TOKEN" -p 52367000000021001 --org 60077006311 --dc in -ni
         env:
           CATALYST_TOKEN: ${{ secrets.CATALYST_TOKEN }}
+
+      - name: Smoke test deployed app
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" https://neural-justice-60077006311.development.catalystserverless.in/app/index.html)
+          echo "APP HTTP status: $status"
+          if [ "$status" != "200" ]; then
+            echo "::error::Deployed app returned $status, not 200. Deployment failed or not live."
+            exit 1
+          fi
