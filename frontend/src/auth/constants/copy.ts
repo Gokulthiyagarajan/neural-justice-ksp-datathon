@@ -15,6 +15,7 @@ export const COPY = {
     header: 'Select Your Access Role',
     subtext: 'Your role determines your access scope and data visibility',
     continueBtn: 'Continue →',
+    selectRoleHint: 'Select a role to continue',
   },
 
   credentials: {
