@@ -142,7 +142,7 @@ export function SPStations() {
       </div>
 
       {/* Summary strip */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: 'Total Stations', value: stations.length, color: 'blue' },
           { label: 'Active', value: stations.filter(s => s.status === 'active').length, color: 'green' },
@@ -161,17 +161,16 @@ export function SPStations() {
         ))}
       </div>
 
-      {/* Search with icon */}
-      <div className="relative w-64">
+      {/* Search */}
+      <div className="relative w-full sm:w-64">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" />
         <input type="text" placeholder="Search station..."
           value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-          className="text-xs bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-1.5
+          className="text-xs bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2
                      text-white/60 placeholder-white/20 focus:outline-none
                      focus:border-blue-500/40 w-full" />
       </div>
 
-      {/* TABLE VIEW */}
       {view === 'table' && (
         <div className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
           {filtered.length === 0 ? (
@@ -182,89 +181,124 @@ export function SPStations() {
             />
           ) : (
             <>
-              <table className="w-full text-xs">
-                <thead className="sticky top-0 bg-[#0f1117] border-b border-white/10">
-                  <tr className="text-white/30 text-[10px]">
-                    <th className="text-left px-4 py-2">Station</th>
-                    {[
-                      { field: 'fir_count' as const, label: 'FIRs' },
-                      { field: 'open_cases' as const, label: 'Open' },
-                      { field: 'solved_rate' as const, label: 'Solved%' },
-                      { field: 'officer_count' as const, label: 'Officers' },
-                    ].map(col => (
-                      <th key={col.field}
-                        className="text-right px-3 py-2 cursor-pointer hover:text-white/60"
-                        onClick={() => {
-                          setSort(prev => ({
-                            field: col.field,
-                            dir: prev.field === col.field && prev.dir === 'asc' ? 'desc' : 'asc',
-                          }));
-                        }}>
-                        {col.label} {sort.field === col.field ? (
-                          sort.dir === 'asc' ? <ChevronUp size={10} className="inline" /> : <ChevronDown size={10} className="inline" />
-                        ) : ''}
-                      </th>
-                    ))}
-                    <th className="text-center px-3 py-2">Status</th>
-                    <th className="text-center px-3 py-2">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {paged.map(station => (
-                    <tr key={station.id}
-                      className="hover:bg-white/5 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/sp/station/${station.id}`)}>
-                      <td className="px-4 py-3">
-                        <p className="text-white/80 font-medium truncate max-w-[160px]">{station.name}</p>
-                      </td>
-                      <td className="px-3 py-3 text-right tabular-nums text-white/60">{station.fir_count}</td>
-                      <td className="px-3 py-3 text-right tabular-nums">
-                        <span className={station.open_cases > 20 ? 'text-red-400' : 'text-white/50'}>
-                          {station.open_cases}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 text-right tabular-nums">
-                        <span className={`font-medium ${
-                          station.solved_rate >= 70 ? 'text-green-400' :
-                          station.solved_rate >= 50 ? 'text-amber-400' : 'text-red-400'
-                        }`}>{station.solved_rate}%</span>
-                      </td>
-                      <td className="px-3 py-3 text-right tabular-nums text-white/50">{station.officer_count}</td>
-                      <td className="px-3 py-3 text-center">
-                        <div className={`inline-block h-2 w-2 rounded-full ${
-                          station.status === 'active' ? 'bg-green-400' :
-                          station.status === 'delayed' ? 'bg-amber-400' : 'bg-red-400'
-                        }`} />
-                      </td>
-                      <td className="px-3 py-3 text-center">
-                        <Link to={`/sp/station/${station.id}`}
-                          onClick={e => e.stopPropagation()}
-                          className="text-[10px] text-blue-400/60 hover:text-blue-400">
-                          View →
-                        </Link>
-                      </td>
+              {/* Mobile card view (< sm) */}
+              <div className="sm:hidden divide-y divide-white/5">
+                {paged.map(station => (
+                  <button
+                    key={station.id}
+                    className="w-full text-left px-4 py-3 hover:bg-white/5 transition-colors active:bg-white/8"
+                    onClick={() => navigate(`/sp/station/${station.id}`)}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-white/80 font-medium text-sm truncate">{station.name}</p>
+                        <p className="text-[11px] text-white/40 mt-0.5">{station.officer_count} officers</p>
+                      </div>
+                      <div className={`mt-0.5 shrink-0 h-2 w-2 rounded-full ${
+                        station.status === 'active' ? 'bg-green-400' :
+                        station.status === 'delayed' ? 'bg-amber-400' : 'bg-red-400'
+                      }`} />
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 text-[11px]">
+                      <span className="text-white/40">{station.fir_count} FIRs</span>
+                      <span className="text-white/30">·</span>
+                      <span className={`font-medium ${
+                        station.solved_rate >= 70 ? 'text-green-400' :
+                        station.solved_rate >= 50 ? 'text-amber-400' : 'text-red-400'
+                      }`}>{station.solved_rate}% solved</span>
+                      <span className="text-white/30">·</span>
+                      <span className={station.open_cases > 20 ? 'text-red-400' : 'text-white/40'}>{station.open_cases} open</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Desktop/tablet table view (sm+) */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-xs min-w-[480px]">
+                  <thead className="sticky top-0 bg-[#0f1117] border-b border-white/10">
+                    <tr className="text-white/30 text-[10px]">
+                      <th className="text-left px-4 py-2">Station</th>
+                      {[
+                        { field: 'fir_count' as const, label: 'FIRs' },
+                        { field: 'open_cases' as const, label: 'Open' },
+                        { field: 'solved_rate' as const, label: 'Solved%' },
+                        { field: 'officer_count' as const, label: 'Officers' },
+                      ].map(col => (
+                        <th key={col.field}
+                          className="text-right px-3 py-2 cursor-pointer hover:text-white/60"
+                          onClick={() => {
+                            setSort(prev => ({
+                              field: col.field,
+                              dir: prev.field === col.field && prev.dir === 'asc' ? 'desc' : 'asc',
+                            }));
+                          }}>
+                          {col.label} {sort.field === col.field ? (
+                            sort.dir === 'asc' ? <ChevronUp size={10} className="inline" /> : <ChevronDown size={10} className="inline" />
+                          ) : ''}
+                        </th>
+                      ))}
+                      <th className="text-center px-3 py-2">Status</th>
+                      <th className="text-center px-3 py-2">Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {paged.map(station => (
+                      <tr key={station.id}
+                        className="hover:bg-white/5 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/sp/station/${station.id}`)}>
+                        <td className="px-4 py-3">
+                          <p className="text-white/80 font-medium truncate max-w-[160px]">{station.name}</p>
+                        </td>
+                        <td className="px-3 py-3 text-right tabular-nums text-white/60">{station.fir_count}</td>
+                        <td className="px-3 py-3 text-right tabular-nums">
+                          <span className={station.open_cases > 20 ? 'text-red-400' : 'text-white/50'}>
+                            {station.open_cases}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-right tabular-nums">
+                          <span className={`font-medium ${
+                            station.solved_rate >= 70 ? 'text-green-400' :
+                            station.solved_rate >= 50 ? 'text-amber-400' : 'text-red-400'
+                          }`}>{station.solved_rate}%</span>
+                        </td>
+                        <td className="px-3 py-3 text-right tabular-nums text-white/50">{station.officer_count}</td>
+                        <td className="px-3 py-3 text-center">
+                          <div className={`inline-block h-2 w-2 rounded-full ${
+                            station.status === 'active' ? 'bg-green-400' :
+                            station.status === 'delayed' ? 'bg-amber-400' : 'bg-red-400'
+                          }`} />
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <Link to={`/sp/station/${station.id}`}
+                            onClick={e => e.stopPropagation()}
+                            className="text-[10px] text-blue-400/60 hover:text-blue-400">
+                            View →
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-2 border-t border-white/10 bg-white/5">
                   <span className="text-[10px] text-white/30">
-                    Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}
+                    {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}
                   </span>
                   <div className="flex gap-1">
                     <button
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="text-[10px] px-2 py-1 rounded border border-white/10 text-white/40 hover:text-white/60 disabled:opacity-30"
+                      className="text-[10px] px-3 py-1.5 min-h-[36px] rounded border border-white/10 text-white/40 hover:text-white/60 disabled:opacity-30"
                     >Prev</button>
                     <span className="text-[10px] px-2 py-1 text-white/30">Page {page} of {totalPages}</span>
                     <button
                       onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                       disabled={page >= totalPages}
-                      className="text-[10px] px-2 py-1 rounded border border-white/10 text-white/40 hover:text-white/60 disabled:opacity-30"
+                      className="text-[10px] px-3 py-1.5 min-h-[36px] rounded border border-white/10 text-white/40 hover:text-white/60 disabled:opacity-30"
                     >Next</button>
                   </div>
                 </div>
@@ -329,7 +363,7 @@ function SPStationsMap({ stations }: { stations: StationSummary[] }) {
   }, [stations]);
 
   return (
-    <div className="rounded-xl border border-white/10 overflow-hidden" style={{ height: 520 }}>
+    <div className="rounded-xl border border-white/10 overflow-hidden" style={{ height: 'clamp(240px, 50vw, 520px)' }}>
       <div ref={containerRef} className="h-full w-full" />
     </div>
   );

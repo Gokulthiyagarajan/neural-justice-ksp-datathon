@@ -4,7 +4,11 @@ import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BloomSearchDropdown, type SearchResult } from './BloomSearchDropdown';
 
-export function BloomSearch() {
+export interface BloomSearchProps {
+  autoFocus?: boolean;
+}
+
+export function BloomSearch({ autoFocus }: BloomSearchProps = {}) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -42,6 +46,12 @@ export function BloomSearch() {
     inputRef.current?.focus();
     setIsOpen(true);
   }, []);
+
+  useEffect(() => {
+    if (autoFocus) {
+      focus();
+    }
+  }, [autoFocus, focus]);
 
   useEffect(() => {
     const handler = () => focus();
@@ -92,6 +102,7 @@ export function BloomSearch() {
         <input
           ref={inputRef}
           type="search"
+          autoFocus={autoFocus}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);

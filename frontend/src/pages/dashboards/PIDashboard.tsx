@@ -107,9 +107,9 @@ function PIHeader({
   }, [])
 
   return (
-    <div className="flex items-center justify-between px-6 py-3 border-b border-border-primary mb-4">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-b border-border-primary mb-4 bg-bg-card/40 rounded-xl">
       <div className="flex items-center gap-3">
-          <Circle size={24} style={{ color: CYAN }} fill={CYAN} />
+        <Circle size={24} style={{ color: CYAN }} fill={CYAN} className="shrink-0" />
         <div>
           <h1 className="text-base font-semibold" style={{ color: CYAN }}>
             Police Inspector
@@ -119,7 +119,7 @@ function PIHeader({
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-4 text-xs">
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs">
         <div className="flex items-center gap-1.5">
           <div className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: GREEN }} />
           <span style={{ color: GREEN }}>On Duty</span>
@@ -155,7 +155,7 @@ const STATION_KPIS = [
 
 function StationKPIStrip({ metrics }: { metrics: PIMetrics }) {
   return (
-    <div className="grid grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {STATION_KPIS.map(kpi => {
         const Icon = kpi.icon
         const value = metrics[kpi.metricKey] ?? 0
@@ -173,12 +173,12 @@ function StationKPIStrip({ metrics }: { metrics: PIMetrics }) {
             )}
             <div className="flex items-center gap-2 mb-2">
               <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center"
+                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                 style={{ background: `${kpi.color}15` }}
               >
                 <Icon size={14} style={{ color: kpi.color }} />
               </div>
-              <span className="text-[10px] text-text-tertiary font-medium">
+              <span className="text-[10px] text-text-tertiary font-medium truncate">
                 {kpi.label}
               </span>
             </div>
@@ -598,7 +598,7 @@ function StationTrendAndPattern({
   stationName: string
 }) {
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <SectionCard title={`${stationName} — FIR Trend (3 Months)`} icon={TrendingUp}>
         <div style={{ height: 160 }}>
           <UnifiedTrendChart
@@ -1061,15 +1061,15 @@ const ACTION_CARDS: { label: string; path: string; icon: LucideIcon; desc: strin
 
 function QuickInvestigationActions() {
   return (
-    <div className="grid grid-cols-3 gap-3 mb-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
       {ACTION_CARDS.map(c => (
         <Link
           key={c.path}
           to={c.path}
-          className="flex items-start gap-3 rounded-xl border border-border-primary bg-bg-card p-3 hover:border-cyan-500/30 hover:bg-hover-bg transition-all group"
+          className="flex items-start gap-3 rounded-xl border border-border-primary bg-bg-card p-3 hover:border-cyan-500/30 hover:bg-hover-bg transition-all group min-h-[48px]"
         >
           <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
             style={{ background: CYAN_12 }}
           >
             <c.icon size={16} style={{ color: CYAN }} />
@@ -1167,7 +1167,7 @@ export function PIDashboard() {
 
   if (error || !metrics) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen p-4">
         <div className="text-center">
           <AlertTriangle size={32} style={{ color: AMBER }} className="mx-auto mb-3" />
           <p className="text-sm text-text-primary">Unable to load PI Dashboard</p>
@@ -1187,7 +1187,7 @@ export function PIDashboard() {
   const todayFIRs = (metrics.recent_firs ?? []).filter(f => isToday(f.occurrence_date)).length
 
   return (
-    <div className="flex flex-col gap-4 p-6 min-h-screen">
+    <div className="flex flex-col gap-4 p-4 sm:p-6 min-h-screen">
       {/* Jurisdiction Banner */}
       <JurisdictionBanner scope={jurisdiction} />
 
@@ -1203,9 +1203,9 @@ export function PIDashboard() {
       />
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Left column (65%) */}
-        <div className="col-span-3 flex flex-col gap-4">
+        <div className="lg:col-span-3 flex flex-col gap-4">
           {/* KPI Strip */}
           <StationKPIStrip metrics={metrics} />
 
@@ -1231,7 +1231,7 @@ export function PIDashboard() {
         </div>
 
         {/* Right column (35%) */}
-        <div className="col-span-2 flex flex-col gap-4">
+        <div className="lg:col-span-2 flex flex-col gap-4">
           {/* AI Recommendations */}
           <AIRecommendations />
 

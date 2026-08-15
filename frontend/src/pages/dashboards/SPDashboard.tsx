@@ -212,7 +212,7 @@ function SPSkeleton() {
   return (
     <div className="space-y-4 max-w-full">
       <div className="h-16 rounded-xl animate-pulse" style={{ background: 'var(--bg-card)' }} />
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="rounded-xl p-4 animate-pulse" style={{ background: 'var(--bg-card)' }}>
             <div className="h-3 w-24 rounded" style={{ background: 'var(--bg-tertiary)' }} />
@@ -220,9 +220,9 @@ function SPSkeleton() {
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-5 gap-4">
-        <div className="col-span-3 h-72 rounded-xl animate-pulse" style={{ background: 'var(--bg-card)' }} />
-        <div className="col-span-2 h-72 rounded-xl animate-pulse" style={{ background: 'var(--bg-card)' }} />
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <div className="lg:col-span-3 h-72 rounded-xl animate-pulse" style={{ background: 'var(--bg-card)' }} />
+        <div className="lg:col-span-2 h-72 rounded-xl animate-pulse" style={{ background: 'var(--bg-card)' }} />
       </div>
     </div>
   )
@@ -375,12 +375,11 @@ export function SPDashboard() {
   return (
     <div className="space-y-4 max-w-full">
       {/* ═══ HEADER ═══════════════════════════════════════════════════════════ */}
-      <div
-        className="flex items-center justify-between px-5 py-3 rounded-xl border border-border-primary"
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border-primary"
         style={{ background: 'var(--bg-card)' }}
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
             <Shield size={20} className="text-blue-400" />
           </div>
           <div>
@@ -392,7 +391,7 @@ export function SPDashboard() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-5 text-[11px] text-text-tertiary">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-5 text-[11px] text-text-tertiary">
           <span>{metrics?.station_count ?? stations.length} Police Stations</span>
           <span className="font-mono text-text-secondary">
             {time.toLocaleTimeString('en-IN', { hour12: false })}
@@ -531,7 +530,7 @@ export function SPDashboard() {
         title={`${resolvedDistrictName} — Station Locations & Crime Hotspots`}
         icon={Map}
         action={
-          <div className="flex gap-1">
+          <div className="flex gap-1 overflow-x-auto pb-1 max-w-[280px] sm:max-w-none">
             {CRIME_FILTERS.map((f) => (
               <button
                 key={f}
@@ -550,7 +549,7 @@ export function SPDashboard() {
           </div>
         }
       >
-        <div className="rounded-lg overflow-hidden" style={{ height: 340 }}>
+        <div className="rounded-lg overflow-hidden" style={{ height: 'clamp(200px, 45vw, 340px)' }}>
           <LeafletMapView
             districtId={districtCode}
             className="h-full w-full"

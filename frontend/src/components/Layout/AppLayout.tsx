@@ -46,9 +46,13 @@ export function AppLayout() {
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
       <AiAssistantProvider>
-        <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <TopCommandBar onMenuClick={() => setSidebarOpen(true)} />
-          <main id="main-content" className="flex-1 overflow-y-auto mt-12 sm:mt-14">
+          <main
+            id="main-content"
+            className="flex-1 overflow-y-auto mt-12 sm:mt-14"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          >
             <SyntheticDataNotice />
             <div key={location.key} className="p-2 sm:p-3 md:p-4 lg:p-6 min-h-[calc(100vh-5rem)] md:min-h-[calc(100vh-6.5rem)]">
               <Outlet />

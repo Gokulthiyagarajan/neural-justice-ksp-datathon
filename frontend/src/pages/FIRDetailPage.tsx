@@ -566,69 +566,56 @@ export function FIRDetailPage() {
   return (
     <div>
       {/* ── Toolbar ────────────────────────────────────────────── */}
-      <div style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        background: C.navy, borderBottom: `1px solid ${C.navyLight}`,
-        padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 16,
-      }}>
-        <Link to="/firs" style={{ color: C.muted, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, textDecoration: 'none' }}>
+      <div className="sticky top-0 z-40 bg-[#0c1929] border-b border-[#1a2d4a] px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+        <Link to="/firs" className="text-[#6b7d9e] hover:text-[#e8edf5] transition-colors flex items-center gap-1.5 text-xs sm:text-sm font-medium min-h-[36px]">
           <ArrowLeft size={16} /> Back
         </Link>
-        <span style={{ flex: 1 }} />
         <button
           onClick={handleExportPdf}
           disabled={isExporting}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: isExporting ? `${C.muted}30` : `${C.amber}18`,
-            color: isExporting ? C.muted : C.amber,
-            border: `1px solid ${isExporting ? C.navyLight : C.amber}40`,
-            borderRadius: 6,
-            padding: '6px 14px', fontSize: 12,
-            cursor: isExporting ? 'not-allowed' : 'pointer',
-          }}
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-medium border transition-colors min-h-[36px] ${
+            isExporting
+              ? 'bg-[#6b7d9e]/20 text-[#6b7d9e] border-[#1a2d4a] cursor-not-allowed'
+              : 'bg-[#f59e0b]/15 text-[#f59e0b] border-[#f59e0b]/40 hover:bg-[#f59e0b]/25 cursor-pointer'
+          }`}
         >
           {isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
           {isExporting ? 'Generating...' : 'Export PDF'}
         </button>
-
       </div>
 
       {/* ── Content ───────────────────────────────────────────── */}
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 24px 80px' }}>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-24 space-y-6">
         
         {/* Case header */}
-        <div style={{
-          background: C.navyMid, border: `1px solid ${C.navyLight}`,
-          borderRadius: 12, padding: 20, marginBottom: 24,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 12 }}>
+        <div className="bg-[#0f1d33] border border-[#1a2d4a] rounded-xl p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                <span style={{ fontFamily: 'monospace', fontSize: 20, fontWeight: 700, color: C.amber }}>
+              <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
+                <span className="font-mono text-lg sm:text-xl font-bold text-[#f59e0b]">
                   {fir.fir_number}
                 </span>
                 <Badge color={statusColor(fir.status)}>{fir.status.replace(/_/g, ' ')}</Badge>
               </div>
-              <div style={{ fontSize: 15, color: C.white, fontWeight: 500 }}>{fir.crime_type}</div>
-              <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>
+              <div className="text-base sm:text-lg text-[#e8edf5] font-semibold">{fir.crime_type}</div>
+              <div className="text-xs sm:text-sm text-[#6b7d9e] mt-1">
                 {fir.station} &middot; Registered by {fir.officer_assigned}
               </div>
             </div>
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              {fir.days_open > 0 && (
-                <div style={{ fontSize: 11, color: fir.days_open > 30 ? C.red : C.muted, marginTop: 6 }}>
-                  {fir.days_open}d open
+            {fir.days_open > 0 && (
+              <div className="sm:text-right shrink-0">
+                <div className={`text-xs font-semibold px-2 py-1 rounded bg-[#0c1929] border border-[#1a2d4a] inline-block ${fir.days_open > 30 ? 'text-[#ef4444]' : 'text-[#6b7d9e]'}`}>
+                  {fir.days_open} days open
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* ── 1. Overview ──────────────────────────────────────── */}
         <Section title="Overview">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#0f1d33]/50 border border-[#1a2d4a]/60 rounded-lg p-4">
+            <div className="space-y-3">
               <Field label="FIR Number" value={fir.fir_number} />
               <Field label="Date of Occurrence" value={fir.date} />
               <Field label="Time" value={fir.occurrence_time} />
@@ -636,7 +623,7 @@ export function FIRDetailPage() {
               <Field label="Category" value={fir.case_category} />
               <Field label="Location" value={fir.location} />
             </div>
-            <div>
+            <div className="space-y-3">
               <Field label="Status" value={<Badge color={statusColor(fir.status)}>{fir.status.replace(/_/g, ' ')}</Badge>} />
               <Field label="Station" value={fir.station} />
               <Field label="Registered By" value={fir.officer_assigned} />
@@ -649,33 +636,31 @@ export function FIRDetailPage() {
 
         {/* ── 2. Description ───────────────────────────────────── */}
         <Section title="Description of Occurrence">
-          <div style={{ fontSize: 13, color: C.white, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+          <div className="text-xs sm:text-sm text-[#e8edf5] leading-relaxed whitespace-pre-wrap bg-[#0f1d33]/50 border border-[#1a2d4a]/60 rounded-lg p-4">
             {fir.description_full}
           </div>
         </Section>
 
         {/* ── 3. Modus Operandi ────────────────────────────────── */}
         <Section title="Modus Operandi">
-          <div style={{ fontSize: 13, color: C.white, lineHeight: 1.7 }}>
+          <div className="text-xs sm:text-sm text-[#e8edf5] leading-relaxed bg-[#0f1d33]/50 border border-[#1a2d4a]/60 rounded-lg p-4">
             {fir.modus_operandi}
           </div>
         </Section>
 
         {/* ── 4. Accused ────────────────────────────────────────── */}
         <Section title="Accused Details">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {/* Header row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.6fr 0.8fr', gap: 16, paddingBottom: 6, borderBottom: `1px solid ${C.navyMid}`, fontSize: 11, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+          <div className="bg-[#0f1d33]/50 border border-[#1a2d4a]/60 rounded-lg p-4 space-y-3">
+            <div className="hidden sm:grid grid-cols-3 gap-4 pb-2 border-b border-[#1a2d4a] text-[11px] font-semibold text-[#6b7d9e] uppercase tracking-wider">
               <div>Name</div>
               <div>Age</div>
               <div>Gender</div>
             </div>
-            {/* One row per accused person */}
             {(fir.accused_list && fir.accused_list.length > 0 ? fir.accused_list : []).map((a, i) => (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.6fr 0.8fr', gap: 16, paddingBottom: 8, borderBottom: i < (fir.accused_list?.length ?? 1) - 1 ? `1px solid ${C.navyMid}` : 'none' }}>
-                <div style={{ fontSize: 13, color: C.white }}>{a.name || 'Not recorded'}</div>
-                <div style={{ fontSize: 13, color: C.white }}>{a.age ? `${a.age}y` : 'N/A'}</div>
-                <div style={{ fontSize: 13, color: C.white }}>{a.gender || 'N/A'}</div>
+              <div key={i} className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-4 pb-3 border-b border-[#1a2d4a]/40 last:border-0 last:pb-0">
+                <div className="text-xs sm:text-sm text-[#e8edf5] font-medium"><span className="sm:hidden text-xs text-[#6b7d9e] font-normal mr-2">Name:</span>{a.name || 'Not recorded'}</div>
+                <div className="text-xs sm:text-sm text-[#e8edf5]"><span className="sm:hidden text-xs text-[#6b7d9e] font-normal mr-2">Age:</span>{a.age ? `${a.age}y` : 'N/A'}</div>
+                <div className="text-xs sm:text-sm text-[#e8edf5]"><span className="sm:hidden text-xs text-[#6b7d9e] font-normal mr-2">Gender:</span>{a.gender || 'N/A'}</div>
               </div>
             ))}
           </div>
@@ -683,7 +668,7 @@ export function FIRDetailPage() {
 
         {/* ── 5. Victim ──────────────────────────────────────────── */}
         <Section title="Victim Details">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-[#0f1d33]/50 border border-[#1a2d4a]/60 rounded-lg p-4">
             <Field label="Name" value={fir.victim_name} />
             <Field label="Age" value={fir.victim_age ? `${fir.victim_age}y` : 'N/A'} />
             <Field label="Gender" value={fir.victim_gender || 'N/A'} />
@@ -692,9 +677,10 @@ export function FIRDetailPage() {
 
         {/* ── 6. Investigation Officers ─────────────────────────── */}
         <Section title="Investigation Team">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div className="bg-[#0f1d33]/50 border border-[#1a2d4a]/60 rounded-lg p-4 space-y-2">
             {fir.investigation_officers.map((o, i) => (
-              <div key={i} style={{ fontSize: 13, color: C.white }}>
+              <div key={i} className="text-xs sm:text-sm text-[#e8edf5] font-medium flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#3b82f6]"></span>
                 {o}
               </div>
             ))}
@@ -704,142 +690,143 @@ export function FIRDetailPage() {
         {/* ── 7. Legal Sections ─────────────────────────────────── */}
         {fir.legal_sections.length > 0 && (
           <Section title="Legal Sections Applied">
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${C.navyLight}`, color: C.muted, textTransform: 'uppercase', fontSize: 10 }}>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Code</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Section</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fir.legal_sections.map((s, i) => (
-                  <tr key={i} style={{ borderBottom: `1px solid ${C.navyLight}20` }}>
-                    <td style={{ padding: '6px 8px', color: C.amber }}>{s.code}</td>
-                    <td style={{ padding: '6px 8px', color: C.white }}>{s.section}</td>
-                    <td style={{ padding: '6px 8px', color: C.muted }}>{s.description}</td>
+            <div className="overflow-x-auto table-scroll rounded-lg border border-[#1a2d4a]/60 bg-[#0f1d33]/50">
+              <table className="w-full text-left border-collapse min-w-[480px]">
+                <thead>
+                  <tr className="border-b border-[#1a2d4a] text-[#6b7d9e] uppercase text-[10px] tracking-wider">
+                    <th className="px-4 py-2.5">Code</th>
+                    <th className="px-4 py-2.5">Section</th>
+                    <th className="px-4 py-2.5">Description</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#1a2d4a]/30 text-xs sm:text-sm">
+                  {fir.legal_sections.map((s, i) => (
+                    <tr key={i} className="hover:bg-[#0c1929]/40">
+                      <td className="px-4 py-2.5 text-[#f59e0b] font-mono font-medium">{s.code}</td>
+                      <td className="px-4 py-2.5 text-[#e8edf5] font-medium">{s.section}</td>
+                      <td className="px-4 py-2.5 text-[#6b7d9e]">{s.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Section>
         )}
 
         {/* ── 8. Evidence ────────────────────────────────────────── */}
         {fir.evidence_items.length > 0 && (
           <Section title="Evidence / Property Seized">
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${C.navyLight}`, color: C.muted, textTransform: 'uppercase', fontSize: 10 }}>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>ID</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Type</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Description</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Seized From</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fir.evidence_items.map((e, i) => (
-                  <tr key={i} style={{ borderBottom: `1px solid ${C.navyLight}20` }}>
-                    <td style={{ padding: '6px 8px', color: C.muted, fontFamily: 'monospace', fontSize: 11 }}>{e.id}</td>
-                    <td style={{ padding: '6px 8px', color: C.white }}>{e.type}</td>
-                    <td style={{ padding: '6px 8px', color: C.muted }}>{e.description}</td>
-                    <td style={{ padding: '6px 8px', color: C.muted }}>{e.seized_from}</td>
-                    <td style={{ padding: '6px 8px' }}>
-                      <Badge color={e.status === 'in_custody' ? C.blue : e.status === 'forensic_analysis' ? C.amber : C.success}>
-                        {e.status.replace(/_/g, ' ')}
-                      </Badge>
-                    </td>
+            <div className="overflow-x-auto table-scroll rounded-lg border border-[#1a2d4a]/60 bg-[#0f1d33]/50">
+              <table className="w-full text-left border-collapse min-w-[600px]">
+                <thead>
+                  <tr className="border-b border-[#1a2d4a] text-[#6b7d9e] uppercase text-[10px] tracking-wider">
+                    <th className="px-4 py-2.5">ID</th>
+                    <th className="px-4 py-2.5">Type</th>
+                    <th className="px-4 py-2.5">Description</th>
+                    <th className="px-4 py-2.5">Seized From</th>
+                    <th className="px-4 py-2.5">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#1a2d4a]/30 text-xs sm:text-sm">
+                  {fir.evidence_items.map((e, i) => (
+                    <tr key={i} className="hover:bg-[#0c1929]/40">
+                      <td className="px-4 py-2.5 text-[#6b7d9e] font-mono text-xs">{e.id}</td>
+                      <td className="px-4 py-2.5 text-[#e8edf5] font-medium">{e.type}</td>
+                      <td className="px-4 py-2.5 text-[#6b7d9e]">{e.description}</td>
+                      <td className="px-4 py-2.5 text-[#6b7d9e]">{e.seized_from}</td>
+                      <td className="px-4 py-2.5">
+                        <Badge color={e.status === 'in_custody' ? C.blue : e.status === 'forensic_analysis' ? C.amber : C.success}>
+                          {e.status.replace(/_/g, ' ')}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Section>
         )}
 
         {/* ── 9. Property ────────────────────────────────────────── */}
         {fir.property.length > 0 && (
           <Section title="Stolen / Recovered Property">
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${C.navyLight}`, color: C.muted, textTransform: 'uppercase', fontSize: 10 }}>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Item</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Description</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Value</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fir.property.map((p, i) => (
-                  <tr key={i} style={{ borderBottom: `1px solid ${C.navyLight}20` }}>
-                    <td style={{ padding: '6px 8px', color: C.white }}>{p.item}</td>
-                    <td style={{ padding: '6px 8px', color: C.muted }}>{p.description}</td>
-                    <td style={{ padding: '6px 8px', color: C.amber }}>₹{p.estimated_value?.toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '6px 8px' }}>
-                      <Badge color={p.status === 'recovered' ? C.success : C.red}>
-                        {p.status}
-                      </Badge>
-                    </td>
+            <div className="overflow-x-auto table-scroll rounded-lg border border-[#1a2d4a]/60 bg-[#0f1d33]/50">
+              <table className="w-full text-left border-collapse min-w-[500px]">
+                <thead>
+                  <tr className="border-b border-[#1a2d4a] text-[#6b7d9e] uppercase text-[10px] tracking-wider">
+                    <th className="px-4 py-2.5">Item</th>
+                    <th className="px-4 py-2.5">Description</th>
+                    <th className="px-4 py-2.5">Value</th>
+                    <th className="px-4 py-2.5">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#1a2d4a]/30 text-xs sm:text-sm">
+                  {fir.property.map((p, i) => (
+                    <tr key={i} className="hover:bg-[#0c1929]/40">
+                      <td className="px-4 py-2.5 text-[#e8edf5] font-medium">{p.item}</td>
+                      <td className="px-4 py-2.5 text-[#6b7d9e]">{p.description}</td>
+                      <td className="px-4 py-2.5 text-[#f59e0b] font-medium">₹{p.estimated_value?.toLocaleString('en-IN')}</td>
+                      <td className="px-4 py-2.5">
+                        <Badge color={p.status === 'recovered' ? C.success : C.red}>
+                          {p.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Section>
         )}
 
         {/* ── 10. Witnesses ──────────────────────────────────────── */}
         {fir.witnesses.length > 0 && (
           <Section title="Witnesses">
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${C.navyLight}`, color: C.muted, textTransform: 'uppercase', fontSize: 10 }}>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Name</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Age</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Relation</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fir.witnesses.map((w, i) => (
-                  <tr key={i} style={{ borderBottom: `1px solid ${C.navyLight}20` }}>
-                    <td style={{ padding: '6px 8px', color: C.white }}>{w.name}</td>
-                    <td style={{ padding: '6px 8px', color: C.muted }}>{w.age}</td>
-                    <td style={{ padding: '6px 8px', color: C.muted }}>{w.relation}</td>
-                    <td style={{ padding: '6px 8px' }}>
-                      <Badge color={w.status === 'examined' ? C.success : w.status === 'cross_examined' ? C.blue : C.amber}>
-                        {w.status.replace(/_/g, ' ')}
-                      </Badge>
-                    </td>
+            <div className="overflow-x-auto table-scroll rounded-lg border border-[#1a2d4a]/60 bg-[#0f1d33]/50">
+              <table className="w-full text-left border-collapse min-w-[500px]">
+                <thead>
+                  <tr className="border-b border-[#1a2d4a] text-[#6b7d9e] uppercase text-[10px] tracking-wider">
+                    <th className="px-4 py-2.5">Name</th>
+                    <th className="px-4 py-2.5">Age</th>
+                    <th className="px-4 py-2.5">Relation</th>
+                    <th className="px-4 py-2.5">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#1a2d4a]/30 text-xs sm:text-sm">
+                  {fir.witnesses.map((w, i) => (
+                    <tr key={i} className="hover:bg-[#0c1929]/40">
+                      <td className="px-4 py-2.5 text-[#e8edf5] font-medium">{w.name}</td>
+                      <td className="px-4 py-2.5 text-[#6b7d9e]">{w.age}</td>
+                      <td className="px-4 py-2.5 text-[#6b7d9e]">{w.relation}</td>
+                      <td className="px-4 py-2.5">
+                        <Badge color={w.status === 'examined' ? C.success : w.status === 'cross_examined' ? C.blue : C.amber}>
+                          {w.status.replace(/_/g, ' ')}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Section>
         )}
 
         {/* ── 11. Investigation Timeline ─────────────────────────── */}
         <Section title="Investigation Timeline">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div className="bg-[#0f1d33]/50 border border-[#1a2d4a]/60 rounded-lg p-4 space-y-3">
             {fir.investigation_timeline.length > 0 ? (
               fir.investigation_timeline.map((evt, i) => (
-                <div key={i} style={{
-                  display: 'flex', gap: 12, padding: '8px 0',
-                  borderBottom: i < fir.investigation_timeline.length - 1 ? `1px solid ${C.navyLight}20` : 'none',
-                }}>
-                  <div style={{
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: i === 0 ? C.amber : C.blue,
-                    marginTop: 4, flexShrink: 0,
-                  }} />
+                <div key={i} className="flex gap-3 pb-3 border-b border-[#1a2d4a]/30 last:border-0 last:pb-0">
+                  <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${i === 0 ? 'bg-[#f59e0b]' : 'bg-[#3b82f6]'}`} />
                   <div>
-                    <div style={{ fontSize: 12, color: C.muted }}>{evt.date}</div>
-                    <div style={{ fontSize: 13, color: C.white, fontWeight: 500 }}>{evt.event}</div>
-                    <div style={{ fontSize: 11, color: C.muted }}>{evt.officer}</div>
+                    <div className="text-xs text-[#6b7d9e]">{evt.date}</div>
+                    <div className="text-xs sm:text-sm text-[#e8edf5] font-medium mt-0.5">{evt.event}</div>
+                    <div className="text-xs text-[#6b7d9e] mt-0.5">{evt.officer}</div>
                   </div>
                 </div>
               ))
             ) : (
-              <div style={{ fontSize: 12, color: C.muted, fontStyle: 'italic' }}>No timeline events recorded.</div>
+              <div className="text-xs text-[#6b7d9e] italic">No timeline events recorded.</div>
             )}
           </div>
         </Section>
@@ -847,30 +834,29 @@ export function FIRDetailPage() {
         {/* ── 12. Case Diary ─────────────────────────────────────── */}
         {fir.case_diary.length > 0 && (
           <Section title="Case Diary">
-            {fir.case_diary.map((d, i) => (
-              <div key={i} style={{
-                background: C.navyMid, border: `1px solid ${C.navyLight}`,
-                borderRadius: 8, padding: 12, marginBottom: 8,
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 11, color: C.muted }}>{d.date}</span>
-                  <span style={{ fontSize: 11, color: C.amber }}>{d.officer}</span>
+            <div className="space-y-3">
+              {fir.case_diary.map((d, i) => (
+                <div key={i} className="bg-[#0f1d33] border border-[#1a2d4a] rounded-lg p-3.5 space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-[#6b7d9e] font-mono">{d.date}</span>
+                    <span className="text-[#f59e0b] font-medium">{d.officer}</span>
+                  </div>
+                  <div className="text-xs sm:text-sm text-[#e8edf5] leading-relaxed">{d.entry}</div>
+                  <div>
+                    <Badge color={d.progress === 'Completed' ? C.success : d.progress === 'Needs Attention' ? C.red : C.blue}>
+                      {d.progress}
+                    </Badge>
+                  </div>
                 </div>
-                <div style={{ fontSize: 13, color: C.white, lineHeight: 1.5 }}>{d.entry}</div>
-                <div style={{ marginTop: 6 }}>
-                  <Badge color={d.progress === 'Completed' ? C.success : d.progress === 'Needs Attention' ? C.red : C.blue}>
-                    {d.progress}
-                  </Badge>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </Section>
         )}
 
         {/* ── 13. Court Info ──────────────────────────────────────── */}
         {fir.court && (
           <Section title="Court Information">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#0f1d33]/50 border border-[#1a2d4a]/60 rounded-lg p-4">
               <Field label="Court" value={fir.court.court_name} />
               <Field label="Case Number" value={fir.court.case_number} />
               <Field label="Judge" value={fir.court.judge} />
@@ -888,43 +874,43 @@ export function FIRDetailPage() {
         {/* ── 14. Linked Cases ────────────────────────────────────── */}
         {fir.linked_case_details.length > 0 && (
           <Section title="Linked Cases">
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${C.navyLight}`, color: C.muted, textTransform: 'uppercase', fontSize: 10 }}>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>FIR Number</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Crime Type</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>District</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left' }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fir.linked_case_details.map((lc, i) => (
-                  <tr key={i} style={{ borderBottom: `1px solid ${C.navyLight}20` }}>
-                    <td style={{ padding: '6px 8px', color: C.amber, fontFamily: 'monospace' }}>{lc.fir_number}</td>
-                    <td style={{ padding: '6px 8px', color: C.white }}>{lc.crime_type}</td>
-                    <td style={{ padding: '6px 8px', color: C.muted }}>{lc.district}</td>
-                    <td style={{ padding: '6px 8px' }}>
-                      <Badge color={lc.status === 'closed' ? C.success : lc.status === 'pending_trial' ? C.amber : C.blue}>
-                        {lc.status.replace(/_/g, ' ')}
-                      </Badge>
-                    </td>
+            <div className="overflow-x-auto table-scroll rounded-lg border border-[#1a2d4a]/60 bg-[#0f1d33]/50">
+              <table className="w-full text-left border-collapse min-w-[500px]">
+                <thead>
+                  <tr className="border-b border-[#1a2d4a] text-[#6b7d9e] uppercase text-[10px] tracking-wider">
+                    <th className="px-4 py-2.5">FIR Number</th>
+                    <th className="px-4 py-2.5">Crime Type</th>
+                    <th className="px-4 py-2.5">District</th>
+                    <th className="px-4 py-2.5">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#1a2d4a]/30 text-xs sm:text-sm">
+                  {fir.linked_case_details.map((lc, i) => (
+                    <tr key={i} className="hover:bg-[#0c1929]/40">
+                      <td className="px-4 py-2.5 text-[#f59e0b] font-mono font-medium">{lc.fir_number}</td>
+                      <td className="px-4 py-2.5 text-[#e8edf5] font-medium">{lc.crime_type}</td>
+                      <td className="px-4 py-2.5 text-[#6b7d9e]">{lc.district}</td>
+                      <td className="px-4 py-2.5">
+                        <Badge color={lc.status === 'closed' ? C.success : lc.status === 'pending_trial' ? C.amber : C.blue}>
+                          {lc.status.replace(/_/g, ' ')}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Section>
         )}
 
         {/* ── 15. Documents ───────────────────────────────────────── */}
         {fir.documents.length > 0 && (
           <Section title="Case Documents">
-            <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+            <ul className="bg-[#0f1d33]/50 border border-[#1a2d4a]/60 rounded-lg divide-y divide-[#1a2d4a]/30 px-4 py-1">
               {fir.documents.map((doc, i) => (
-                <li key={i} style={{
-                  padding: '6px 0', fontSize: 13, color: C.white,
-                  borderBottom: `1px solid ${C.navyLight}20`,
-                }}>
-                  {doc}
+                <li key={i} className="py-2.5 text-xs sm:text-sm text-[#e8edf5] font-medium flex items-center justify-between">
+                  <span>{doc}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-[#1a2d4a] text-[#6b7d9e]">PDF</span>
                 </li>
               ))}
             </ul>
