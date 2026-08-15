@@ -12,6 +12,7 @@
  * Purple accent (#8B5CF6) throughout — analytical, observant, precise.
  */
 import { useEffect, useState, useCallback } from 'react';
+import i18n from 'i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FileText, FolderOpen, CheckCircle2, MapPin,
@@ -400,7 +401,7 @@ function SeasonalHeatmap({ data }: { data: PSMetrics['seasonal_data'] }) {
                       background: PURPLE,
                       opacity: getOpacity(count),
                     }}
-                    title={`${DAYS[dayIdx]}: ${count} FIRs`}
+                    title={i18n.t('dashboard.dayFirs', { day: DAYS[dayIdx], count })}
                   />
                 )
               })}
@@ -636,7 +637,7 @@ export function PSIDashboard() {
         {/* Right: Crime Type Donut + Trend (45%) */}
         <div className="col-span-5 flex flex-col gap-4">
           <CrimeTypeDonut crimeTypes={metrics.crime_types} />
-          <SectionCard title={`${stationName} — Trend (3M)`} icon={TrendingUp}>
+          <SectionCard title={i18n.t('dashboard.stationTrend3m', { station: stationName })} icon={TrendingUp}>
             <div style={{ height: 140 }}>
               <UnifiedTrendChart
                 data={metrics.trend_3m}

@@ -12,10 +12,11 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isExpanded, onToggle }: SidebarProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [hovered, setHovered] = useState(false);
   const user = useAuthStore((s) => s.user);
   const userRole = (user?.roles?.[0] ?? 'OFFICER') as KSPRole;
+  const isKn = i18n.language?.startsWith('kn');
 
   const navItems = getNavForRole(userRole);
 
@@ -138,7 +139,7 @@ export function Sidebar({ isExpanded, onToggle }: SidebarProps) {
                       if (isExpanded) onToggle();
                     }}
                     end={item.path === '/'}
-                    title={!(showLabels || isExpanded) ? item.label : undefined}
+                    title={!(showLabels || isExpanded) ? (isKn ? item.labelKn : item.label) : undefined}
                     className={({ isActive }) =>
                       [
                         'flex items-center min-h-[44px] px-3 rounded-md text-xs font-medium',
@@ -153,7 +154,7 @@ export function Sidebar({ isExpanded, onToggle }: SidebarProps) {
                   >
                     <item.icon className="w-4 h-4 shrink-0" strokeWidth={1.75} />
                     {(showLabels || isExpanded) && (
-                      <span className="text-[11px] sm:text-xs truncate">{item.label}</span>
+                      <span className="text-[11px] sm:text-xs truncate">{isKn ? item.labelKn : item.label}</span>
                     )}
                     {(showLabels || isExpanded) && item.badge === 'alerts' && (
                       <span className="ml-auto w-1.5 h-1.5 rounded-full bg-alert-red animate-pulse" aria-hidden />

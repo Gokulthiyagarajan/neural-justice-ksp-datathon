@@ -3,6 +3,7 @@ import { ROLE_CONFIGS } from '../constants/roleConfig';
 import { RoleCard } from '../components/RoleCard';
 import { COPY } from '../constants/copy';
 import type { KSPRole } from '@/config/navConfig';
+import { useTranslation } from 'react-i18next';
 
 interface RoleSelectProps {
   selectedRole: string | null;
@@ -11,6 +12,8 @@ interface RoleSelectProps {
 }
 
 export function RoleSelect({ selectedRole, onSelect, onNext }: RoleSelectProps) {
+  const { i18n } = useTranslation();
+  const isKn = i18n.language?.startsWith('kn');
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -30,7 +33,7 @@ export function RoleSelect({ selectedRole, onSelect, onNext }: RoleSelectProps) 
           >
             <RoleCard
               icon={role.icon}
-              title={role.title}
+              title={isKn ? role.titleKn : role.title}
               abbrev={role.abbrev}
               scope={role.scope}
               badge={role.badge}

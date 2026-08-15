@@ -45,7 +45,7 @@ export default function CopilotPanel({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { getPrimaryRole } = useAuth();
   const userRole = getPrimaryRole();
-  const roleLabel = RANK_CONFIG[userRole]?.label ?? 'Investigator';
+  const roleLabel = RANK_CONFIG[userRole]?.[lang === 'kn' ? 'labelKn' : 'label'] ?? 'Investigator';
   const roleWelcome = useMemo(
     () => ROLE_WELCOME[userRole]?.[lang] ?? ROLE_WELCOME.OFFICER[lang],
     [userRole, lang],

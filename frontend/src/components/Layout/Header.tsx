@@ -15,12 +15,13 @@ export function Header({ title }: HeaderProps) {
   const { user, logout } = useAuth();
   const { t, i18n } = useTranslation();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const isKn = i18n.language?.startsWith('kn');
 
   // Map internal role to proper police rank display name (e.g. "Superintendent of Police (SP)")
   const userRole = (user?.roles?.[0] ?? 'OFFICER') as KSPRole;
   const rankConfig = RANK_CONFIG[userRole] || RANK_CONFIG.OFFICER;
   const roleAbbrev = ROLE_CONFIGS.find((r) => r.value === userRole)?.abbrev || 'PC';
-  const rankDisplay = `${rankConfig.label} (${roleAbbrev})`;
+  const rankDisplay = `${isKn ? rankConfig.labelKn : rankConfig.label} (${roleAbbrev})`;
 
   const handleLanguageChange = (lang: string) => {
     i18n.changeLanguage(lang);

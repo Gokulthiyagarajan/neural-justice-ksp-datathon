@@ -13,6 +13,7 @@
  * Uses existing design tokens, UnifiedTrendChart, AnimatedCounter, LeafletMapView.
  */
 import { useEffect, useState, useCallback } from 'react';
+import i18n from 'i18next';
 import {
   Shield, Users, AlertTriangle, BarChart3, MapPin,
   Activity, Server, Database, Clock, Eye, TrendingUp,
@@ -455,7 +456,7 @@ export function CPDashboard() {
                           ? `rgba(248, 113, 113, ${0.2 + intensity * 0.3})`
                           : `rgba(96, 165, 250, ${0.1 + intensity * 0.2})`,
                       }}
-                      title={`${d.name}: ${d.firCount} FIRs`}
+                      title={i18n.t('dashboard.districtFirs', { name: d.name, count: d.firCount })}
                       aria-label={`${d.name}: ${d.firCount} FIRs — click for details`}
                       onClick={() => {
                         drawer.open({

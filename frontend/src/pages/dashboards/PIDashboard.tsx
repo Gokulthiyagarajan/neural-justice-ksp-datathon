@@ -17,6 +17,7 @@
  * Cyan accent (#06B6D4) throughout — active, urgent, operational.
  */
 import { useEffect, useState, useRef, useCallback } from 'react';
+import i18n from 'i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FileText, FolderOpen, CheckCircle2, ShieldAlert,
@@ -561,7 +562,7 @@ function StationNetworkMini() {
 
   return (
     <SectionCard
-      title={`Co-Accused Network — ${networkData.nodes.length} nodes`}
+      title={i18n.t('dashboard.coAccusedNetwork', { count: networkData.nodes.length })}
       icon={Zap}
       action={
         <Link to="/pi/network" className="text-[10px] text-text-tertiary hover:text-text-secondary">
@@ -599,7 +600,7 @@ function StationTrendAndPattern({
 }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <SectionCard title={`${stationName} — FIR Trend (3 Months)`} icon={TrendingUp}>
+          <SectionCard title={i18n.t('dashboard.firTrend3m', { station: stationName })} icon={TrendingUp}>
         <div style={{ height: 160 }}>
           <UnifiedTrendChart
             data={trendData}
@@ -894,7 +895,7 @@ function TeamStatus() {
   }
 
   return (
-    <SectionCard title={`Team Status (${officers.length})`} icon={Users}>
+    <SectionCard title={i18n.t('dashboard.teamStatus', { count: officers.length })} icon={Users}>
       <div className="divide-y divide-border-primary max-h-[260px] overflow-y-auto">
         {officers.map((o, i) => (
           <div key={i} className="flex items-center gap-3 px-2 py-2.5">

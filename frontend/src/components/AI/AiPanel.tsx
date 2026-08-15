@@ -93,7 +93,7 @@ export default function AiPanel({ visible }: AiPanelProps) {
 
   const { getPrimaryRole } = useAuth();
   const userRole = getPrimaryRole();
-  const roleLabel = RANK_CONFIG[userRole]?.label ?? 'Investigator';
+  const roleLabel = RANK_CONFIG[userRole]?.[lang === 'kn' ? 'labelKn' : 'label'] ?? 'Investigator';
   const roleWelcome = ROLE_WELCOME[userRole]?.[lang] ?? ROLE_WELCOME.OFFICER[lang];
 
   useAiKeyboard(mode, setMode);

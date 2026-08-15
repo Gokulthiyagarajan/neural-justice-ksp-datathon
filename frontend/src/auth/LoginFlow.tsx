@@ -14,8 +14,13 @@ import { useAuthStore } from '@/store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { JURISDICTION_BY_ROLE } from '@/constants/jurisdiction';
 
-const roleTitle = (value: string | null) =>
-  ROLE_CONFIGS.find((r) => r.value === value)?.title ?? '';
+import i18n from 'i18next';
+
+const roleTitle = (value: string | null) => {
+  const isKn = i18n.language?.startsWith('kn') ?? false;
+  const found = ROLE_CONFIGS.find((r) => r.value === value);
+  return (isKn ? found?.titleKn : found?.title) ?? '';
+};
 
 export function LoginFlow() {
   const login = useLoginState();

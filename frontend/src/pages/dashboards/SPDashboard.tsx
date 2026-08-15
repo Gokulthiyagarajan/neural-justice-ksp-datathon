@@ -13,6 +13,7 @@
  * Blue accent (#3B82F6) throughout — district is the atom.
  */
 import { useEffect, useState, useCallback } from 'react';
+import i18n from 'i18next';
 import { Link } from 'react-router-dom';
 import {
   Shield, AlertTriangle, BarChart3,
@@ -69,7 +70,7 @@ function DistrictWarningsSection({
 
   if (loading) {
     return (
-      <SectionCard title={'Early Warnings — Loading...'} icon={AlertTriangle}>
+      <SectionCard title={i18n.t('dashboard.earlyWarningsLoading')} icon={AlertTriangle}>
         <div className="h-20 flex items-center justify-center">
           <span className="text-[11px] text-text-tertiary">Loading warnings...</span>
         </div>
@@ -78,7 +79,7 @@ function DistrictWarningsSection({
   }
 
   return (
-    <SectionCard title={`Early Warnings — ${liveCount} active`} icon={AlertTriangle}>
+    <SectionCard title={i18n.t('dashboard.earlyWarningsActive', { count: liveCount })} icon={AlertTriangle}>
       <div className="space-y-2">
         {warnings.length > 0 ? (
           warnings.slice(0, 3).map((w) => (
@@ -527,7 +528,7 @@ export function SPDashboard() {
 
       {/* ═══ ROW 4: DISTRICT MAP ════════════════════════════════════════════ */}
       <SectionCard
-        title={`${resolvedDistrictName} — Station Locations & Crime Hotspots`}
+        title={i18n.t('dashboard.stationLocationsHotspots', { district: resolvedDistrictName })}
         icon={Map}
         action={
           <div className="flex gap-1 overflow-x-auto pb-1 max-w-[280px] sm:max-w-none">
@@ -561,7 +562,7 @@ export function SPDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <UnifiedTrendChart
           data={(metrics?.trend_6m ?? []).map((t) => ({ date: t.date, count: t.count }))}
-          title={`${resolvedDistrictName} — FIR Trend (6 Months)`}
+          title={i18n.t('dashboard.firTrend6m', { district: resolvedDistrictName })}
           showForecast
           isLoading={loading}
           emptyTitle="No trend data available"
@@ -715,7 +716,7 @@ function StationPerformanceTable({
   )
 
   return (
-    <SectionCard title={`Station Performance — ${stations.length} Stations`} icon={Building2}>
+    <SectionCard title={i18n.t('dashboard.stationPerformance', { count: stations.length })} icon={Building2}>
       <div className="overflow-x-auto -mx-4 px-4">
         <table className="w-full text-[11px]">
           <thead>

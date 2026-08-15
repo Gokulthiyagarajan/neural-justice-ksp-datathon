@@ -45,7 +45,8 @@ const COLOR_MAP: Record<string, string> = {
 };
 
 export function KPICards({ data, isLoading }: KPICardsProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isKn = i18n.language?.startsWith('kn');
   const { getPrimaryRole } = useAuth();
   const userRole = getPrimaryRole();
 
@@ -149,7 +150,7 @@ export function KPICards({ data, isLoading }: KPICardsProps) {
       if (!config) return null;
       return {
         ...config,
-        label: kpiCard.label,
+        label: isKn ? kpiCard.labelKn : kpiCard.label,
         icon: ICON_MAP[kpiCard.metricKey] ?? FileText,
         accentColor: COLOR_MAP[kpiCard.metricKey] ?? 'var(--accent-cyan)',
         metricKey: kpiCard.metricKey,
