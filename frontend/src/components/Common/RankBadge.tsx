@@ -17,7 +17,7 @@ interface RankBadgeProps {
 export function RankBadge({ role, userName, expanded = true, className = '' }: RankBadgeProps) {
   const { i18n } = useTranslation();
   const config = RANK_CONFIG[role] || RANK_CONFIG.OFFICER;
-  const isKannada = i18n.language === 'kn';
+  const isKannada = i18n.language?.startsWith('kn');
 
   if (!expanded) {
     return (

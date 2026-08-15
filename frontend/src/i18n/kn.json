@@ -204,7 +204,7 @@
   "warningPanel.openInvestigation": "ತನಿಖೆ ತೆರೆಯಿರಿ",
   "statusBar.connected": "ಸಂಪರ್ಕಿತ",
   "statusBar.lastSync": "ಕೊನೆಯ ಸಿಂಕ್: ಸದ್ಯದಲ್ಲೇ",
-  "statusBar.stats": "{{districts}} ಜಿಲ್ಲೆಗಳು · {{stations}} ಠಾಣೆಗಳು · {{cases}} ಪ್ರಕರಣಗಳು",
+  "statusBar.stats": "{{divisions}} ವಿಭಾಗಗಳು · {{districts}} ಜಿಲ್ಲೆಗಳು · {{stations}} ಠಾಣೆಗಳು",
   "statusBar.version": "ನ್ಯೂರಲ್ ಜಸ್ಟಿಸ್",
   "kpi.confidenceAi": "{{confidence}}% AI",
   "kpi.aiPrefix": "AI",
