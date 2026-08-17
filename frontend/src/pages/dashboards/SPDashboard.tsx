@@ -211,7 +211,7 @@ function SectionCard({
 // ─── Loading Skeleton ────────────────────────────────────────────────────────
 function SPSkeleton() {
   return (
-    <div className="space-y-4 max-w-full">
+    <div className="page-container space-y-4">
       <div className="h-16 rounded-xl animate-pulse" style={{ background: 'var(--bg-card)' }} />
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {[1, 2, 3, 4, 5].map((i) => (
@@ -300,7 +300,7 @@ export function SPDashboard() {
 
   if (error && !metrics) {
     return (
-      <div className="space-y-4 max-w-full">
+      <div className="page-container space-y-4">
         <JurisdictionBanner scope={jurisdiction} />
         <div className="rounded-xl border border-border-primary p-8 text-center" style={{ background: 'var(--bg-card)' }}>
           <AlertTriangle size={32} className="mx-auto mb-3" style={{ color: RED }} />
@@ -374,7 +374,7 @@ export function SPDashboard() {
   const resolvedDistrictName = metrics?.district_name ?? districtName
 
   return (
-    <div className="space-y-4 max-w-full">
+    <div className="page-container space-y-4">
       {/* ═══ HEADER ═══════════════════════════════════════════════════════════ */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border-primary"
         style={{ background: 'var(--bg-card)' }}

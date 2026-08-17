@@ -12,6 +12,7 @@ import { SyntheticDataNotice } from '@/components/Common/SyntheticDataNotice';
 import { AiAssistantProvider } from '@/context/AiAssistantContext';
 import { useAuth } from '@/hooks/useAuth';
 import { canAccess } from '@/config/navConfig';
+import { useMediaQuery } from '@/design-system/hooks';
 
 /**
  * AI is accessed via a floating "Ask AI" button (bottom-right) that opens
@@ -27,6 +28,12 @@ export function AppLayout() {
   const { getPrimaryRole } = useAuth();
   const userRole = getPrimaryRole();
   const copilotVisible = canAccess(userRole, 'OFFICER');
+
+  // Layout is CSS-only; matchMedia is used purely to gate drawer BEHAVIOR
+  // (focus trap / Escape / scroll lock) on viewports where the sidebar is a
+  // fixed overlay instead of the persistent md+ rail.
+  const isDrawerBreakpoint = useMediaQuery('(max-width: 1023.98px)');
+  const drawerActive = sidebarOpen && isDrawerBreakpoint;
 
   const handleAIClick = useCallback(() => {
     setAiOpen((prev) => !prev);
@@ -44,17 +51,23 @@ export function AppLayout() {
       <Sidebar
         isExpanded={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
+        trapActive={drawerActive}
       />
       <AiAssistantProvider>
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <TopCommandBar onMenuClick={() => setSidebarOpen(true)} />
+          <TopCommandBar
+            onMenuClick={() => setSidebarOpen(true)}
+            menuOpen={sidebarOpen}
+          />
           <main
             id="main-content"
             className="flex-1 overflow-y-auto mt-12 sm:mt-14"
             style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
             <SyntheticDataNotice />
-            <div key={location.key} className="p-2 sm:p-3 md:p-4 lg:p-6 min-h-[calc(100vh-5rem)] md:min-h-[calc(100vh-6.5rem)]">
+            {/* Global page gutter: min 16px on mobile, growing on larger screens.
+                Pages that need a width cap add .page-container to their own root. */}
+            <div key={location.key} className="px-4 sm:px-5 md:px-6 py-3 sm:py-4 min-h-[calc(100vh-5rem)] md:min-h-[calc(100vh-6.5rem)]">
               <Outlet />
             </div>
           </main>

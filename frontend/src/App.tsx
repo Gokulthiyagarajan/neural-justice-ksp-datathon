@@ -234,7 +234,7 @@ export default function App() {
           <Route path="risk" element={<RoleAwareRedirect pc="/psi/warnings" psi="/psi/warnings" pi="/pi/warnings" sp="/sp/warnings" />} />
           <Route path="network" element={<RoleAwareRedirect pc="/psi/network" psi="/psi/network" pi="/pi/network" sp="/sp/network" />} />
           <Route path="profiles" element={<RoleAwareRedirect pc="/" psi="/" pi="/pi/profiles" sp="/sp/officers" />} />
-          <Route path="geo" element={<RoleAwareRedirect pc="/pi/geo" psi="/pi/geo" pi="/pi/geo" sp="/sp/map" />} />
+          <Route path="patrol" element={<RoleAwareRedirect pc="/sp/patrol" psi="/sp/patrol" pi="/sp/patrol" sp="/sp/patrol" />} />
           <Route path="finance" element={<RoleAwareRedirect pc="/psi/finance" psi="/psi/finance" pi="/pi/finance" sp="/sp/finance" />} />
           <Route path="warnings" element={<RoleAwareRedirect pc="/psi/warnings" psi="/psi/warnings" pi="/pi/warnings" sp="/sp/warnings" />} />
           <Route path="officers" element={<Navigate to="/sp/officers" replace />} />

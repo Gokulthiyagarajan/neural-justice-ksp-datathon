@@ -336,7 +336,7 @@ export function CPDashboard() {
   // ─── Loading skeleton ────────────────────────────────────────────────────
   if (loading && !data) {
     return (
-      <div className="space-y-4 max-w-full">
+      <div className="page-container space-y-4">
         <JurisdictionBanner scope={{ role: 'SUPER_ADMIN', district_id: null, station_id: null, jurisdiction_type: 'state', isStateWide: true, isDistrict: false, isStation: false, isAssigned: false, scopeLabel: 'State-wide — Karnataka' }} />
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {[1, 2, 3, 4, 5].map((i) => (
@@ -358,7 +358,7 @@ export function CPDashboard() {
   // ─── Error state ─────────────────────────────────────────────────────────
   if (error && !data) {
     return (
-      <div className="space-y-4 max-w-full">
+      <div className="page-container space-y-4">
         <JurisdictionBanner scope={{ role: 'SUPER_ADMIN', district_id: null, station_id: null, jurisdiction_type: 'state', isStateWide: true, isDistrict: false, isStation: false, isAssigned: false, scopeLabel: 'State-wide — Karnataka' }} />
         <div
           className="rounded-xl border border-red-500/30 p-8 text-center"
@@ -382,9 +382,9 @@ export function CPDashboard() {
   }
 
   return (
-    <div className="space-y-4 max-w-full">
+    <div className="page-container flex flex-col gap-4">
       {/* ─── Status bar ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between order-1">
         <JurisdictionBanner scope={{ role: 'SUPER_ADMIN', district_id: null, station_id: null, jurisdiction_type: 'state', isStateWide: true, isDistrict: false, isStation: false, isAssigned: false, scopeLabel: `State-wide — Karnataka (All ${data?.district_count ?? 31} Districts, ${data?.station_count ?? 906} Stations)` }} />
         <button
           type="button"
@@ -397,7 +397,7 @@ export function CPDashboard() {
       </div>
 
       {/* ═══ ROW 1: KPI Strip ═══════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 order-3">
         {kpis.map((kpi, idx) => {
           const Icon = kpi.icon
           return (
@@ -433,7 +433,7 @@ export function CPDashboard() {
       </div>
 
       {/* ═══ ROW 2: Karnataka Map + Division Breakdown ═════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 order-4">
         {/* Map */}
         <SectionCard title="Karnataka District Map" icon={MapPin} className="lg:col-span-2">
           <div className="relative rounded-lg overflow-hidden h-60 sm:h-80" style={{ background: 'var(--bg-tertiary)' }}>
@@ -563,7 +563,7 @@ export function CPDashboard() {
       </div>
 
       {/* ═══ ROW 3: Intelligence Feed + District Top 10 ═══════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 order-5">
         <SectionCard title="Active Intelligence Warnings" icon={AlertTriangle}>
           <div className="space-y-2">
             <CPWarningsSection activeCount={data?.active_warnings ?? 0} />
@@ -630,7 +630,7 @@ export function CPDashboard() {
       </div>
 
       {/* ═══ ROW 4: 12-Month Trend + Top Districts by Solved Rate ═════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 order-6">
         <div className="lg:col-span-2">
           <UnifiedTrendChart
             data={(data?.trend_12m ?? []).map((t) => ({ date: t.date, count: t.count }))}
@@ -697,7 +697,7 @@ export function CPDashboard() {
       </div>
 
       {/* ═══ ROW 5: Officer Command View ═════════════════════════════════════ */}
-      <SectionCard title="Officer Command View — Force Deployment" icon={Users}>
+      <SectionCard title="Officer Command View — Force Deployment" icon={Users} className="order-2">
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
           {[
             { label: 'Total Officers', value: data?.total_officers ?? 0, icon: Users, color: BLUE },
@@ -728,7 +728,7 @@ export function CPDashboard() {
       </SectionCard>
 
       {/* ═══ ROW 6: AI Model Stats + Forecast ════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 order-7">
         <SectionCard title="AI Model Statistics" icon={Activity}>
           <div className="grid grid-cols-2 gap-3">
             {[
@@ -778,7 +778,7 @@ export function CPDashboard() {
       </div>
 
       {/* ═══ ROW 7: Audit Health + System ════════════════════════════════════ */}
-      <SectionCard title="Audit Health & System Metrics" icon={Server}>
+      <SectionCard title="Audit Health & System Metrics" icon={Server} className="order-8">
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
           {[
             { label: 'Audit Events Today', value: data?.audit_events_today ?? 0, icon: Eye, color: CP_GOLD },

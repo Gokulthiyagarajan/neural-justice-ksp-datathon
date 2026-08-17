@@ -1,9 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { useRightDrawer } from '@/store/rightDrawerStore';
+import { useFocusTrap } from '@/design-system/hooks';
 
 export function RightDrawer() {
   const { isOpen, title, content, close } = useRightDrawer();
+  const asideRef = useRef<HTMLElement>(null);
+  useFocusTrap(asideRef, isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -30,9 +33,10 @@ export function RightDrawer() {
         aria-hidden="true"
       />
       <aside
+        ref={asideRef}
         className="fixed top-0 right-0 h-full z-50 flex flex-col animate-slide-left motion-reduce:animate-none"
         style={{
-          width: '400px',
+          width: 'min(100vw, 400px)',
           background: 'rgba(18, 24, 43, 0.85)',
           backdropFilter: 'blur(32px)',
           borderLeft: '1px solid rgba(0, 212, 255, 0.12)',

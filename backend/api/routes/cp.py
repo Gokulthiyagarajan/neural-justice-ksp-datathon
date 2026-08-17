@@ -214,27 +214,43 @@ async def get_cp_warnings():
 
 @router.get("/cases")
 async def get_cp_cases():
-    """Get state-wide case summary for CP."""
+    """Get state-wide case summary for CP.
+
+    Contract matches what the frontend CPCases page renders: summary
+    (total/active/under_investigation/solved_rate), cases (CaseItem[]),
+    districts (string[]), crime_types (string[]), last_updated.
+    """
     now = datetime.now()
+    districts = ["Bengaluru Urban", "Bengaluru Rural", "Mysuru", "Hubballi", "Mangaluru", "Belagavi",
+                 "Kalaburagi", "Shivamogga", "Dakshina Kannada", "Tumakuru", "Ballari", "Udupi"]
+    types = ["Theft", "Robbery", "Assault", "Burglary", "Cyber Fraud", "Chain Snatching", "Vehicle Theft", "Murder"]
+    statuses = ["registered", "under_investigation", "closed", "chargesheeted", "critical"]
+    accused = ["Ravi Kumar", "Suresh Patel", "Mohan Reddy", "Unknown", "Anil Kumar", "Priya Singh", "Karthik S", "Venkat Rao"]
+
+    cases = []
+    for i in range(14):
+        cases.append({
+            "crime_no": f"KSP-2026-{str(200 - i).zfill(3)}",
+            "district": districts[i % len(districts)],
+            "station_name": f"{districts[i % len(districts)]} PS",
+            "crime_type": types[i % len(types)],
+            "status": statuses[i % len(statuses)],
+            "days_open": (i * 7) % 60 + 1,
+            "occurrence_date": (now - timedelta(days=(i * 3) % 30)).date().isoformat(),
+            "accused_name": accused[i % len(accused)],
+        })
+
+    active = [c for c in cases if c["status"] not in ("closed", "resolved")]
     return {
         "summary": {
-            "total_open": 3471,
-            "total_solved_today": 47,
-            "overdue_count": 128,
-            "high_risk_count": 42,
-            "avg_resolution_days": 18.5,
+            "total": len(cases),
+            "active": len(active),
+            "under_investigation": len([c for c in cases if c["status"] == "under_investigation"]),
+            "solved_rate": 38.2,
         },
-        "by_district": [
-            {"district": "Bengaluru Urban", "open": 892, "solved_today": 12, "overdue": 34},
-            {"district": "Mysuru", "open": 456, "solved_today": 8, "overdue": 21},
-            {"district": "Belagavi", "open": 387, "solved_today": 6, "overdue": 18},
-            {"district": "Kalaburagi", "open": 312, "solved_today": 5, "overdue": 15},
-            {"district": "Dakshina Kannada", "open": 245, "solved_today": 4, "overdue": 12},
-        ],
-        "recent_critical": [
-            {"fir_no": "FIR-2026-1847", "crime_type": "Armed Robbery", "station": "Vijayanagar PS", "district": "Bengaluru Urban", "status": "under_investigation", "days_open": 3},
-            {"fir_no": "FIR-2026-1832", "crime_type": "Murder", "station": "Mysuru Palace PS", "district": "Mysuru", "status": "chargesheeted", "days_open": 12},
-        ],
+        "cases": cases,
+        "districts": districts,
+        "crime_types": types,
         "last_updated": now.isoformat(),
     }
 
@@ -301,17 +317,53 @@ async def get_cp_ai_situation():
 
 @router.get("/activity")
 async def get_cp_activity():
-    """Get state-wide activity feed for CP."""
+    """Get state-wide activity feed for CP.
+
+    Contract matches the frontend CPActivity page: summary
+    (total/today/arrests/fir_registrations/alerts), activities
+    (ActivityEntry[]), districts (string[]), action_types (string[]),
+    last_updated.
+    """
     now = datetime.now()
+    districts = ["Bengaluru Urban", "Bengaluru Rural", "Mysuru", "Hubballi", "Mangaluru", "Belagavi",
+                 "Kalaburagi", "Shivamogga"]
+    users = [("SI Sharma", "SI"), ("HC Kumar", "HC"), ("SI Meena", "SI"), ("ASI Gopal", "ASI"), ("PC Ramesh", "PC")]
+
+    def entry(i: int) -> dict:
+        template = [
+            ("fir_registration", "FIR", "registered at", "Armed Robbery", "high"),
+            ("resolution", "case", "chargesheeted at", "Murder", "info"),
+            ("patrol", "Night patrol", "completed in", "0 incidents", "low"),
+            ("alert", "AI warning issued", "spike detected in", "Chain snatching", "critical"),
+            ("arrest", "arrest", "effected in", "Organized crime", "medium"),
+        ][i % 5]
+        action, resource, verb, detail, severity = template
+        user, role = users[i % len(users)]
+        return {
+            "id": str(i + 1),
+            "user": user,
+            "user_role": role,
+            "action": action,
+            "resource": resource,
+            "details": f"{resource} {verb} {detail}",
+            "district": districts[i % len(districts)],
+            "timestamp": (now - timedelta(minutes=15 * (i + 1))).isoformat(),
+            "severity": severity,
+        }
+
+    activities = [entry(i) for i in range(10)]
+    today = sum(1 for a in activities if a["timestamp"][:10] == now.date().isoformat())
     return {
-        "activities": [
-            {"id": 1, "type": "fir_filed", "description": "FIR-2026-1847 filed at Vijayanagar PS — Armed Robbery", "timestamp": (now - timedelta(minutes=15)).isoformat(), "district": "Bengaluru Urban"},
-            {"id": 2, "type": "case_solved", "description": "FIR-2026-1832 chargesheeted at Mysuru Palace PS", "timestamp": (now - timedelta(hours=1)).isoformat(), "district": "Mysuru"},
-            {"id": 3, "type": "patrol_completed", "description": "Night patrol completed in Koramangala — 0 incidents", "timestamp": (now - timedelta(hours=2)).isoformat(), "district": "Bengaluru Urban"},
-            {"id": 4, "type": "warning_issued", "description": "AI warning issued: Chain snatching spike in Bengaluru", "timestamp": (now - timedelta(hours=3)).isoformat(), "district": "Bengaluru Urban"},
-            {"id": 5, "type": "officer_transfer", "description": "SI Meena transferred to Kalaburagi City PS", "timestamp": (now - timedelta(hours=5)).isoformat(), "district": "Kalaburagi"},
-        ],
-        "total": 5,
+        "summary": {
+            "total": len(activities),
+            "today": today,
+            "arrests": len([a for a in activities if a["action"] == "arrest"]),
+            "fir_registrations": len([a for a in activities if a["action"] == "fir_registration"]),
+            "alerts": len([a for a in activities if a["action"] == "alert"]),
+        },
+        "activities": activities,
+        "districts": districts,
+        "action_types": ["fir_registration", "arrest", "alert", "patrol", "resolution"],
         "last_updated": now.isoformat(),
     }
 
@@ -321,15 +373,32 @@ async def get_cp_activity():
 
 @router.get("/notifications")
 async def get_cp_notifications():
-    """Get notifications for CP."""
+    """Get notifications for CP.
+
+    Contract matches the frontend CPNotifications page: summary
+    (total/unread/critical/today), notifications (NotificationItem[]
+    with category in alert|intelligence|admin|system, critical, source,
+    actionable), last_updated.
+    """
     now = datetime.now()
+    notifications = [
+        {"id": "N-1", "title": "Critical Alert: Chain Snatching Spike", "message": "42% increase detected in Bengaluru Urban", "category": "alert", "read": False, "critical": True, "timestamp": (now - timedelta(hours=2)).isoformat(), "source": "AI Analytics", "actionable": True},
+        {"id": "N-2", "title": "Weekly Report Ready", "message": "State-wide weekly crime report is available", "category": "system", "read": False, "critical": False, "timestamp": (now - timedelta(hours=6)).isoformat(), "source": "Reports", "actionable": True},
+        {"id": "N-3", "title": "Infrastructure Alert", "message": "Sedam PS condition score critical (3.2)", "category": "admin", "read": True, "critical": False, "timestamp": (now - timedelta(hours=12)).isoformat(), "source": "Infrastructure Wing", "actionable": False},
+        {"id": "N-4", "title": "Intelligence Input: Vehicle Theft Ring", "message": "Emerging pattern across Mysuru division", "category": "intelligence", "read": False, "critical": True, "timestamp": (now - timedelta(hours=26)).isoformat(), "source": "Crime Intelligence", "actionable": True},
+        {"id": "N-5", "title": "System Maintenance", "message": "Scheduled maintenance of Command Centre systems", "category": "system", "read": True, "critical": False, "timestamp": (now - timedelta(hours=40)).isoformat(), "source": "IT Wing", "actionable": False},
+    ]
+    unread = len([n for n in notifications if not n["read"]])
+    critical = len([n for n in notifications if n["critical"]])
+    today = len([n for n in notifications if n["timestamp"][:10] == now.date().isoformat()])
     return {
-        "notifications": [
-            {"id": 1, "title": "Critical Alert: Chain Snatching Spike", "message": "42% increase detected in Bengaluru Urban", "type": "alert", "read": False, "timestamp": (now - timedelta(hours=2)).isoformat()},
-            {"id": 2, "title": "Weekly Report Ready", "message": "State-wide weekly crime report is available", "type": "report", "read": False, "timestamp": (now - timedelta(hours=6)).isoformat()},
-            {"id": 3, "title": "Infrastructure Alert", "message": "Sedam PS condition score critical (3.2)", "type": "warning", "read": True, "timestamp": (now - timedelta(hours=12)).isoformat()},
-        ],
-        "unread_count": 2,
+        "summary": {
+            "total": len(notifications),
+            "unread": unread,
+            "critical": critical,
+            "today": today,
+        },
+        "notifications": notifications,
         "last_updated": now.isoformat(),
     }
 
@@ -602,18 +671,49 @@ async def get_cp_finance():
 
 @router.get("/patrol")
 async def get_cp_patrol():
-    """Get patrol data for CP."""
+    """Get patrol data for CP.
+
+    Contract matches what the frontend CPPatrol page renders: summary
+    (active_patrols/vehicles_deployed/officers_on_patrol/coverage_pct/
+    shifts_active/districts_covered), patrols (PatrolEntry[]), districts,
+    last_updated.
+    """
     now = datetime.now()
+    districts = ["Bengaluru Urban", "Bengaluru Rural", "Mysuru", "Hubballi", "Mangaluru", "Belagavi"]
+    vehicles = ["Gypsy", "Bolero", "Scorpio", "Tavera", "Motorcycle"]
+    zones = ["A Sector", "B Sector", "C Sector", "D Sector", "E Sector", "F Sector"]
+    statuses = ["active", "on_break", "completed", "standby"]
+    officer_pool = ["SI Sharma", "HC Kumar", "PC Venkatesh", "SI Meena", "PC Ramesh", "ASI Gopal", "SI Priya", "PC Suresh"]
+
+    patrols = []
+    for i in range(14):
+        officers = min(3, (i % 3) + 1)
+        selected = [officer_pool[(i + j) % len(officer_pool)] for j in range(officers)]
+        patrols.append({
+            "id": f"PT-{str(i + 1).zfill(3)}",
+            "district": districts[i % len(districts)],
+            "zone": zones[i % len(zones)],
+            "vehicle": vehicles[i % len(vehicles)],
+            "officers": officers,
+            "officer_names": selected,
+            "status": statuses[i % len(statuses)],
+            "started_at": (now - timedelta(hours=(i * 37) % 8 + 1)).isoformat(),
+            "coverage_hours": (i % 8) + 4,
+            "beat": f"Beat {chr(65 + (i % 6))}-{i // 6 + 1}",
+        })
+
+    active = [p for p in patrols if p["status"] == "active"]
     return {
-        "active_units": 124,
-        "total_units": 150,
-        "coverage_pct": 82.5,
-        "incidents_today": 8,
-        "recent_patrols": [
-            {"unit_id": "PU-001", "area": "MG Road", "status": "active", "officers": 2, "start_time": (now - timedelta(hours=2)).isoformat()},
-            {"unit_id": "PU-002", "area": "Koramangala", "status": "active", "officers": 2, "start_time": (now - timedelta(hours=1)).isoformat()},
-            {"unit_id": "PU-003", "area": "Whitefield", "status": "returning", "officers": 3, "start_time": (now - timedelta(hours=4)).isoformat()},
-        ],
+        "summary": {
+            "active_patrols": len(active),
+            "vehicles_deployed": len([p for p in patrols if p["status"] != "standby"]),
+            "officers_on_patrol": sum(p["officers"] for p in active),
+            "coverage_pct": round(len(active) / len(patrols) * 100),
+            "shifts_active": 3,
+            "districts_covered": len(set(p["district"] for p in patrols)),
+        },
+        "patrols": patrols,
+        "districts": districts,
         "last_updated": now.isoformat(),
     }
 
@@ -623,32 +723,112 @@ async def get_cp_patrol():
 
 @router.get("/officers")
 async def get_cp_officers():
-    """Get officer data for CP."""
+    """Get officer/personnel data for CP.
+
+    Contract matches what the frontend CPOfficers page renders:
+    summary (total_sanctioned/total_deployed/vacancy_rate_pct/by_rank object),
+    by_district (with sanctioned/deployed/vacancies/vacancy_rate_pct/by_rank),
+    recruitment_pipeline, vacancy_alerts, last_updated.
+    """
+    districts = [
+        {"name": "Bengaluru Urban", "population": 9621000, "officers_per_100k": 142},
+        {"name": "Bengaluru Rural", "population": 987000, "officers_per_100k": 78},
+        {"name": "Mysuru", "population": 3065000, "officers_per_100k": 105},
+        {"name": "Belagavi", "population": 4779000, "officers_per_100k": 88},
+        {"name": "Dharwad", "population": 1847000, "officers_per_100k": 95},
+        {"name": "Mangaluru (Dakshina Kannada)", "population": 2089000, "officers_per_100k": 112},
+        {"name": "Tumakuru", "population": 2678000, "officers_per_100k": 72},
+        {"name": "Kalaburagi", "population": 2566000, "officers_per_100k": 68},
+        {"name": "Shivamogga", "population": 1752000, "officers_per_100k": 82},
+        {"name": "Ballari", "population": 2460000, "officers_per_100k": 62},
+        {"name": "Udupi", "population": 1177000, "officers_per_100k": 90},
+        {"name": "Hassan", "population": 1776000, "officers_per_100k": 76},
+    ]
+
+    # Rank distribution weights (share of a district's deployed strength).
+    RANK_WEIGHTS: list[tuple[str, float]] = [
+        ("DGP", 0.0004), ("ADGP", 0.001), ("IGP", 0.002), ("DIG", 0.004),
+        ("SP", 0.01), ("Addl_SP", 0.02), ("DySP", 0.03), ("PI", 0.08),
+        ("PSI", 0.16), ("ASI", 0.22), ("HC", 0.30), ("PC", 0.1726),
+    ]
+
+    def distribute_ranks(deployed: int) -> list[dict[str, Any]]:
+        counts: list[dict[str, Any]] = []
+        remaining = deployed
+        for rank, weight in RANK_WEIGHTS:
+            if remaining <= 0:
+                counts.append({"rank": rank, "count": 0})
+                continue
+            if rank == "PC":
+                # PC absorbs the remainder so the sum matches deployed exactly.
+                counts.append({"rank": rank, "count": remaining})
+                remaining = 0
+            else:
+                n = int(round(deployed * weight))
+                n = min(n, remaining)
+                counts.append({"rank": rank, "count": n})
+                remaining -= n
+        return counts
+
+    by_district: list[dict[str, Any]] = []
+    summary_by_rank: dict[str, int] = {}
+    total_sanctioned = 0
+    total_deployed = 0
+
+    for i, d in enumerate(districts):
+        sanctioned = int(round(d["population"] * d["officers_per_100k"] / 100_000 * 1.15))
+        # Deterministic per-district vacancy rate (roughly 8-22%, varies by index).
+        vacancy_rate_pct = round(8.0 + ((d["population"] // 97_000) % 15), 1)
+        deployed = int(round(sanctioned * (1 - vacancy_rate_pct / 100)))
+        vacancies = sanctioned - deployed
+        total_sanctioned += sanctioned
+        total_deployed += deployed
+
+        rank_counts = distribute_ranks(deployed)
+        for rc in rank_counts:
+            summary_by_rank[rc["rank"]] = summary_by_rank.get(rc["rank"], 0) + rc["count"]
+
+        by_district.append({
+            "district": d["name"],
+            "sanctioned": sanctioned,
+            "deployed": deployed,
+            "vacancies": vacancies,
+            "vacancy_rate_pct": vacancy_rate_pct,
+            "by_rank": rank_counts,
+        })
+
+    total_vacancies = total_sanctioned - total_deployed
+    overall_rate = round(total_vacancies / total_sanctioned * 100, 1) if total_sanctioned else 0
+
+    vacancy_alerts = []
+    for dist in sorted(by_district, key=lambda x: x["vacancy_rate_pct"], reverse=True):
+        if dist["vacancy_rate_pct"] < 12:
+            continue
+        worst_rank = max(dist["by_rank"], key=lambda r: r["count"] * 0.2 + r["count"])
+        rank_label = worst_rank["rank"] if worst_rank["count"] else "PC"
+        vacancy_alerts.append({
+            "district": dist["district"],
+            "rank": rank_label,
+            "vacancies": dist["vacancies"],
+            "priority": "critical" if dist["vacancy_rate_pct"] >= 20 else "high" if dist["vacancy_rate_pct"] >= 15 else "medium",
+        })
+
     return {
         "summary": {
-            "total_officers": 28492,
-            "on_duty": 18340,
-            "on_leave": 2156,
-            "training": 1892,
+            "total_sanctioned": total_sanctioned,
+            "total_deployed": total_deployed,
+            "vacancy_rate_pct": overall_rate,
+            "by_rank": summary_by_rank,
         },
-        "by_rank": [
-            {"rank": "Commissioner", "count": 1},
-            {"rank": "ADGP", "count": 4},
-            {"rank": "IGP", "count": 8},
-            {"rank": "DIG", "count": 16},
-            {"rank": "SP", "count": 31},
-            {"rank": "DCP", "count": 45},
-            {"rank": "ACP", "count": 120},
-            {"rank": "Inspector", "count": 450},
-            {"rank": "SI", "count": 1200},
-            {"rank": "ASI", "count": 2400},
-            {"rank": "HC", "count": 8500},
-            {"rank": "PC", "count": 15731},
+        "by_district": by_district,
+        "recruitment_pipeline": [
+            {"stage": "Written Exam (PSI)", "count": 12500, "eta": "2026-08"},
+            {"stage": "Physical Endurance Test", "count": 8400, "eta": "2026-09"},
+            {"stage": "Interview Round", "count": 3200, "eta": "2026-10"},
+            {"stage": "Medical Verification", "count": 1800, "eta": "2026-11"},
+            {"stage": "Training Academy (PC)", "count": 2500, "eta": "2026-12"},
         ],
-        "recent_transfers": [
-            {"officer": "SI Meena", "from": "Koramangala PS", "to": "Kalaburagi City PS", "date": "2026-07-25"},
-            {"officer": "Inspector Rajesh", "from": "Vijayanagar PS", "to": "Mysuru North PS", "date": "2026-07-20"},
-        ],
+        "vacancy_alerts": vacancy_alerts[:8],
         "last_updated": datetime.now().isoformat(),
     }
 
@@ -666,7 +846,7 @@ async def get_cp_orders():
             {"id": "ORD-2026-003", "title": "Quarterly Firearms Inspection", "description": "All stations to complete quarterly firearms inspection and submit reports", "issued_to": "All District SPs", "priority": "high", "status": "active", "date": (now - timedelta(days=3)).strftime("%Y-%m-%d"), "due_date": (now + timedelta(days=14)).strftime("%Y-%m-%d"), "category": "Administration"},
             {"id": "ORD-2026-008", "title": "Women Safety Audit", "description": "Conduct safety audit of all police stations for women-friendly infrastructure", "issued_to": "All District SPs, W&J Wing", "priority": "medium", "status": "completed", "date": (now - timedelta(days=60)).strftime("%Y-%m-%d"), "due_date": (now - timedelta(days=15)).strftime("%Y-%m-%d"), "category": "Administration"},
         ],
-        "summary": {"total": 3, "active": 2, "completed": 1},
+        "summary": {"total": 3, "active": 2, "completed": 1, "overdue": 0},
         "last_updated": now.isoformat(),
     }
 

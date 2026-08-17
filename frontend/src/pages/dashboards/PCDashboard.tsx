@@ -318,7 +318,7 @@ function ActivityFeedCard({ feed }: { feed: PCMetrics['activity_feed'] }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 function PCDashboardSkeleton() {
   return (
-    <div className="flex flex-col gap-4 p-6 min-h-screen max-w-4xl mx-auto animate-pulse">
+    <div className="page-container flex flex-col gap-4 py-6 min-h-screen max-w-4xl mx-auto animate-pulse">
       <div className="flex items-center gap-3">
         <div className="h-8 w-8 rounded-full" style={{ background: SLATE_12 }} />
         <div>
@@ -395,7 +395,7 @@ export function PCDashboard() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6 min-h-screen max-w-4xl mx-auto">
+    <div className="page-container flex flex-col gap-4 py-6 min-h-screen max-w-4xl mx-auto">
       {/* Jurisdiction Banner */}
       <JurisdictionBanner scope={jurisdiction} />
 

@@ -521,7 +521,7 @@ function EmergingThreatsFeed({ threats }: { threats: EmergingThreat[] }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 function PSIDashboardSkeleton() {
   return (
-    <div className="flex flex-col gap-4 p-6 min-h-screen animate-pulse">
+    <div className="page-container flex flex-col gap-4 min-h-screen animate-pulse">
       <div className="flex items-center gap-3">
         <div className="h-8 w-8 rounded-full" style={{ background: PURPLE_12 }} />
         <div>
@@ -607,7 +607,7 @@ export function PSIDashboard() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6 min-h-screen">
+    <div className="page-container flex flex-col gap-4 min-h-screen">
       {/* Quick Link Strip */}
       <PSIQuickLinks />
 

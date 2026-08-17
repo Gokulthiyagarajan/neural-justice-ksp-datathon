@@ -13,9 +13,11 @@ import { cn } from '@/design-system/utils/cn';
 
 interface TopCommandBarProps {
   onMenuClick: () => void;
+  /** Whether the sidebar is open — drives the hamburger's aria-expanded state */
+  menuOpen?: boolean;
 }
 
-export default function TopCommandBar({ onMenuClick }: TopCommandBarProps) {
+export default function TopCommandBar({ onMenuClick, menuOpen = false }: TopCommandBarProps) {
   const { t, i18n } = useTranslation();
   const logout = useAuthStore((s) => s.logout);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -95,7 +97,7 @@ export default function TopCommandBar({ onMenuClick }: TopCommandBarProps) {
               onClick={onMenuClick}
               className="lg:hidden"
               aria-controls="app-sidebar"
-              aria-expanded={false}
+              aria-expanded={menuOpen}
             />
 
             <div className="flex items-center gap-2 min-w-0">

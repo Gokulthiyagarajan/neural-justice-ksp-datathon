@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
@@ -122,6 +122,66 @@ export function useWindowSize(): { width: number; height: number } {
 export function useIsMobile(breakpoint = 768): boolean {
   const { width } = useWindowSize();
   return width < breakpoint;
+}
+
+/**
+ * useFocusTrap — while `active` is true, traps keyboard Tab focus inside
+ * `ref`, moves focus to the first focusable element, and on deactivation
+ * restores focus to the element that had it before activation (e.g. the
+ * hamburger trigger). Used by the mobile drawer navigation.
+ */
+export function useFocusTrap<T extends HTMLElement>(
+  ref: React.RefObject<T>,
+  active: boolean
+): void {
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!active) {
+      // Restore focus to the trigger that opened the drawer
+      if (previouslyFocused.current) {
+        previouslyFocused.current.focus?.();
+        previouslyFocused.current = null;
+      }
+      return;
+    }
+
+    const container = ref.current;
+    if (!container) return;
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+
+    const getFocusables = () => {
+      const nodes = container.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      return Array.from(nodes).filter(
+        (el) => !el.hasAttribute('hidden') && el.offsetParent !== null
+      );
+    };
+
+    // Move focus into the drawer (first focusable = the close button)
+    const first = getFocusables()[0];
+    first?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const items = getFocusables();
+      if (items.length === 0) return;
+      const firstEl = items[0];
+      const lastEl = items[items.length - 1];
+      const activeEl = document.activeElement;
+      if (e.shiftKey && (activeEl === firstEl || activeEl === container)) {
+        e.preventDefault();
+        lastEl.focus();
+      } else if (!e.shiftKey && activeEl === lastEl) {
+        e.preventDefault();
+        firstEl.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [ref, active]);
 }
 
 export function useCountUp(

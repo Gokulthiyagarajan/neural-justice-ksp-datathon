@@ -604,6 +604,17 @@
     @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
   }
 
+  /*
+   * Page content container — caps full-width pages at 1440px and centers
+   * them. The horizontal gutter itself is global (AppLayout wrapper,
+   * min 16px on mobile); this class only constrains very wide content.
+   * Pages opt in by adding .page-container to their root element.
+   */
+  .page-container {
+    @apply w-full mx-auto;
+    max-width: 1440px;
+  }
+
   /* Active / press state for touch devices */
   .btn-press {
     @apply active:scale-[0.97] transition-transform duration-fast;

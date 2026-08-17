@@ -1021,7 +1021,7 @@ function AIRecommendations() {
 // ═══════════════════════════════════════════════════════════════════════════════
 function PIDashboardSkeleton() {
   return (
-    <div className="flex flex-col gap-4 p-6 min-h-screen animate-pulse">
+    <div className="flex flex-col gap-4 min-h-screen animate-pulse">
       <div className="flex items-center gap-3">
         <div className="h-8 w-8 rounded-full" style={{ background: CYAN_12 }} />
         <div>
@@ -1188,7 +1188,7 @@ export function PIDashboard() {
   const todayFIRs = (metrics.recent_firs ?? []).filter(f => isToday(f.occurrence_date)).length
 
   return (
-    <div className="flex flex-col gap-4 p-4 sm:p-6 min-h-screen">
+    <div className="page-container flex flex-col gap-4 min-h-screen">
       {/* Jurisdiction Banner */}
       <JurisdictionBanner scope={jurisdiction} />
 
